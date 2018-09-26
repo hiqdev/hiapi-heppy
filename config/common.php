@@ -24,6 +24,7 @@ return [
                             'user'      => $params['heppy.rabbitmq.user'],
                             'password'  => $params['heppy.rabbitmq.password'],
                             'vhost'     => $params['heppy.rabbitmq.vhost'],
+                            'queue'     => $params['heppy.rabbitmq.queue'],
                         ],
                     ],
                 ],

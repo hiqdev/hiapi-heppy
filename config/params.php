@@ -14,4 +14,5 @@ return [
     'heppy.rabbitmq.user'       => 'guest',
     'heppy.rabbitmq.password'   => 'guest',
     'heppy.rabbitmq.vhost'      => '/',
+    'heppy.rabbitmq.queue'      => null,
 ];
