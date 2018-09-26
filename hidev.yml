@@ -1,0 +1,14 @@
+package:
+    type:       yii2-extension
+    name:       hiapi-heppy
+    title:      hiAPI plugin for hEPPy
+    headline:   hiAPI hEPPy
+    keywords:   hiapi, hipanel, heppy
+    description:    |
+        The plugin for integration [hEPPy] EPP client in hiAPI.
+
+        Provides:
+
+        - performing commands with hEPPy EPP client
+
+        [hEPPy]: https://github.com/hiqdev/heppy
