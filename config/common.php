@@ -14,6 +14,20 @@ return [
             'heppyTool' => [
                 '__class' => \hiapi\heppy\HeppyTool::class,
             ],
+            \hiapi\heppy\ClientInterface::class => [
+                '__class' => \hiapi\heppy\RabbitMQClient::class,
+                '__construct()' => [
+                    [
+                        'main' => [
+                            'host'      => $params['heppy.rabbitmq.host'],
+                            'port'      => $params['heppy.rabbitmq.port'],
+                            'user'      => $params['heppy.rabbitmq.user'],
+                            'password'  => $params['heppy.rabbitmq.password'],
+                            'vhost'     => $params['heppy.rabbitmq.vhost'],
+                        ],
+                    ],
+                ],
+            ],
         ],
     ],
 ];

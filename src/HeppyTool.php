@@ -15,4 +15,17 @@ namespace hiapi\heppy;
  */
 class HeppyTool extends \hiapi\components\AbstractTool
 {
+    public function __construct(ClientInterface $client)
+    {
+        $this->client = $client;
+    }
+
+    public function domainInfo($row)
+    {
+        $data = $this->client->request([
+            'command'   => 'domain:info',
+            'name'      => $row['name'],
+        ]);
+        var_dump($data);die;
+    }
 }

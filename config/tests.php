@@ -9,9 +9,6 @@
  */
 
 return [
-    'heppy.rabbitmq.host'       => 'localhost',    
-    'heppy.rabbitmq.port'       => 5672,    
-    'heppy.rabbitmq.user'       => 'guest',
-    'heppy.rabbitmq.password'   => 'guest',
-    'heppy.rabbitmq.vhost'      => '/',
+    'id' => 'tests',
+    'basePath' => dirname(__DIR__),
 ];
