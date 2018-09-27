@@ -15,17 +15,59 @@ namespace hiapi\heppy;
  */
 class HeppyTool extends \hiapi\components\AbstractTool
 {
-    public function __construct(ClientInterface $client)
-    {
-        $this->client = $client;
-    }
+    protected $_client;
 
     public function domainInfo($row)
     {
-        $data = $this->client->request([
+        return $this->request([
             'command'   => 'domain:info',
-            'name'      => $row['name'],
+            'name'      => $row['domain'],
         ]);
-        var_dump($data);die;
+    }
+
+    protected function addNamestoreExt(array $data, string $zone = null): array
+    {
+        $zone = strtoupper($zone ?: $this->findZone($data));
+        if (in_array($zone, ['COM', 'NET'])) {
+            $data['extensions']['namestoreExt:subProduct'] = 'namestoreExt:subProduct';
+            $data['subProduct'] = $zone;
+        }
+
+        return $data;
+    }
+
+    protected function findZone(array $data, string $name = null): ?string
+    {
+        if (isset($data['zone'])) {
+            return $data['zone'];
+        }
+        if (!$name) {
+            $name = $name ?: $data['name'] ?? null;
+        }
+
+        return array_pop(explode('.', $name));
+    }
+
+    protected function request(array $data): array
+    {
+        $data = $this->addNamestoreExt($data);
+        return $this->getClient()->request($data);
+    }
+
+    protected function getClient(): ClientInterface
+    {
+        if ($this->_client === null) {
+            $this->_client = new RabbitMQClient([
+                [
+                    'host'      => $this->data['url']       ?? null,
+                    'port'      => $this->data['port']      ?? 5672,
+                    'user'      => $this->data['login']     ?? 'guest',
+                    'password'  => $this->data['password']  ?? 'guest',
+                    'vhost'     => $this->data['vhost']     ?? '/',
+                ],
+            ], $this->data['queue'] ?? null);
+        }
+
+        return $this->_client;
     }
 }
