@@ -9,10 +9,10 @@
  */
 
 return [
-    'heppy.rabbitmq.host'       => 'localhost',    
-    'heppy.rabbitmq.port'       => 5672,    
-    'heppy.rabbitmq.user'       => 'guest',
-    'heppy.rabbitmq.password'   => 'guest',
-    'heppy.rabbitmq.vhost'      => '/',
-    'heppy.rabbitmq.queue'      => null,
+    'hiapi.heppy.rabbitmq.host'     => 'localhost',
+    'hiapi.heppy.rabbitmq.port'     => 5672,
+    'hiapi.heppy.rabbitmq.user'     => 'guest',
+    'hiapi.heppy.rabbitmq.password' => 'guest',
+    'hiapi.heppy.rabbitmq.vhost'    => '/',
+    'hiapi.heppy.rabbitmq.queue'    => null,
 ];

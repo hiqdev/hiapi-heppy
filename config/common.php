@@ -19,14 +19,14 @@ return [
                 '__construct()' => [
                     [
                         'main' => [
-                            'host'      => $params['heppy.rabbitmq.host'],
-                            'port'      => $params['heppy.rabbitmq.port'],
-                            'user'      => $params['heppy.rabbitmq.user'],
-                            'password'  => $params['heppy.rabbitmq.password'],
-                            'vhost'     => $params['heppy.rabbitmq.vhost'],
-                            'queue'     => $params['heppy.rabbitmq.queue'],
+                            'host'      => $params['hiapi.heppy.rabbitmq.host'],
+                            'port'      => $params['hiapi.heppy.rabbitmq.port'],
+                            'user'      => $params['hiapi.heppy.rabbitmq.user'],
+                            'password'  => $params['hiapi.heppy.rabbitmq.password'],
+                            'vhost'     => $params['hiapi.heppy.rabbitmq.vhost'],
                         ],
                     ],
+                    $params['hiapi.heppy.rabbitmq.queue'],
                 ],
             ],
         ],
