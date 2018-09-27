@@ -19,9 +19,32 @@ class HeppyTool extends \hiapi\components\AbstractTool
 
     public function domainInfo($row)
     {
-        return $this->request([
+        $data = $this->request([
             'command'   => 'domain:info',
             'name'      => $row['domain'],
+        ]);
+
+        return array_filter([
+            'domain'            => $data['name'],
+            'result_msg'        => $data['result_msg'],
+            'result_code'       => $data['result_code'],
+            'result_lang'       => $data['result_lang'],
+            'result_reason'     => $data['result_reason'],
+            'server_trid'       => $data['svTRID'],
+            'client_trid'       => $data['clTRID'],
+            'name'              => $data['name'],
+            'roid'              => $data['roid'],
+            'statuses'          => implode(',', $data['statuses']),
+            'nameservers'       => implode(',', $data['nss']),
+            'hosts'             => implode(',', $data['hosts']),
+            'created_by'        => $data['crID'],
+            'created_date'      => $data['crDate'],
+            'updated_by'        => $data['upID'],
+            'updated_date'      => $data['upDate'],
+            'expiration_date'   => $data['exDate'],
+            'transfer_date'     => $data['trDate'],
+            'password'          => $data['pw'],
+            'epp_client_id'     => $data['clID'],
         ]);
     }
 
@@ -51,6 +74,7 @@ class HeppyTool extends \hiapi\components\AbstractTool
     protected function request(array $data): array
     {
         $data = $this->addNamestoreExt($data);
+
         return $this->getClient()->request($data);
     }
 
