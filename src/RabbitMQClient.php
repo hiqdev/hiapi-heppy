@@ -28,15 +28,10 @@ class RabbitMQClient implements ClientInterface
 
     protected $reply;
 
-    public function __construct(array $connections)
+    public function __construct(array $connections, string $queue)
     {
-        /// TODO: in new amqp lib should be like this
-        /// $this->connection = AMQPStreamConnection::create_connection($connections);
-
-        $config = reset($connections);
-        extract($config);
+        $this->connection = AMQPStreamConnection::create_connection($connections);
         $this->queue = $queue;
-        $this->connection = new AMQPStreamConnection($host, $port, $user, $password, $vhost);
         $this->channel = $this->connection->channel();
         $this->callback_queue = $this->startCallbackQueue($this->channel);
     }
