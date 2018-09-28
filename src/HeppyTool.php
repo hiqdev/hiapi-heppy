@@ -34,7 +34,7 @@ class HeppyTool extends \hiapi\components\AbstractTool
             'client_trid'       => $data['clTRID'],
             'name'              => $data['name'],
             'roid'              => $data['roid'],
-            'statuses'          => implode(',', $data['statuses']),
+            'statuses'          => implode(',', array_keys($data['statuses'])),
             'nameservers'       => implode(',', $data['nss']),
             'hosts'             => implode(',', $data['hosts']),
             'created_by'        => $data['crID'],
