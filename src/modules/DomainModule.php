@@ -39,4 +39,22 @@ class DomainModule extends AbstractModule
             'epp_client_id'     => $data['clID'],
         ]);
     }
+
+    public function domainsCheck(array $row)
+    {
+        $data = $this->tool->request([
+            'command'   => 'domain:check',
+            'names'     => $row['domains'],
+        ]);
+
+        return array_filter([
+            'avails'            => $data['avails'],
+            'reasons'           => $data['reasons'],
+            'result_msg'        => $data['result_msg'],
+            'result_code'       => $data['result_code'],
+            'result_lang'       => $data['result_lang'],
+            'server_trid'       => $data['svTRID'],
+            'client_trid'       => $data['clTRID'],
+        ]);
+    }
 }
