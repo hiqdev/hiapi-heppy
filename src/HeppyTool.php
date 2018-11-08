@@ -12,6 +12,7 @@ namespace hiapi\heppy;
 
 use hiapi\heppy\exceptions\InvalidCallException;
 use hiapi\heppy\modules\AbstractModule;
+use hiapi\heppy\modules\ContactModule;
 use hiapi\heppy\modules\DomainModule;
 
 /**
