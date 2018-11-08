@@ -20,6 +20,8 @@ class RabbitMQClient implements ClientInterface
 {
     protected $connection;
 
+    protected $queue;
+
     protected $channel;
 
     protected $callback_queue;
