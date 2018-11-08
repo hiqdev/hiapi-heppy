@@ -3,6 +3,8 @@
 namespace hiapi\heppy\modules;
 
 
+use err;
+
 class DomainModule extends AbstractModule
 {
     /**
@@ -40,7 +42,11 @@ class DomainModule extends AbstractModule
         ]);
     }
 
-    public function domainsCheck(array $row)
+    /**
+     * @param array $row
+     * @return array
+     */
+    public function domainsCheck(array $row): array
     {
         $data = $this->tool->request([
             'command'   => 'domain:check',
@@ -57,4 +63,46 @@ class DomainModule extends AbstractModule
             'client_trid'       => $data['clTRID'],
         ]);
     }
+
+    public function domainRegister(array $row): array
+    {
+        $row = $this->domainPrepareContacts($row);
+
+        $data = $this->tool->request(array_filter([
+            'command'       => 'domain:create',
+            'name'          => $row['domain'],
+            'period'        => $row['period'],
+            'registrant'    => $row['registrant'],
+            'admin'         => $row['admin'],
+            'tech'          => $row['tech'],
+            'billing'       => $row['billing'],
+            'nss'           => $row['nss'],
+            'pw'            => $row['password']
+        ]));
+    }
+
+    public function domainPrepareContacts(array $row): array
+    {
+        $contacts = $this->base->domainGetWPContactsInfo($row);
+        if (err::is($contacts)) {
+            return $contacts;
+        }
+        $remoteIds = [];
+        foreach ($this->base->getContactTypes() as $type) {
+            $contactId = $contacts[$type]['id'];
+            $remoteId = $remoteIds[$contactId];
+            if (!$remoteId) {
+                $response = $this->tool->contactSet($contacts[$type]);
+                if (err::is($response)) {
+                    return $response;
+                }
+                $remoteId = $response['id'];
+                $remoteIds[$contactId] = $remoteId;
+            }
+            $row[$type . '_remoteid'] = $remoteId;
+        }
+
+        return $row;
+    }
+
 }
