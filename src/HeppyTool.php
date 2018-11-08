@@ -10,6 +10,10 @@
 
 namespace hiapi\heppy;
 
+use hiapi\heppy\exceptions\InvalidCallException;
+use hiapi\heppy\modules\AbstractModule;
+use hiapi\heppy\modules\DomainModule;
+
 /**
  * hEPPy tool.
  */
@@ -17,67 +21,66 @@ class HeppyTool extends \hiapi\components\AbstractTool
 {
     protected $_client;
 
-    public function domainInfo($row)
-    {
-        $data = $this->request([
-            'command'   => 'domain:info',
-            'name'      => $row['domain'],
-        ]);
+    protected $modules = [
+        'domain'    => DomainModule::class,
+        'domains'   => DomainModule::class,
+        'contact'   => ContactModule::class,
+        'contacts'  => ContactModule::class,
+        'host'      => HostModule::class,
+        'hosts'     => HostModule::class,
+        'poll'      => PollModule::class,
+        'polls'     => PollModule::class,
+    ];
 
-        return array_filter([
-            'domain'            => $data['name'],
-            'result_msg'        => $data['result_msg'],
-            'result_code'       => $data['result_code'],
-            'result_lang'       => $data['result_lang'],
-            'result_reason'     => $data['result_reason'],
-            'server_trid'       => $data['svTRID'],
-            'client_trid'       => $data['clTRID'],
-            'name'              => $data['name'],
-            'roid'              => $data['roid'],
-            'statuses'          => implode(',', array_keys($data['statuses'])),
-            'nameservers'       => implode(',', $data['nss']),
-            'hosts'             => implode(',', $data['hosts']),
-            'created_by'        => $data['crID'],
-            'created_date'      => $data['crDate'],
-            'updated_by'        => $data['upID'],
-            'updated_date'      => $data['upDate'],
-            'expiration_date'   => $data['exDate'],
-            'transfer_date'     => $data['trDate'],
-            'password'          => $data['pw'],
-            'epp_client_id'     => $data['clID'],
-        ]);
+    public function __call($command, $args): array
+    {
+        $parts = preg_split('/(?=[A-Z])/', $command);
+        $entity = reset($parts);
+        $module = $this->getModule($entity);
+
+        return call_user_func_array([$module, $command], $args);
     }
 
-    protected function addNamestoreExt(array $data, string $zone = null): array
+    /**
+     * @param string $name
+     * @return AbstractModule
+     */
+    public function getModule(string $name): AbstractModule
     {
-        $zone = strtoupper($zone ?: $this->findZone($data));
-        if (in_array($zone, ['COM', 'NET'])) {
-            $data['extensions']['namestoreExt:subProduct'] = 'namestoreExt:subProduct';
-            $data['subProduct'] = $zone;
+        if (empty($this->modules[$name])) {
+            throw new InvalidCallException("module `$name` not found");
+        }
+        $module = $this->modules[$name];
+        if (!is_object($module)) {
+            $this->modules[$name] = $this->createModule($module);
         }
 
-        return $data;
+        return $this->modules[$name];
     }
 
-    protected function findZone(array $data, string $name = null): ?string
+    /**
+     * @param string $class
+     * @return AbstractModule
+     */
+    public function createModule(string $class): AbstractModule
     {
-        if (isset($data['zone'])) {
-            return $data['zone'];
-        }
-        if (!$name) {
-            $name = $name ?: $data['name'] ?? null;
-        }
-
-        return array_pop(explode('.', $name));
+        return new $class($this);
     }
 
-    protected function request(array $data): array
+    /**
+     * @param array $data
+     * @return array
+     */
+    public function request(array $data): array
     {
-        $data = $this->addNamestoreExt($data);
+        $data = (new Extension)->addNamestoreExt($data);
 
         return $this->getClient()->request($data);
     }
 
+    /**
+     * @return ClientInterface
+     */
     protected function getClient(): ClientInterface
     {
         if ($this->_client === null) {
