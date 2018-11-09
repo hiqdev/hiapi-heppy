@@ -6,39 +6,44 @@ use err;
 
 class ContactModule extends AbstractModule
 {
-    public function contactSet(array $row): void
+    /**
+     * @param array $row
+     * @return array
+     */
+    public function contactSet(array $row): array
     {
         $info = $this->tool->contactInfo($row);
-        $row['id'] = $info['id'] ?? null;
 
         if (err::is($info) || empty($info['id'])) {
-            $this->contactCreate($row);
+            $info = $this->contactCreate($row);
         }
-        else {
-            $this->contactUpdate($row);
-        }
+        return $info;
     }
 
-    public function contactInfo(array $row)
+    /**
+     * @param array $row
+     * @return array
+     */
+    public function contactInfo(array $row): array
     {
-        $data = $this->tool->request(array_filter([
+        $data = $this->tool->request([
             'command'   => 'contact:info',
             'id'        => $row['epp_id'],
             'pw'        => $row['password'],
-        ]));
+        ]);
 
         return array_filter([
             'id'            => $data['id'],
             'name'          => $data['name'],
             'password'      => $data['pw'],
-            'cc'            => $data['cc'],
-            'city'          => $data['city'],
             'email'         => $data['email'],
-            'fax'           => $data['fax'],
-            'voice'         => $data['voice'],
+            'fax_phone'     => $data['fax'],
+            'voice_phone'   => $data['voice'],
+            'country'       => $data['cc'],
+            'city'          => $data['city'],
             'org'           => $data['org'],
             'roid'          => $data['roid'],
-            'pc'            => $data['pc'],
+            'postal_code'   => $data['pc'],
             'street'        => $data['street'],
             'sp'            => $data['sp'],
             'statuses'      => implode(',', array_keys($data['statuses'])),
@@ -50,6 +55,40 @@ class ContactModule extends AbstractModule
             'result_lang'   => $data['result_lang'],
             'client_trid'   => $data['clTRID'],
             'epp_client_id' => $data['clID'],
+            'server_trid'   => $data['svTRID'],
+        ]);
+    }
+
+    /**
+     * @param array $row
+     * @return array
+     */
+    public function contactCreate(array $row): array
+    {
+        $data = $this->tool->request([
+            'command'   => 'contact:create',
+            'id'        => $row['epp_id'],
+            'name'      => $row['name'],
+            'email'     => $row['email'],
+            'voice'     => $row['voice_phone'],
+            'fax'       => $row['fax_phone'],
+            'org'       => $row['org'],
+            'cc'        => $row['country'],
+            'city'      => $row['city'],
+            'street1'   => $row['street1'],
+            'street2'   => $row['street2'],
+            'street3'   => $row['street3'],
+            'pc'        => $row['postal_code'],
+            'pw'        => $row['password'] ?: uniqid(),
+        ]);
+
+        return array_filter([
+            'id'            => $data['id'],
+            'result_msg'    => $data['result_msg'],
+            'client_trid'   => $data['clTRID'],
+            'created_date'  => $data['crDate'],
+            'result_code'   => $data['result_code'],
+            'result_lang'   => $data['result_lang'],
             'server_trid'   => $data['svTRID'],
         ]);
     }
