@@ -3,6 +3,7 @@
 namespace hiapi\heppy\modules;
 
 
+use arr;
 use err;
 
 class DomainModule extends AbstractModule
@@ -64,21 +65,43 @@ class DomainModule extends AbstractModule
         ]);
     }
 
+    /**
+     * @param array $row
+     * @return array
+     */
     public function domainRegister(array $row): array
     {
+        if (!$row['nss']) {
+            $row['nss'] = arr::get($this->base->domainGetNSs($row),'nss');
+        }
+        if (!$row['nss']) {
+            $row['nss'] = $this->tool->getDefaultNss();
+        }
         $row = $this->domainPrepareContacts($row);
 
         $data = $this->tool->request(array_filter([
             'command'       => 'domain:create',
             'name'          => $row['domain'],
             'period'        => $row['period'],
-            'registrant'    => $row['registrant'],
-            'admin'         => $row['admin'],
-            'tech'          => $row['tech'],
-            'billing'       => $row['billing'],
+            'registrant'    => $row['registrant_remote_id'],
+            'admin'         => $row['admin_remote_id'],
+            'tech'          => $row['tech_remote_id'],
+            'billing'       => $row['billing_remote_id'],
             'nss'           => $row['nss'],
             'pw'            => $row['password']
         ]));
+
+        return array_filter([
+            'domain'            => $data['name'],
+            'reason'            => $data['result_reason'],
+            'result_msg'        => $data['result_msg'],
+            'result_code'       => $data['result_code'],
+            'result_lang'       => $data['result_lang'],
+            'created_date'      => $data['crDate'],
+            'expiration_date'   => $data['exDate'],
+            'server_trid'       => $data['svTRID'],
+            'client_trid'       => $data['clTRID'],
+        ]);
     }
 
     public function domainPrepareContacts(array $row): array
@@ -99,7 +122,7 @@ class DomainModule extends AbstractModule
                 $remoteId = $response['id'];
                 $remoteIds[$contactId] = $remoteId;
             }
-            $row[$type . '_remoteid'] = $remoteId;
+            $row[$type . '_remote_id'] = $remoteId;
         }
 
         return $row;

@@ -22,6 +22,8 @@ class HeppyTool extends \hiapi\components\AbstractTool
 {
     protected $_client;
 
+    protected $defaultNss = ['ns1.topdns.me', 'ns2.topdns.me'];
+
     protected $modules = [
         'domain'    => DomainModule::class,
         'domains'   => DomainModule::class,
@@ -69,13 +71,19 @@ class HeppyTool extends \hiapi\components\AbstractTool
     }
 
     /**
+     * @return array
+     */
+    public function getDefaultNss(): array
+    {
+        return $this->defaultNss;
+    }
+
+    /**
      * @param array $data
      * @return array
      */
     public function request(array $data): array
     {
-        $data = (new Extension)->addNamestoreExt($data);
-
         return $this->getClient()->request($data);
     }
 
