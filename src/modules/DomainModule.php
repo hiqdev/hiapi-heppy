@@ -104,6 +104,10 @@ class DomainModule extends AbstractModule
         ]);
     }
 
+    /**
+     * @param array $row
+     * @return array
+     */
     public function domainPrepareContacts(array $row): array
     {
         $contacts = $this->base->domainGetWPContactsInfo($row);
@@ -128,4 +132,15 @@ class DomainModule extends AbstractModule
         return $row;
     }
 
+    /**
+     * @param array $row
+     * @return array
+     */
+    public function domainDelete(array $row): array
+    {
+        $data = $this->tool->request([
+            'command'   => 'domain:check',
+            'name'     => $row['domain'],
+        ]);
+    }
 }
