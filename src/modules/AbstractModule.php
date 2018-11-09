@@ -19,7 +19,7 @@ class AbstractModule
      * @param int $length
      * @return string
      */
-    public function generatePassword(int $length = 8): string
+    public function generatePassword(int $length = 10): string
     {
         $charsets = [
             'abcdefghijklmnopqrstuvwxyz',

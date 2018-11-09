@@ -14,6 +14,7 @@ use hiapi\heppy\exceptions\InvalidCallException;
 use hiapi\heppy\modules\AbstractModule;
 use hiapi\heppy\modules\ContactModule;
 use hiapi\heppy\modules\DomainModule;
+use hiapi\heppy\modules\HostModule;
 
 /**
  * hEPPy tool.
