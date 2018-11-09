@@ -26,11 +26,11 @@ class ContactModule extends AbstractModule
      */
     public function contactInfo(array $row): array
     {
-        $data = $this->tool->request([
+        $data = $this->tool->request(array_filter([
             'command'   => 'contact:info',
             'id'        => $row['epp_id'],
             'pw'        => $row['password'],
-        ]);
+        ]));
 
         return array_filter([
             'id'            => $data['id'],
@@ -79,7 +79,7 @@ class ContactModule extends AbstractModule
             'street2'   => $row['street2'],
             'street3'   => $row['street3'],
             'pc'        => $row['postal_code'],
-            'pw'        => $row['password'] ?: uniqid(),
+            'pw'        => $row['password'] ?: $this->generatePassword(),
         ]);
 
         return array_filter([
