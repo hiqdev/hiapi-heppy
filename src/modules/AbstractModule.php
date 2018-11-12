@@ -38,16 +38,4 @@ class AbstractModule
 
         return $result;
     }
-
-    protected function filterCommonResponsePart(array $data): array
-    {
-        return array_filter([
-            'result_msg'    => $data['result_msg'],
-            'result_code'   => $data['result_code'],
-            'result_lang'   => $data['result_lang'],
-            'result_reason' => $data['result_reason'],
-            'server_trid'   => $data['svTRID'],
-            'client_trid'   => $data['clTRID'],
-        ]);
-    }
 }

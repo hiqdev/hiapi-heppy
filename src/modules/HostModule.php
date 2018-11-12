@@ -15,8 +15,7 @@ class HostModule extends AbstractModule
         $info = $this->hostInfo($row);
         if (err::is($info) || empty($info['host'])) {
             $data = $this->hostCreate($row);
-        }
-        else {
+        } else {
             $row = $this->prepareDataForUpdate($row, $info);
             $data = $this->hostUpdate($row);
         }
@@ -30,16 +29,10 @@ class HostModule extends AbstractModule
      */
     public function hostCreate(array $row): array
     {
-        $data = $this->tool->request([
-            'command'   => 'host:create',
+        return $this->tool->request('host:create', [
             'name'      => $row['host'],
             'ips'       => $row['ips'],
         ]);
-
-        return array_merge(array_filter([
-            'host'              => $data['name'],
-            'created_date'      => $data['crDate'],
-        ]), $this->filterCommonResponsePart($data));
     }
 
     /**
@@ -48,19 +41,16 @@ class HostModule extends AbstractModule
      */
     public function hostInfo(array $row): array
     {
-        $data = $this->tool->request([
-            'command'   => 'host:info',
+        return $this->tool->request('host:info', [
             'name'      => $row['host'],
+        ], [
+            'host'              => 'name',
+            'ips'               => 'ips|values',
+            'roid'              => 'roid',
+            'statuses'          => 'statuses|keys',
+            'created_by'        => 'crID',
+            'created_date'      => 'crDate',
         ]);
-
-        return array_merge(array_filter([
-            'host'              => $data['name'],
-            'ips'               => $data['ips'],
-            'roid'              => $data['roid'],
-            'statuses'          => implode(',', array_keys($data['statuses'])),
-            'created_by'        => $data['crID'],
-            'created_date'      => $data['crDate'],
-        ]), $this->filterCommonResponsePart($data));
     }
 
     /**
@@ -69,15 +59,12 @@ class HostModule extends AbstractModule
      */
     public function hostUpdate(array $row): array
     {
-        $data = $this->tool->request(array_filter([
-            'command'   => 'host:update',
+        return $this->tool->request('host:update', array_filter([
             'name'      => $row['host'],
             'add'       => $row['add'],
             'rem'       => $row['rem'],
             'chg'       => $row['chg'],
         ]));
-
-        return $this->filterCommonResponsePart($data);
     }
 
     /**
@@ -96,14 +83,14 @@ class HostModule extends AbstractModule
     }
 
     /**
-     * @param array $row
+     * @param array $hosts
      * @return array
      */
     public function hostsDelete(array $hosts): array
     {
         $data = [];
         foreach ($hosts as $id => $hostData) {
-            $data[$id] = $this->hostDalete($hostData);
+            $data[$id] = $this->hostDelete($hostData);
         }
 
         return $data;
@@ -113,13 +100,10 @@ class HostModule extends AbstractModule
      * @param array $row
      * @return array
      */
-    private function hostDalete(array $row): array
+    private function hostDelete(array $row): array
     {
-        $data = $this->tool->request([
-            'command'   => 'host:delete',
+        return $this->tool->request('host:delete', [
             'name'      => $row['host'],
         ]);
-
-        return $this->filterCommonResponsePart($data);
     }
 }
