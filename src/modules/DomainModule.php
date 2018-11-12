@@ -118,8 +118,7 @@ class DomainModule extends AbstractModule
      */
     public function domainDelete(array $row): array
     {
-        $data = $this->tool->request([
-            'command'   => 'domain:check',
+        return $this->tool->commonRequest('domain:delete', [
             'name'     => $row['domain'],
         ]);
     }
