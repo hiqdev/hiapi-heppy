@@ -2,11 +2,14 @@
 
 namespace hiapi\heppy\modules;
 
-
 use err;
 
 class HostModule extends AbstractModule
 {
+    /**
+     * @param array $row
+     * @return array
+     */
     public function hostSet(array $row): array
     {
         $info = $this->hostInfo($row);
@@ -15,8 +18,10 @@ class HostModule extends AbstractModule
             $data = $this->hostCreate($row);
         }
         else {
-
+            $row = $this->prepareDataForUpdate($row, $info);
+            $data = $this->hostUpdate($row);
         }
+        return $data;
     }
 
     /**
@@ -68,5 +73,44 @@ class HostModule extends AbstractModule
             'created_by'        => $data['crID'],
             'created_date'      => $data['crDate'],
         ]);
+    }
+
+    /**
+     * @param array $row
+     * @return array
+     */
+    public function hostUpdate(array $row): array
+    {
+        $data = $this->tool->request(array_filter([
+            'command'   => 'host:update',
+            'name'      => $row['host'],
+            'add'       => $row['add'],
+            'rem'       => $row['rem'],
+            'chg'       => $row['chg'],
+        ]));
+
+        return array_filter([
+            'result_msg'    => $data['result_msg'],
+            'result_code'   => $data['result_code'],
+            'result_lang'   => $data['result_lang'],
+            'result_reason' => $data['result_reason'],
+            'server_trid'   => $data['svTRID'],
+            'client_trid'   => $data['clTRID'],
+        ]);
+    }
+
+    /**
+     * @param array $local
+     * @param array $remote
+     * @return array
+     */
+    private function prepareDataForUpdate(array $local, array $remote): array
+    {
+        $add = array_diff($local['ips'], $remote['ips']);
+        empty($add) ?: $local['add'] = $add;
+        $rem = array_diff($remote['ips'], $local['ips']);
+        empty($add) ?: $local['rem'] = $rem;
+
+        return $local;
     }
 }
