@@ -45,9 +45,11 @@ class HostModule extends AbstractModule
             'name'      => $row['host'],
         ], [
             'host'              => 'name',
-            'ips'               => 'ips|values',
+            'ips'               => 'ips',
             'roid'              => 'roid',
-            'statuses'          => 'statuses|keys',
+            'statuses'          => function ($data) {
+                return array_keys($data['statuses']);
+            },
             'created_by'        => 'crID',
             'created_date'      => 'crDate',
         ]);

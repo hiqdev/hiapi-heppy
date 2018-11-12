@@ -85,21 +85,29 @@ class HeppyTool extends \hiapi\components\AbstractTool
      * @param array $returns
      * @return array
      */
-    public function request(string $command, array $input, array $returns = []): array
+    public function commonRequest(string $command, array $input, array $returns = []): array
     {
-        $input['command'] = $command;
-        $response = $this->getClient()->request($input);
+        $response = $this->request($command, $input);
         $returns = $this->addCommonResponseFields($returns);
-        $data = [];
+
+        $res = [];
         foreach ($returns as $apiName => $eppName) {
-            [$eppName, $entity] = explode('|', $eppName);
-            $data[$apiName] = isset($entity) ?
-                implode(',', ('array_' . $entity)($response[$eppName])) :
-                $data[$apiName] = $response[$eppName];
-            unset($entity);
+            $res[$apiName] = $eppName instanceof \Closure ? $eppName($response) : $response[$eppName];
         }
 
-        return array_filter($data);
+        return array_filter($res);
+    }
+
+    /**
+     * @param string $command
+     * @param array $data
+     * @return array
+     */
+    public function request(string $command, array $data): array
+    {
+        $data['command'] = $command;
+
+        return $this->getClient()->request($data);
     }
 
     /**
