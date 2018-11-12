@@ -80,12 +80,42 @@ class HeppyTool extends \hiapi\components\AbstractTool
     }
 
     /**
-     * @param array $data
+     * @param string $command
+     * @param array $input
+     * @param array $returns
      * @return array
      */
-    public function request(array $data): array
+    public function request(string $command, array $input, array $returns = []): array
     {
-        return $this->getClient()->request($data);
+        $input['command'] = $command;
+        $response = $this->getClient()->request($input);
+        $returns = $this->addCommonResponseFields($returns);
+        $data = [];
+        foreach ($returns as $apiName => $eppName) {
+            [$eppName, $entity] = explode('|', $eppName);
+            $data[$apiName] = isset($entity) ?
+                implode(',', ('array_' . $entity)($response[$eppName])) :
+                $data[$apiName] = $response[$eppName];
+            unset($entity);
+        }
+
+        return array_filter($data);
+    }
+
+    /**
+     * @param array $returns
+     * @return array
+     */
+    private function addCommonResponseFields(array $returns): array
+    {
+        return array_merge($returns, [
+            'result_msg'    => 'result_msg',
+            'result_code'   => 'result_code',
+            'result_lang'   => 'result_lang',
+            'result_reason' => 'result_reason',
+            'server_trid'   => 'svTRID',
+            'client_trid'   => 'clTRID',
+        ]);
     }
 
     /**
