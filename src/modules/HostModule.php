@@ -113,4 +113,38 @@ class HostModule extends AbstractModule
 
         return $local;
     }
+
+    /**
+     * @param array $row
+     * @return array
+     */
+    public function hostsDelete(array $hosts): array
+    {
+        $data = [];
+        foreach ($hosts as $id => $hostData) {
+            $data[$id] = $this->hostDalete($hostData);
+        }
+        return $data;
+    }
+
+    /**
+     * @param array $row
+     * @return array
+     */
+    private function hostDalete(array $row): array
+    {
+        $data = $this->tool->request([
+            'command'   => 'host:delete',
+            'name'      => $row['host'],
+        ]);
+
+        return array_filter([
+            'result_msg'    => $data['result_msg'],
+            'result_code'   => $data['result_code'],
+            'result_lang'   => $data['result_lang'],
+            'result_reason' => $data['result_reason'],
+            'server_trid'   => $data['svTRID'],
+            'client_trid'   => $data['clTRID'],
+        ]);
+    }
 }
