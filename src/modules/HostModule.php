@@ -13,7 +13,6 @@ class HostModule extends AbstractModule
     public function hostSet(array $row): array
     {
         $info = $this->hostInfo($row);
-
         if (err::is($info) || empty($info['host'])) {
             $data = $this->hostCreate($row);
         }
@@ -21,6 +20,7 @@ class HostModule extends AbstractModule
             $row = $this->prepareDataForUpdate($row, $info);
             $data = $this->hostUpdate($row);
         }
+
         return $data;
     }
 
@@ -36,16 +36,10 @@ class HostModule extends AbstractModule
             'ips'       => $row['ips'],
         ]);
 
-        return array_filter([
+        return array_merge(array_filter([
             'host'              => $data['name'],
-            'reason'            => $data['result_reason'],
-            'result_msg'        => $data['result_msg'],
-            'result_code'       => $data['result_code'],
-            'result_lang'       => $data['result_lang'],
             'created_date'      => $data['crDate'],
-            'server_trid'       => $data['svTRID'],
-            'client_trid'       => $data['clTRID'],
-        ]);
+        ]), $this->filterCommonResponsePart($data));
     }
 
     /**
@@ -59,20 +53,14 @@ class HostModule extends AbstractModule
             'name'      => $row['host'],
         ]);
 
-        return array_filter([
+        return array_merge(array_filter([
             'host'              => $data['name'],
             'ips'               => $data['ips'],
-            'result_msg'        => $data['result_msg'],
-            'result_code'       => $data['result_code'],
-            'result_lang'       => $data['result_lang'],
-            'result_reason'     => $data['result_reason'],
-            'server_trid'       => $data['svTRID'],
-            'client_trid'       => $data['clTRID'],
             'roid'              => $data['roid'],
             'statuses'          => implode(',', array_keys($data['statuses'])),
             'created_by'        => $data['crID'],
             'created_date'      => $data['crDate'],
-        ]);
+        ]), $this->filterCommonResponsePart($data));
     }
 
     /**
@@ -89,14 +77,7 @@ class HostModule extends AbstractModule
             'chg'       => $row['chg'],
         ]));
 
-        return array_filter([
-            'result_msg'    => $data['result_msg'],
-            'result_code'   => $data['result_code'],
-            'result_lang'   => $data['result_lang'],
-            'result_reason' => $data['result_reason'],
-            'server_trid'   => $data['svTRID'],
-            'client_trid'   => $data['clTRID'],
-        ]);
+        return $this->filterCommonResponsePart($data);
     }
 
     /**
@@ -124,6 +105,7 @@ class HostModule extends AbstractModule
         foreach ($hosts as $id => $hostData) {
             $data[$id] = $this->hostDalete($hostData);
         }
+
         return $data;
     }
 
@@ -138,13 +120,6 @@ class HostModule extends AbstractModule
             'name'      => $row['host'],
         ]);
 
-        return array_filter([
-            'result_msg'    => $data['result_msg'],
-            'result_code'   => $data['result_code'],
-            'result_lang'   => $data['result_lang'],
-            'result_reason' => $data['result_reason'],
-            'server_trid'   => $data['svTRID'],
-            'client_trid'   => $data['clTRID'],
-        ]);
+        return $this->filterCommonResponsePart($data);
     }
 }
