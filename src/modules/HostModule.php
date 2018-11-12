@@ -41,17 +41,17 @@ class HostModule extends AbstractModule
      */
     public function hostInfo(array $row): array
     {
-        return $this->tool->request('host:info', [
+        return $this->tool->commonRequest('host:info', [
             'name'      => $row['host'],
         ], [
-            'host'              => 'name',
-            'ips'               => 'ips',
-            'roid'              => 'roid',
-            'statuses'          => function ($data) {
-                return array_keys($data['statuses']);
+            'host'          => 'name',
+            'ips'           => 'ips',
+            'roid'          => 'roid',
+            'created_by'    => 'crID',
+            'created_date'  => 'crDate',
+            'statuses'      => function ($data) {
+                implode(',', array_keys($data['statuses']));
             },
-            'created_by'        => 'crID',
-            'created_date'      => 'crDate',
         ]);
     }
 
@@ -61,7 +61,7 @@ class HostModule extends AbstractModule
      */
     public function hostUpdate(array $row): array
     {
-        return $this->tool->request('host:update', array_filter([
+        return $this->tool->commonRequest('host:update', array_filter([
             'name'      => $row['host'],
             'add'       => $row['add'],
             'rem'       => $row['rem'],
@@ -104,7 +104,7 @@ class HostModule extends AbstractModule
      */
     private function hostDelete(array $row): array
     {
-        return $this->tool->request('host:delete', [
+        return $this->tool->commonRequest('host:delete', [
             'name'      => $row['host'],
         ]);
     }

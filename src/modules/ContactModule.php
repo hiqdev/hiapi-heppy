@@ -12,12 +12,12 @@ class ContactModule extends AbstractModule
      */
     public function contactSet(array $row): array
     {
-        $info = $this->tool->contactInfo($row);
+        $res = $this->tool->contactInfo($row);
 
-        if (err::is($info) || empty($info['id'])) {
-            $info = $this->contactCreate($row);
+        if (err::is($res) || empty($res['id'])) {
+            $res = $this->contactCreate($row);
         }
-        return $info;
+        return $res;
     }
 
     /**
@@ -26,36 +26,29 @@ class ContactModule extends AbstractModule
      */
     public function contactInfo(array $row): array
     {
-        $data = $this->tool->request(array_filter([
-            'command'   => 'contact:info',
+        return $this->tool->commonRequest('contact:info', array_filter([
             'id'        => $row['epp_id'],
             'pw'        => $row['password'],
-        ]));
-
-        return array_filter([
-            'id'            => $data['id'],
-            'name'          => $data['name'],
-            'password'      => $data['pw'],
-            'email'         => $data['email'],
-            'fax_phone'     => $data['fax'],
-            'voice_phone'   => $data['voice'],
-            'country'       => $data['cc'],
-            'city'          => $data['city'],
-            'org'           => $data['org'],
-            'roid'          => $data['roid'],
-            'postal_code'   => $data['pc'],
-            'street'        => $data['street'],
-            'sp'            => $data['sp'],
-            'statuses'      => implode(',', array_keys($data['statuses'])),
-            'created_by'    => $data['crID'],
-            'created_date'  => $data['crDate'],
-            'result_msg'    => $data['result_msg'],
-            'result_reason' => $data['reasons'],
-            'result_code'   => $data['result_code'],
-            'result_lang'   => $data['result_lang'],
-            'client_trid'   => $data['clTRID'],
-            'epp_client_id' => $data['clID'],
-            'server_trid'   => $data['svTRID'],
+        ]), [
+            'id'            => 'id',
+            'name'          => 'name',
+            'password'      => 'pw',
+            'email'         => 'email',
+            'fax_phone'     => 'fax',
+            'voice_phone'   => 'voice',
+            'country'       => 'cc',
+            'city'          => 'city',
+            'org'           => 'org',
+            'roid'          => 'roid',
+            'postal_code'   => 'pc',
+            'street'        => 'street',
+            'sp'            => 'sp',
+            'created_by'    => 'crID',
+            'created_date'  => 'crDate',
+            'epp_client_id' => 'clID',
+            'statuses'      => function ($data) {
+                implode(',', array_keys($data['statuses']));
+            },
         ]);
     }
 
@@ -65,8 +58,7 @@ class ContactModule extends AbstractModule
      */
     public function contactCreate(array $row): array
     {
-        $data = $this->tool->request([
-            'command'   => 'contact:create',
+        return $this->tool->commonRequest('contact:create', [
             'id'        => $row['epp_id'],
             'name'      => $row['name'],
             'email'     => $row['email'],
@@ -80,16 +72,9 @@ class ContactModule extends AbstractModule
             'street3'   => $row['street3'],
             'pc'        => $row['postal_code'],
             'pw'        => $row['password'] ?: $this->generatePassword(),
-        ]);
-
-        return array_filter([
-            'id'            => $data['id'],
-            'result_msg'    => $data['result_msg'],
-            'client_trid'   => $data['clTRID'],
-            'created_date'  => $data['crDate'],
-            'result_code'   => $data['result_code'],
-            'result_lang'   => $data['result_lang'],
-            'server_trid'   => $data['svTRID'],
+        ], [
+            'id'            => 'id',
+            'created_date'  => 'crDate',
         ]);
     }
 }
