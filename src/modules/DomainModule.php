@@ -2,7 +2,6 @@
 
 namespace hiapi\heppy\modules;
 
-
 use arr;
 use err;
 
@@ -14,32 +13,29 @@ class DomainModule extends AbstractModule
      */
     public function domainInfo(array $row): array
     {
-        $data = $this->tool->request([
-            'command'   => 'domain:info',
+        return $this->tool->commonRequest('domain:info', [
             'name'      => $row['domain'],
-        ]);
-
-        return array_filter([
-            'domain'            => $data['name'],
-            'result_msg'        => $data['result_msg'],
-            'result_code'       => $data['result_code'],
-            'result_lang'       => $data['result_lang'],
-            'result_reason'     => $data['result_reason'],
-            'server_trid'       => $data['svTRID'],
-            'client_trid'       => $data['clTRID'],
-            'name'              => $data['name'],
-            'roid'              => $data['roid'],
-            'statuses'          => implode(',', array_keys($data['statuses'])),
-            'nameservers'       => implode(',', $data['nss']),
-            'hosts'             => implode(',', $data['hosts']),
-            'created_by'        => $data['crID'],
-            'created_date'      => $data['crDate'],
-            'updated_by'        => $data['upID'],
-            'updated_date'      => $data['upDate'],
-            'expiration_date'   => $data['exDate'],
-            'transfer_date'     => $data['trDate'],
-            'password'          => $data['pw'],
-            'epp_client_id'     => $data['clID'],
+        ], [
+            'domain'            => 'name',
+            'name'              => 'name',
+            'roid'              => 'roid',
+            'created_by'        => 'crID',
+            'created_date'      => 'crDate',
+            'updated_by'        => 'upID',
+            'updated_date'      => 'upDate',
+            'expiration_date'   => 'exDate',
+            'transfer_date'     => 'trDate',
+            'password'          => 'pw',
+            'epp_client_id'     => 'clID',
+            'statuses'          => function ($data) {
+                implode(',', array_keys($data['statuses']));
+            },
+            'nameservers'       => function ($data) {
+                implode(',', $data['nss']);
+            },
+            'hosts'             => function ($data) {
+                implode(',', $data['hosts']);
+            },
         ]);
     }
 
@@ -49,19 +45,11 @@ class DomainModule extends AbstractModule
      */
     public function domainsCheck(array $row): array
     {
-        $data = $this->tool->request([
-            'command'   => 'domain:check',
+        return $this->tool->commonRequest('domain:check', [
             'names'     => $row['domains'],
-        ]);
-
-        return array_filter([
-            'avails'            => $data['avails'],
-            'reasons'           => $data['reasons'],
-            'result_msg'        => $data['result_msg'],
-            'result_code'       => $data['result_code'],
-            'result_lang'       => $data['result_lang'],
-            'server_trid'       => $data['svTRID'],
-            'client_trid'       => $data['clTRID'],
+        ], [
+            'avails'    => 'avails',
+            'reasons'   => 'reasons',
         ]);
     }
 
@@ -79,8 +67,7 @@ class DomainModule extends AbstractModule
         }
         $row = $this->domainPrepareContacts($row);
 
-        $data = $this->tool->request(array_filter([
-            'command'       => 'domain:create',
+        return $this->tool->commonRequest('domain:create', array_filter([
             'name'          => $row['domain'],
             'period'        => $row['period'],
             'registrant'    => $row['registrant_remote_id'],
@@ -89,19 +76,12 @@ class DomainModule extends AbstractModule
             'billing'       => $row['billing_remote_id'],
             'nss'           => $row['nss'],
             'pw'            => $row['password']
-        ]));
-
-        return array_filter([
-            'domain'            => $data['name'],
-            'reason'            => $data['result_reason'],
-            'result_msg'        => $data['result_msg'],
-            'result_code'       => $data['result_code'],
-            'result_lang'       => $data['result_lang'],
-            'created_date'      => $data['crDate'],
-            'expiration_date'   => $data['exDate'],
-            'server_trid'       => $data['svTRID'],
-            'client_trid'       => $data['clTRID'],
+        ]), [
+            'domain'            => 'name',
+            'created_date'      => 'crDate',
+            'expiration_date'   => 'exDate',
         ]);
+
     }
 
     /**
