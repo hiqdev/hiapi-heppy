@@ -122,4 +122,20 @@ class DomainModule extends AbstractModule
             'name'     => $row['domain'],
         ]);
     }
+
+    /**
+     * @param array $row
+     * @return array
+     */
+    public function domainRenew(array $row): array
+    {
+        return $this->tool->commonRequest('domain:renew', [
+            'name'          => $row['domain'],
+            'curExpDate'    => $row['expires'],
+            'period'        => $row['period'],
+        ], [
+            'domain'            => 'name',
+            'expiration_date'   => 'exDate',
+        ]);
+    }
 }
