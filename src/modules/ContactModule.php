@@ -91,4 +91,15 @@ class ContactModule extends AbstractModule
             'chg'       => $row['chg'],
         ]));
     }
+
+    /**
+     * @param array $row
+     * @return array
+     */
+    public function contactDelete(array $row): array
+    {
+        return $this->tool->commonRequest('contact:delete', [
+            'id'    => $row['epp_id'],
+        ]);
+    }
 }
