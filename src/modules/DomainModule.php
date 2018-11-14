@@ -145,8 +145,6 @@ class DomainModule extends AbstractModule
     }
 
     /**
-     * TODO: clarify returns
-     *
      * @param array $row
      * @return array
      */
@@ -161,12 +159,25 @@ class DomainModule extends AbstractModule
         ], [
             'domain'            => 'name',
             'expiration_date'   => 'exDate',
-
-            'acDate'            => 'acDate',
-            'acId'              => 'acId',
-            'reDate'            => 'reDate',
-            'reId'              => 'reId',
-            'trStatus'          => 'trStatus'
+            'action_date'       => 'acDate',
+            'action_client_id'  => 'acId',
+            'request_date'      => 'reDate',
+            'request_client_id' => 'reId',
+            'transfer_status'   => 'trStatus'
         ]);
+    }
+
+    /**
+     * @param array $row
+     * @return array
+     */
+    public function domainUpdate(array $row): array
+    {
+        return $this->tool->commonRequest('domain:update', array_filter([
+            'name'      => $row['host'],
+            'add'       => $row['add'],
+            'rem'       => $row['rem'],
+            'chg'       => $row['chg'],
+        ]));
     }
 }
