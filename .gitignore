@@ -6,6 +6,7 @@
 
 # local config
 /.env
+/tests/.env
 /hidev-local.yml
 
 # IDE & OS files
