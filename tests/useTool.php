@@ -9,10 +9,10 @@ require_once __DIR__ . '/../../../../vendor/hiqdev/hiapi-directi/vendor/hiqdev/h
 use hiapi\heppy\HeppyTool;
 
 $heppyTool = new HeppyTool(new stdClass(), [
-    'queue'     => 'heppy-ote2-afilias-srs',
-    'url'       => 'epp.solex.me',
-    'login'     => "tmp",
-    'password'  => "Etgiaks2Orf",
+    'queue'     => $_ENV['HEPPY_QUEUE'],
+    'url'       => $_ENV['HEPPY_URL'],
+    'login'     => $_ENV['HEPPY_LOGIN'],
+    'password'  => $_ENV['HEPPY_PASSWORD'],
 ]);
 
 $heppyTool->domainTransfer([
