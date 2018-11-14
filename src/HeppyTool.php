@@ -19,11 +19,15 @@ use hiapi\heppy\modules\HostModule;
 /**
  * hEPPy tool.
  */
-class HeppyTool extends \hiapi\components\AbstractTool
+class HeppyTool
 {
-    protected $_client;
+    private $_client;
 
-    protected $defaultNss = ['ns1.topdns.me', 'ns2.topdns.me'];
+    private $base;
+
+    private $defaultNss = ['ns1.topdns.me', 'ns2.topdns.me'];
+
+    private $data;
 
     protected $modules = [
         'domain'    => DomainModule::class,
@@ -35,6 +39,12 @@ class HeppyTool extends \hiapi\components\AbstractTool
         'poll'      => PollModule::class,
         'polls'     => PollModule::class,
     ];
+
+    public function __construct($base, $data)
+    {
+        $this->base = $base;
+        $this->data = $data;
+    }
 
     public function __call($command, $args): array
     {
@@ -144,5 +154,10 @@ class HeppyTool extends \hiapi\components\AbstractTool
         }
 
         return $this->_client;
+    }
+
+    public function getBase()
+    {
+        return $this->base;
     }
 }
