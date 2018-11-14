@@ -77,4 +77,18 @@ class ContactModule extends AbstractModule
             'created_date'  => 'crDate',
         ]);
     }
+
+    /**
+     * @param array $row
+     * @return array
+     */
+    public function contactUpdate(array $row): array
+    {
+        return $this->tool->commonRequest('contact:update', array_filter([
+            'name'      => $row['host'],
+            'add'       => $row['add'],
+            'rem'       => $row['rem'],
+            'chg'       => $row['chg'],
+        ]));
+    }
 }
