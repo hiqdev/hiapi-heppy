@@ -146,12 +146,13 @@ class DomainModule extends AbstractModule
 
     /**
      * @param array $row
+     * @param string $op
      * @return array
      */
-    public function domainTransfer(array $row): array
+    public function performTransfer(array $row, string $op): array
     {
         return $this->tool->commonRequest('domain:transfer', [
-            'op'        => 'request',
+            'op'        => $op,
             'name'      => $row['domain'],
             'pw'        => $row['password'],
             'period'    => $row['period'],
@@ -165,6 +166,42 @@ class DomainModule extends AbstractModule
             'request_client_id' => 'reId',
             'transfer_status'   => 'trStatus'
         ]);
+    }
+
+    /**
+     * @param array $row
+     * @return array
+     */
+    public function domainTransfer(array $row): array
+    {
+        return $this->performTransfer($row, 'request');
+    }
+
+    /**
+     * @param array $row
+     * @return array
+     */
+    public function domainCancelTransfer(array $row): array
+    {
+        return $this->performTransfer($row, 'cancel');
+    }
+
+    /**
+     * @param array $row
+     * @return array
+     */
+    public function domainApproveTransfer(array $row): array
+    {
+        return $this->performTransfer($row, 'approve');
+    }
+
+    /**
+     * @param array $row
+     * @return array
+     */
+    public function domainRejectTransfer(array $row): array
+    {
+        return $this->performTransfer($row, 'reject');
     }
 
     /**

@@ -3,10 +3,12 @@
 
 require_once __DIR__ . '/../../../../vendor/autoload.php';
 require_once __DIR__ . '/../../../../vendor/yiisoft/yii2/Yii.php';
-
 require_once __DIR__ . '/../../../../vendor/hiqdev/hiapi-directi/vendor/hiqdev/hiapi-legacy/src/lib/deps/data.php';
 
 use hiapi\heppy\HeppyTool;
+
+$dotenv = new Dotenv\Dotenv(__DIR__);
+$dotenv->load();
 
 $heppyTool = new HeppyTool(new stdClass(), [
     'queue'     => $_ENV['HEPPY_QUEUE'],
