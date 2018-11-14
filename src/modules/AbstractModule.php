@@ -38,4 +38,11 @@ class AbstractModule
 
         return $result;
     }
+
+    protected function getFilterCallback(): \Closure
+    {
+        return function ($value) {
+            return !is_null($value);
+        };
+    }
 }

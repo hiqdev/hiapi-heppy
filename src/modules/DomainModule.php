@@ -13,9 +13,10 @@ class DomainModule extends AbstractModule
      */
     public function domainInfo(array $row): array
     {
-        return $this->tool->commonRequest('domain:info', [
+        return $this->tool->commonRequest('domain:info', array_filter([
             'name'      => $row['domain'],
-        ], [
+            'pw'        => $row['password']
+        ], $this->getFilterCallback()), [
             'domain'            => 'name',
             'name'              => 'name',
             'roid'              => 'roid',
@@ -25,6 +26,10 @@ class DomainModule extends AbstractModule
             'updated_date'      => 'upDate',
             'expiration_date'   => 'exDate',
             'transfer_date'     => 'trDate',
+            'registrant'        => 'registrant',
+            'admin'             => 'admin',
+            'billing'           => 'billing',
+            'tech'              => 'tech',
             'password'          => 'pw',
             'epp_client_id'     => 'clID',
             'statuses'          => function ($data) {
@@ -136,6 +141,32 @@ class DomainModule extends AbstractModule
         ], [
             'domain'            => 'name',
             'expiration_date'   => 'exDate',
+        ]);
+    }
+
+    /**
+     * TODO: clarify returns
+     *
+     * @param array $row
+     * @return array
+     */
+    public function domainTransfer(array $row): array
+    {
+        return $this->tool->commonRequest('domain:transfer', [
+            'op'        => 'request',
+            'name'      => $row['domain'],
+            'pw'        => $row['password'],
+            'period'    => $row['period'],
+            'roid'      => $row['roid'],
+        ], [
+            'domain'            => 'name',
+            'expiration_date'   => 'exDate',
+
+            'acDate'            => 'acDate',
+            'acId'              => 'acId',
+            'reDate'            => 'reDate',
+            'reId'              => 'reId',
+            'trStatus'          => 'trStatus'
         ]);
     }
 }
