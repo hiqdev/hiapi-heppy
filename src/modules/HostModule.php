@@ -76,12 +76,15 @@ class HostModule extends AbstractModule
      */
     private function prepareDataForUpdate(array $local, array $remote): array
     {
-        $add = array_diff($local['ips'], $remote['ips']);
-        empty($add) ?: $local['add']['ips'] = $add;
-        $rem = array_diff($remote['ips'], $local['ips']);
-        empty($add) ?: $local['rem']['ips'] = $rem;
+        $res = [
+            'add' => [],
+            'rem' => [],
+        ];
+        $res['add']['ips'] = array_diff($local['ips'], $remote['ips']);
+        $res['rem']['ips'] = array_diff($remote['ips'], $local['ips']);
 
-        return $local;
+
+        return array_merge($local, array_filter($res));
     }
 
     /**
