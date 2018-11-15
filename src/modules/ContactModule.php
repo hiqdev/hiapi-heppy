@@ -17,21 +17,7 @@ class ContactModule extends AbstractModule
         if (err::is($info) || empty($info['epp_id'])) {
             $res = $this->contactCreate($row);
         } else {
-            $row = $this->prepareDataForUpdate($row, $info, [
-                'name'          => 'name',
-                'organization'  => 'org',
-                'email'         => 'email',
-                'fax_phone'     => 'fax',
-                'voice_phone'   => 'voice',
-                'country'       => 'cc',
-                'city'          => 'city',
-                'postal_code'   => 'pc',
-                'street1'       => 'street1',
-                'street2'       => 'street2',
-                'street3'       => 'street3',
-                'province'      => 'sp',
-            ]);
-            $res = $this->contactUpdate($row);
+            $res = $this->contactUpdate($row, $info);
         }
 
         return $res;
@@ -95,10 +81,13 @@ class ContactModule extends AbstractModule
 
     /**
      * @param array $row
+     * @param array|null $info
      * @return array
      */
-    public function contactUpdate(array $row): array
+    public function contactUpdate(array $row, array $info = null): array
     {
+        $row = $this->prepareDataForContactUpdate($row, $info);
+
         return $this->tool->commonRequest('contact:update', array_filter([
             'id'        => $row['epp_id'],
             'add'       => $row['add'],
@@ -108,38 +97,51 @@ class ContactModule extends AbstractModule
     }
 
     /**
-     * @param $local
-     * @param $remote
-     * @param $map
+     * @param array $local
+     * @param array $remote
      * @return array
      */
-    private function prepareDataForUpdate(array $local, array $remote, array $map): array
+    private function prepareDataForContactUpdate(array $local, array $remote): array
     {
-        $add = [];
-        $chg = [];
-        $rem = [];
+        $map = [
+            'name'          => 'name',
+            'organization'  => 'org',
+            'email'         => 'email',
+            'fax_phone'     => 'fax',
+            'voice_phone'   => 'voice',
+            'country'       => 'cc',
+            'city'          => 'city',
+            'postal_code'   => 'pc',
+            'street1'       => 'street1',
+            'street2'       => 'street2',
+            'street3'       => 'street3',
+            'province'      => 'sp',
+        ];
+
+        $res = [
+            'add' => [],
+            'chg' => [],
+            'rem' => [],
+        ];
 
         foreach ($map as $apiName => $eppName) {
             if (key_exists($apiName, $local)
                 && !key_exists($apiName, $remote)
                 && !is_null($local[$apiName])) {
-                $add[$eppName] = $local[$apiName];
+                $res['add'][$eppName] = $local[$apiName];
             } else if (key_exists($apiName, $local)
                 && key_exists($apiName, $remote)
                 && !is_null($local[$apiName])
                 && $local[$apiName] !== $remote[$apiName]) {
-                $chg[$eppName] = $local[$apiName];
+                $res['chg'][$eppName] = $local[$apiName];
             } else if (key_exists($apiName, $remote)
                 && !key_exists($apiName, $local)
                 && !is_null($remote[$apiName])) {
-                $rem[$eppName] = $remote[$apiName];
+                $res['rem'][$eppName] = $remote[$apiName];
             }
         }
-        empty($add) ?: $local['add'] = $add;
-        empty($chg) ?: $local['chg'] = $chg;
-        empty($rem) ?: $local['rem'] = $rem;
 
-        return $local;
+        return array_merge($local, array_filter($res));
     }
 
     /**
