@@ -14,13 +14,13 @@ class HostModule extends AbstractModule
     {
         $info = $this->hostInfo($row);
         if (err::is($info) || empty($info['host'])) {
-            $data = $this->hostCreate($row);
+            $res = $this->hostCreate($row);
         } else {
             $row = $this->prepareDataForUpdate($row, $info);
-            $data = $this->hostUpdate($row);
+            $res = $this->hostUpdate($row);
         }
 
-        return $data;
+        return $res;
     }
 
     /**
@@ -77,9 +77,9 @@ class HostModule extends AbstractModule
     private function prepareDataForUpdate(array $local, array $remote): array
     {
         $add = array_diff($local['ips'], $remote['ips']);
-        empty($add) ?: $local['add'] = $add;
+        empty($add) ?: $local['add']['ips'] = $add;
         $rem = array_diff($remote['ips'], $local['ips']);
-        empty($add) ?: $local['rem'] = $rem;
+        empty($add) ?: $local['rem']['ips'] = $rem;
 
         return $local;
     }
