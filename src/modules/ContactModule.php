@@ -12,11 +12,28 @@ class ContactModule extends AbstractModule
      */
     public function contactSet(array $row): array
     {
-        $res = $this->tool->contactInfo($row);
+        $info = $this->tool->contactInfo($row);
 
-        if (err::is($res) || empty($res['id'])) {
+        if (err::is($info) || empty($info['epp_id'])) {
             $res = $this->contactCreate($row);
+        } else {
+            $row = $this->prepareDataForUpdate($row, $info, [
+                'name'          => 'name',
+                'organization'  => 'org',
+                'email'         => 'email',
+                'fax_phone'     => 'fax',
+                'voice_phone'   => 'voice',
+                'country'       => 'cc',
+                'city'          => 'city',
+                'postal_code'   => 'pc',
+                'street1'       => 'street1',
+                'street2'       => 'street2',
+                'street3'       => 'street3',
+                'province'      => 'sp',
+            ]);
+            $res = $this->contactUpdate($row);
         }
+
         return $res;
     }
 
@@ -30,8 +47,9 @@ class ContactModule extends AbstractModule
             'id'        => $row['epp_id'],
             'pw'        => $row['password'],
         ]), [
-            'id'            => 'id',
+            'epp_id'        => 'id',
             'name'          => 'name',
+            'organization'  => 'org',
             'password'      => 'pw',
             'email'         => 'email',
             'fax_phone'     => 'fax',
@@ -41,11 +59,8 @@ class ContactModule extends AbstractModule
             'org'           => 'org',
             'roid'          => 'roid',
             'postal_code'   => 'pc',
-            'street'        => 'street',
-            'sp'            => 'sp',
-            'created_by'    => 'crID',
-            'created_date'  => 'crDate',
-            'epp_client_id' => 'clID',
+            'street1'       => 'street',
+            'province'      => 'sp',
             'statuses'      => function ($data) {
                 implode(',', array_keys($data['statuses']));
             },
@@ -85,11 +100,46 @@ class ContactModule extends AbstractModule
     public function contactUpdate(array $row): array
     {
         return $this->tool->commonRequest('contact:update', array_filter([
-            'name'      => $row['host'],
+            'id'        => $row['epp_id'],
             'add'       => $row['add'],
             'rem'       => $row['rem'],
             'chg'       => $row['chg'],
         ]));
+    }
+
+    /**
+     * @param $local
+     * @param $remote
+     * @param $map
+     * @return array
+     */
+    private function prepareDataForUpdate(array $local, array $remote, array $map): array
+    {
+        $add = [];
+        $chg = [];
+        $rem = [];
+
+        foreach ($map as $apiName => $eppName) {
+            if (key_exists($apiName, $local)
+                && !key_exists($apiName, $remote)
+                && !is_null($local[$apiName])) {
+                $add[$eppName] = $local[$apiName];
+            } else if (key_exists($apiName, $local)
+                && key_exists($apiName, $remote)
+                && !is_null($local[$apiName])
+                && $local[$apiName] !== $remote[$apiName]) {
+                $chg[$eppName] = $local[$apiName];
+            } else if (key_exists($apiName, $remote)
+                && !key_exists($apiName, $local)
+                && !is_null($remote[$apiName])) {
+                $rem[$eppName] = $remote[$apiName];
+            }
+        }
+        empty($add) ?: $local['add'] = $add;
+        empty($chg) ?: $local['chg'] = $chg;
+        empty($rem) ?: $local['rem'] = $rem;
+
+        return $local;
     }
 
     /**

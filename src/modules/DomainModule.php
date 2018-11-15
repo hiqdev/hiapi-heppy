@@ -149,7 +149,7 @@ class DomainModule extends AbstractModule
      * @param string $op
      * @return array
      */
-    public function performTransfer(array $row, string $op): array
+    private function performTransfer(array $row, string $op): array
     {
         return $this->tool->commonRequest('domain:transfer', [
             'op'        => $op,
