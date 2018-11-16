@@ -16,8 +16,7 @@ class HostModule extends AbstractModule
         if (err::is($info) || empty($info['host'])) {
             $res = $this->hostCreate($row);
         } else {
-            $row = $this->prepareDataForUpdate($row, $info);
-            $res = $this->hostUpdate($row);
+            $res = $this->hostUpdate($row, $info);
         }
 
         return $res;
@@ -57,10 +56,12 @@ class HostModule extends AbstractModule
 
     /**
      * @param array $row
+     * @param array $info
      * @return array
      */
-    public function hostUpdate(array $row): array
+    public function hostUpdate(array $row, array $info): array
     {
+        $row = $this->prepareDataForHostUpdate($row, $info);
         return $this->tool->commonRequest('host:update', array_filter([
             'name'      => $row['host'],
             'add'       => $row['add'],
@@ -74,17 +75,11 @@ class HostModule extends AbstractModule
      * @param array $remote
      * @return array
      */
-    private function prepareDataForUpdate(array $local, array $remote): array
+    private function prepareDataForHostUpdate(array $local, array $remote): array
     {
-        $res = [
-            'add' => [],
-            'rem' => [],
-        ];
-        $res['add']['ips'] = array_diff($local['ips'], $remote['ips']);
-        $res['rem']['ips'] = array_diff($remote['ips'], $local['ips']);
-
-
-        return array_merge($local, array_filter($res));
+        return $this->prepareDataForUpdate($local, $remote, [
+                'ips' => 'ips'
+            ]);
     }
 
     /**
