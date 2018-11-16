@@ -84,7 +84,7 @@ class ContactModule extends AbstractModule
      * @param array|null $info
      * @return array
      */
-    public function contactUpdate(array $row, array $info = null): array
+    public function contactUpdate(array $row, array $info): array
     {
         $row = $this->prepareDataForContactUpdate($row, $info);
 

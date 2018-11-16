@@ -32,15 +32,9 @@ class DomainModule extends AbstractModule
             'tech'              => 'tech',
             'password'          => 'pw',
             'epp_client_id'     => 'clID',
-            'statuses'          => function ($data) {
-                implode(',', array_keys($data['statuses']));
-            },
-            'nameservers'       => function ($data) {
-                implode(',', $data['nss']);
-            },
-            'hosts'             => function ($data) {
-                implode(',', $data['hosts']);
-            },
+            'statuses'          => 'statuses',
+            'nss'               => 'nss',
+            'hosts'             => 'hosts',
         ]);
     }
 
@@ -208,13 +202,44 @@ class DomainModule extends AbstractModule
      * @param array $row
      * @return array
      */
-    public function domainUpdate(array $row): array
+    private function domainUpdate(array $row): array
     {
         return $this->tool->commonRequest('domain:update', array_filter([
-            'name'      => $row['host'],
+            'name'      => $row['domain'],
             'add'       => $row['add'],
             'rem'       => $row['rem'],
             'chg'       => $row['chg'],
         ]));
     }
+
+    /**
+     * @param $row
+     * @return array
+     */
+    public function domainSetPassword(array $row): array
+    {
+        $info = $this->domainInfo(['domain' => $row['domain']]);
+
+        $row = $this->prepareDataForUpdate($row, $info, [
+            'password' => 'pw',
+        ]);
+
+        return $this->domainUpdate($row);
+    }
+
+    /**
+     * @param array $row
+     * @return array
+     */
+    public function domainSetNSs(array $row): array
+    {
+        $info = $this->domainInfo($row);
+
+        $row = $this->prepareDataForUpdate($row, $info, [
+            'nss' => 'nss',
+        ]);
+
+        return $this->domainUpdate($row);
+    }
+
 }

@@ -39,6 +39,9 @@ class AbstractModule
         return $result;
     }
 
+    /**
+     * @return \Closure
+     */
     protected function getFilterCallback(): \Closure
     {
         return function ($value) {
@@ -46,6 +49,12 @@ class AbstractModule
         };
     }
 
+    /**
+     * @param array $local
+     * @param array $remote
+     * @param array $map
+     * @return array
+     */
     protected function prepareDataForUpdate(array $local, array $remote, array $map): array
     {
         $res = [
@@ -55,19 +64,17 @@ class AbstractModule
         ];
 
         foreach ($map as $apiName => $eppName) {
-            if (key_exists($apiName, $local)
-                && !key_exists($apiName, $remote)
-                && !is_null($local[$apiName])) {
-                $res['add'][$eppName] = $local[$apiName];
-            } else if (key_exists($apiName, $local)
-                && key_exists($apiName, $remote)
-                && !is_null($local[$apiName])
-                && $local[$apiName] !== $remote[$apiName]) {
+            if (is_array($local[$apiName])) {
+                $remote[$apiName] = $remote[$apiName] ?? [];
+                if ($add = array_diff($local[$apiName], $remote[$apiName])) {
+                    $res['add'][$eppName] = $add;
+                }
+                if ($rem = array_diff($remote[$apiName], $local[$apiName])) {
+                    $res['rem'][$eppName] = $rem;
+                }
+            } else if (key_exists($apiName, $local) &&
+                strcasecmp((string)$local[$apiName], (string)$remote[$apiName])) {
                 $res['chg'][$eppName] = $local[$apiName];
-            } else if (key_exists($apiName, $remote)
-                && !key_exists($apiName, $local)
-                && !is_null($remote[$apiName])) {
-                $res['rem'][$eppName] = $remote[$apiName];
             }
         }
 
