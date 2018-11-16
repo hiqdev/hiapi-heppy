@@ -45,4 +45,32 @@ class AbstractModule
             return !is_null($value);
         };
     }
+
+    protected function prepareDataForUpdate(array $local, array $remote, array $map): array
+    {
+        $res = [
+            'add' => [],
+            'chg' => [],
+            'rem' => [],
+        ];
+
+        foreach ($map as $apiName => $eppName) {
+            if (key_exists($apiName, $local)
+                && !key_exists($apiName, $remote)
+                && !is_null($local[$apiName])) {
+                $res['add'][$eppName] = $local[$apiName];
+            } else if (key_exists($apiName, $local)
+                && key_exists($apiName, $remote)
+                && !is_null($local[$apiName])
+                && $local[$apiName] !== $remote[$apiName]) {
+                $res['chg'][$eppName] = $local[$apiName];
+            } else if (key_exists($apiName, $remote)
+                && !key_exists($apiName, $local)
+                && !is_null($remote[$apiName])) {
+                $res['rem'][$eppName] = $remote[$apiName];
+            }
+        }
+
+        return array_merge($local, array_filter($res));
+    }
 }

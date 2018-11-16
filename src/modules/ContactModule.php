@@ -103,7 +103,7 @@ class ContactModule extends AbstractModule
      */
     private function prepareDataForContactUpdate(array $local, array $remote): array
     {
-        $map = [
+        return $this->prepareDataForUpdate($local, $remote, [
             'name'          => 'name',
             'organization'  => 'org',
             'email'         => 'email',
@@ -116,32 +116,7 @@ class ContactModule extends AbstractModule
             'street2'       => 'street2',
             'street3'       => 'street3',
             'province'      => 'sp',
-        ];
-
-        $res = [
-            'add' => [],
-            'chg' => [],
-            'rem' => [],
-        ];
-
-        foreach ($map as $apiName => $eppName) {
-            if (key_exists($apiName, $local)
-                && !key_exists($apiName, $remote)
-                && !is_null($local[$apiName])) {
-                $res['add'][$eppName] = $local[$apiName];
-            } else if (key_exists($apiName, $local)
-                && key_exists($apiName, $remote)
-                && !is_null($local[$apiName])
-                && $local[$apiName] !== $remote[$apiName]) {
-                $res['chg'][$eppName] = $local[$apiName];
-            } else if (key_exists($apiName, $remote)
-                && !key_exists($apiName, $local)
-                && !is_null($remote[$apiName])) {
-                $res['rem'][$eppName] = $remote[$apiName];
-            }
-        }
-
-        return array_merge($local, array_filter($res));
+        ]);
     }
 
     /**
