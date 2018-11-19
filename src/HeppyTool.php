@@ -102,7 +102,11 @@ class HeppyTool
 
         $res = [];
         foreach ($returns as $apiName => $eppName) {
-            $res[$apiName] = $eppName instanceof \Closure ? $eppName($response) : $response[$eppName];
+            if (key_exists($eppName, $response)) {
+                $res[$apiName] = $eppName instanceof \Closure
+                    ? $eppName($response)
+                    : $response[$eppName];
+            }
         }
 
         return array_filter($res);
@@ -156,8 +160,19 @@ class HeppyTool
         return $this->_client;
     }
 
-    public function getBase()
+    /**
+     * @return \mrdpBase
+     */
+    public function getBase(): \mrdpBase
     {
         return $this->base;
+    }
+
+    /**
+     * @param $client
+     */
+    public function setClient($client): void
+    {
+        $this->_client = $client;
     }
 }
