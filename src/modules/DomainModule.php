@@ -243,21 +243,37 @@ class DomainModule extends AbstractModule
     }
 
     /**
-     * @param array $rows
+     * @param array $row
      * @param string $action
      * @param array $statuses
      * @return array
      */
     private function domainUpdateStatuses(
+        array $row,
+        string $action,
+        array $statuses
+    ): array {
+        $row[$action]['statuses'] = $statuses;
+
+        return $this->domainUpdate($row);
+    }
+
+    /**
+     * @param array $rows
+     * @param string $action
+     * @param array $statuses
+     * @return array
+     */
+    private function domainsUpdateStatuses(
         array $rows,
         string $action,
         array $statuses
     ): array {
         $res = [];
         foreach ($rows as $domainId => $domainData) {
-            $domainData[$action]['statuses'] = $statuses;
-            $res[$domainId] = $this->domainUpdate($domainData);
+            $res[$domainId] = $this->domainUpdateStatuses($domainData, $action, $statuses);
         }
+
         return $res;
     }
 
@@ -267,9 +283,9 @@ class DomainModule extends AbstractModule
      */
     public function domainsEnableLock(array $rows): array
     {
-        return $this->domainUpdateStatuses($rows, 'add', [
+        return $this->domainsUpdateStatuses($rows, 'add', [
            'clientDeleteProhibited'     => null,
-           'clientTransferProhibited'   => null
+           'clientTransferProhibited'   => null,
         ]);
     }
 
@@ -279,10 +295,32 @@ class DomainModule extends AbstractModule
      */
     public function domainsDisableLock(array $rows): array
     {
-        return $this->domainUpdateStatuses($rows, 'rem', [
+        return $this->domainsUpdateStatuses($rows, 'rem', [
             'clientUpdateProhibited'    => null,
             'clientDeleteProhibited'    => null,
-            'clientTransferProhibited'  => null
+            'clientTransferProhibited'  => null,
+        ]);
+    }
+
+    /**
+     * @param array $row
+     * @return array
+     */
+    public function domainEnableHold(array $row): array
+    {
+        return $this->domainUpdateStatuses($row, 'add', [
+            'clientHold' => null,
+        ]);
+    }
+
+    /**
+     * @param array $row
+     * @return array
+     */
+    public function domainDisableHold(array $row): array
+    {
+        return $this->domainUpdateStatuses($row, 'rem', [
+            'clientHold' => null,
         ]);
     }
 }
