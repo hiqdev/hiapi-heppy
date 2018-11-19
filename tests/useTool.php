@@ -3,7 +3,6 @@
 
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__  . '/../vendor/yiisoft/yii2/Yii.php';
-require_once dirname(__DIR__, 4) . '/vendor/hiqdev/hiapi-legacy/src/lib/deps/data.php';
 
 use hiapi\heppy\HeppyTool;
 

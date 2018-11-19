@@ -78,8 +78,8 @@ class HostModule extends AbstractModule
     private function prepareDataForHostUpdate(array $local, array $remote): array
     {
         return $this->prepareDataForUpdate($local, $remote, [
-                'ips' => 'ips'
-            ]);
+            'ips' => 'ips'
+        ]);
     }
 
     /**
