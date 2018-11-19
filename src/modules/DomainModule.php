@@ -242,4 +242,47 @@ class DomainModule extends AbstractModule
         return $this->domainUpdate($row);
     }
 
+    /**
+     * @param array $rows
+     * @param string $action
+     * @param array $statuses
+     * @return array
+     */
+    private function domainUpdateStatuses(
+        array $rows,
+        string $action,
+        array $statuses
+    ): array {
+        $res = [];
+        foreach ($rows as $domainId => $domainData) {
+            $domainData[$action]['statuses'] = $statuses;
+            $res[$domainId] = $this->domainUpdate($domainData);
+        }
+        return $res;
+    }
+
+    /**
+     * @param array $rows
+     * @return array
+     */
+    public function domainsEnableLock(array $rows): array
+    {
+        return $this->domainUpdateStatuses($rows, 'add', [
+           'clientDeleteProhibited'     => null,
+           'clientTransferProhibited'   => null
+        ]);
+    }
+
+    /**
+     * @param array $rows
+     * @return array
+     */
+    public function domainsDisableLock(array $rows): array
+    {
+        return $this->domainUpdateStatuses($rows, 'rem', [
+            'clientUpdateProhibited'    => null,
+            'clientDeleteProhibited'    => null,
+            'clientTransferProhibited'  => null
+        ]);
+    }
 }
