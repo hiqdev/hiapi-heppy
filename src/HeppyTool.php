@@ -163,7 +163,7 @@ class HeppyTool
     /**
      * @return \mrdpBase
      */
-    public function getBase(): \mrdpBase
+    public function getBase()
     {
         return $this->base;
     }

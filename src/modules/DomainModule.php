@@ -155,9 +155,9 @@ class DomainModule extends AbstractModule
             'domain'            => 'name',
             'expiration_date'   => 'exDate',
             'action_date'       => 'acDate',
-            'action_client_id'  => 'acId',
+            'action_client_id'  => 'acID',
             'request_date'      => 'reDate',
-            'request_client_id' => 'reId',
+            'request_client_id' => 'reID',
             'transfer_status'   => 'trStatus'
         ]);
     }
