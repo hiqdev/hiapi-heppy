@@ -9,15 +9,18 @@ class DomainInfoTest extends TestCase
 {
     public function testDomainInfo()
     {
+        $domain = 'silverfires1.me';
+        $password = 'adf-AA01';
+
         $tool = $this->createTool([
-            'name'      => 'silverfires1.me',
-            'pw'        => 'adf-AA01',
+            'name'      => $domain,
+            'pw'        => $password,
             'command'   => 'domain:info',
         ], [
             'clTRID'        => 'AA-00',
             'billing'       => 'MR_25844382',
             'svTRID'        => 'SRO-1542643145066',
-            'name'          => 'silverfires1.me',
+            'name'          => $domain,
             'roid'          => 'D425500000000823001-AGRS',
             'result_msg'    => 'Command completed successfully',
             'admin'         => 'MR_25844382',
@@ -29,7 +32,7 @@ class DomainInfoTest extends TestCase
             'clID'          => 'OTE1186-EP1',
             'tech'          => 'MR_25844382',
             'result_code'   => '1000',
-            'pw'            => 'adf-AA01',
+            'pw'            => $password,
             'registrant'    => 'MR_25844382',
             'statuses'      => [
                 'inactive'                  => NULL,
@@ -39,14 +42,14 @@ class DomainInfoTest extends TestCase
         ]);
 
         $result = $tool->domainInfo([
-            'domain'    => 'silverfires1.me',
-            'password'  => 'adf-AA01',
+            'domain'    => $domain,
+            'password'  => $password,
             'id'        => NULL,
         ]);
 
         $this->assertSame($result, [
-            'domain'            => 'silverfires1.me',
-            'name'              => 'silverfires1.me',
+            'domain'            => $domain,
+            'name'              => $domain,
             'roid'              => 'D425500000000823001-AGRS',
             'created_by'        => 'OTE1186-EP1',
             'created_date'      => '2018-11-09T10:43:04.0Z',
@@ -57,7 +60,7 @@ class DomainInfoTest extends TestCase
             'admin'             => 'MR_25844382',
             'billing'           => 'MR_25844382',
             'tech'              => 'MR_25844382',
-            'password'          => 'adf-AA01',
+            'password'          => $password,
             'epp_client_id'     => 'OTE1186-EP1',
             'statuses'          => [
                 'inactive'                  => NULL,
