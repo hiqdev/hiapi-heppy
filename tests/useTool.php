@@ -16,9 +16,11 @@ $heppyTool = new HeppyTool(new stdClass(), [
     'password'  => $_ENV['HEPPY_PASSWORD'],
 ]);
 
-$heppyTool->domainTransfer([
+$res = $heppyTool->domainTransfer([
     'domain'    => 'silverfires1.me',
     'password'  => 'adf-AA01',
     'period'    => 1,
     'roid'      => 'D425500000000823001-AGRS',
 ]);
+
+var_dump($res);
