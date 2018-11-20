@@ -8,10 +8,13 @@ class DomainsCheckTest extends TestCase
 {
     public function testDomainsCheck()
     {
+        $domain1 = 'silverfires1.me';
+        $domain42 = 'silverfires42.me';
+
         $tool = $this->createTool([
             'names'         => [
-                0 => 'silverfires1.me',
-                1 => 'silverfires42.me',
+                0 => $domain1,
+                1 => $domain42,
             ],
             'command'       => 'domain:check',
         ], [
@@ -22,8 +25,8 @@ class DomainsCheckTest extends TestCase
                 'silverfires1.me'   => 'In use',
             ],
             'avails'        => [
-                'silverfires42.me'  => '1',
-                'silverfires1.me'   => '0',
+                $domain1   => '0',
+                $domain42  => '1',
             ],
             'result_lang'   => 'en-US',
             'result_code'   => '1000',
@@ -31,18 +34,18 @@ class DomainsCheckTest extends TestCase
 
         $result = $tool->domainsCheck([
             'domains' => [
-                0 => 'silverfires1.me',
-                1 => 'silverfires42.me',
+                0 => $domain1,
+                1 => $domain42,
             ],
         ]);
 
         $this->assertSame($result, [
             'avails' => [
-                'silverfires42.me'  => '1',
-                'silverfires1.me'   => '0',
+                $domain1   => '0',
+                $domain42  => '1',
             ],
             'reasons' => [
-                'silverfires1.me'   => 'In use',
+                $domain1   => 'In use',
             ],
             'result_msg'    => 'Command completed successfully',
             'result_code'   => '1000',
