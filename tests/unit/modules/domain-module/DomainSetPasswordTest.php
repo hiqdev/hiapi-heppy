@@ -29,13 +29,7 @@ class DomainSetPasswordTest extends TestCase
                 'pw' => 'new_pass',
             ],
             'command' => 'domain:update',
-        ], [
-            'result_lang' => 'en-US',
-            'clTRID'      => 'AA-00',
-            'svTRID'      => 'SRW-425500000011746783',
-            'result_code' => '1000',
-            'result_msg'  => 'Command completed successfully',
-        ]);
+        ], $this->getCommonSuccessResponse());
 
         $domainModule->setTool($tool);
         $tool->setModule('domain', $domainModule);
@@ -48,14 +42,9 @@ class DomainSetPasswordTest extends TestCase
             'pincode_ok' => true,
         ]);
 
-        $this->assertSame($result, [
+        $this->assertSame($result, $this->addMappedCommonSuccessResponse([
             'id'          => 25844450,
             'domain'      => $domain,
-            'result_msg'  => 'Command completed successfully',
-            'result_code' => '1000',
-            'result_lang' => 'en-US',
-            'server_trid' => 'SRW-425500000011746783',
-            'client_trid' => 'AA-00',
-        ]);
+        ]));
     }
 }

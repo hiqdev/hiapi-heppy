@@ -15,15 +15,10 @@ class DomainRenewTest extends TestCase
             'curExpDate'    => '2019-11-09',
             'period'        => '1',
             'command'       => 'domain:renew',
-        ], [
-            'clTRID'        => 'AA-00',
-            'svTRID'        => 'SRW-425500000011738408',
+        ], $this->addCommonSuccessResponse([
             'name'          => 'silverfires1.me',
-            'result_msg'    => 'Command completed successfully',
-            'result_lang'   => 'en-US',
             'exDate'        => '2020-11-09T10:43:04.0Z',
-            'result_code'   => '1000',
-        ]);
+        ]));
 
         $result = $tool->domainRenew([
             'domain'        => $domain,
@@ -39,14 +34,9 @@ class DomainRenewTest extends TestCase
             'expires_time'  => NULL,
         ]);
 
-        $this->assertSame($result, [
+        $this->assertSame($result, $this->addMappedCommonSuccessResponse([
             'domain'            => $domain,
             'expiration_date'   => '2020-11-09T10:43:04.0Z',
-            'result_msg'        => 'Command completed successfully',
-            'result_code'       => '1000',
-            'result_lang'       => 'en-US',
-            'server_trid'       => 'SRW-425500000011738408',
-            'client_trid'       => 'AA-00',
-        ]);
+        ]));
     }
 }

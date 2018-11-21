@@ -16,22 +16,17 @@ class DomainInfoTest extends TestCase
             'name'      => $domain,
             'pw'        => $password,
             'command'   => 'domain:info',
-        ], [
-            'clTRID'        => 'AA-00',
+        ], $this->addCommonSuccessResponse([
             'billing'       => 'MR_25844382',
-            'svTRID'        => 'SRO-1542643145066',
             'name'          => $domain,
             'roid'          => 'D425500000000823001-AGRS',
-            'result_msg'    => 'Command completed successfully',
             'admin'         => 'MR_25844382',
             'crDate'        => '2018-11-09T10:43:04.0Z',
             'upID'          => 'OTE1186-EP1',
             'upDate'        => '2018-11-19T13:09:35.0Z',
             'crID'          => 'OTE1186-EP1',
-            'result_lang'   => 'en-US',
             'clID'          => 'OTE1186-EP1',
             'tech'          => 'MR_25844382',
-            'result_code'   => '1000',
             'pw'            => $password,
             'registrant'    => 'MR_25844382',
             'statuses'      => [
@@ -39,7 +34,7 @@ class DomainInfoTest extends TestCase
                 'serverTransferProhibited'  => 'realtime',
             ],
             'exDate'        => '2019-11-09T10:43:04.0Z',
-        ]);
+        ]));
 
         $result = $tool->domainInfo([
             'domain'    => $domain,
@@ -47,7 +42,7 @@ class DomainInfoTest extends TestCase
             'id'        => NULL,
         ]);
 
-        $this->assertSame($result, [
+        $this->assertSame($result, $this->addMappedCommonSuccessResponse([
             'domain'            => $domain,
             'name'              => $domain,
             'roid'              => 'D425500000000823001-AGRS',
@@ -66,11 +61,6 @@ class DomainInfoTest extends TestCase
                 'inactive'                  => NULL,
                 'serverTransferProhibited'  => 'realtime',
             ],
-            'result_msg'        => 'Command completed successfully',
-            'result_code'       => '1000',
-            'result_lang'       => 'en-US',
-            'server_trid'       => 'SRO-1542643145066',
-            'client_trid'       => 'AA-00',
-        ]);
+        ]));
     }
 }

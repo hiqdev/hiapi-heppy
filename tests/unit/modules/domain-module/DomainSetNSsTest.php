@@ -48,27 +48,16 @@ class DomainSetNSsTest extends TestCase
                 ],
             ],
             'command' => 'domain:update',
-        ], [
-            'result_lang' => 'en-US',
-            'clTRID'      => 'AA-00',
-            'svTRID'      => 'SRW-425500000011747552',
-            'result_code' => '1000',
-            'result_msg'  => 'Command completed successfully',
-        ]);
+        ], $this->getCommonSuccessResponse());
 
         $domainModule->setTool($tool);
         $tool->setModule('domain', $domainModule);
 
         $result = $tool->domainSetNSs($apiData);
 
-        $this->assertSame($result, [
+        $this->assertSame($result, $this->addMappedCommonSuccessResponse([
             'id'          => 25844481,
             'domain'      => $domain,
-            'result_msg'  => 'Command completed successfully',
-            'result_code' => '1000',
-            'result_lang' => 'en-US',
-            'server_trid' => 'SRW-425500000011747552',
-            'client_trid' => 'AA-00',
-        ]);
+        ]));
     }
 }

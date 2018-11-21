@@ -85,7 +85,11 @@ class TestCase extends \PHPUnit\Framework\TestCase
         return $module;
     }
 
-    private function getMethodsNames($methods): array
+    /**
+     * @param array $methods
+     * @return array
+     */
+    private function getMethodsNames(array $methods): array
     {
         $methodNames = [];
 
@@ -94,5 +98,51 @@ class TestCase extends \PHPUnit\Framework\TestCase
         }
 
         return $methodNames;
+    }
+
+    /**
+     * @param array $data
+     * @return array
+     */
+    protected function addCommonSuccessResponse(array $data = null): array
+    {
+        return array_merge($data, $this->getCommonSuccessResponse());
+    }
+
+    /**
+     * @return array
+     */
+    protected function getCommonSuccessResponse(): array
+    {
+        return [
+            'result_lang' => 'en-US',
+            'clTRID'      => 'AA-00',
+            'svTRID'      => 'SRW-425500000011746893',
+            'result_code' => '1000',
+            'result_msg'  => 'Command completed successfully',
+        ];
+    }
+
+    /**
+     * @param array $data
+     * @return array
+     */
+    protected function addMappedCommonSuccessResponse(array $data = null): array
+    {
+        return array_merge($data, $this->getMappedCommonSuccessResponse());
+    }
+
+    /**
+     * @return array
+     */
+    protected function getMappedCommonSuccessResponse(): array
+    {
+        return [
+            'result_msg'  => 'Command completed successfully',
+            'result_code' => '1000',
+            'result_lang' => 'en-US',
+            'server_trid' => 'SRW-425500000011746893',
+            'client_trid' => 'AA-00',
+        ];
     }
 }
