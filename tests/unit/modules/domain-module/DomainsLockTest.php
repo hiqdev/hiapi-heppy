@@ -20,13 +20,7 @@ class DomainsLockTest extends TestCase
                 ],
             ],
             'command' => 'domain:update',
-        ], [
-            'result_lang' => 'en-US',
-            'clTRID'      => 'AA-00',
-            'svTRID'      => 'SRW-425500000011746893',
-            'result_code' => '1000',
-            'result_msg'  => 'Command completed successfully',
-        ]);
+        ], $this->getCommonSuccessResponse());
 
         $result = $tool->domainsEnableLock([
             $this->id => [
@@ -36,15 +30,10 @@ class DomainsLockTest extends TestCase
         ]);
 
         $this->assertSame($result, [
-            25844450 => [
+            25844450 => array_merge([
                 'id'          => $this->id,
                 'domain'      => $this->domain,
-                'result_msg'  => 'Command completed successfully',
-                'result_code' => '1000',
-                'result_lang' => 'en-US',
-                'server_trid' => 'SRW-425500000011746893',
-                'client_trid' => 'AA-00',
-            ],
+            ], $this->getMappedCommonSuccessResponse()),
         ]);
     }
 

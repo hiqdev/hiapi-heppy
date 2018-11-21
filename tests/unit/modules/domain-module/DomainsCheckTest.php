@@ -17,20 +17,15 @@ class DomainsCheckTest extends TestCase
                 1 => $domain42,
             ],
             'command'       => 'domain:check',
-        ], [
-            'clTRID'        => 'AA-00',
-            'svTRID'        => 'SRO-1542720376580',
-            'result_msg'    => 'Command completed successfully',
+        ], $this->addCommonSuccessResponse([
             'reasons'       => [
-                'silverfires1.me'   => 'In use',
+                $domain1   => 'In use',
             ],
             'avails'        => [
                 $domain1   => '0',
                 $domain42  => '1',
             ],
-            'result_lang'   => 'en-US',
-            'result_code'   => '1000',
-        ]);
+        ]));
 
         $result = $tool->domainsCheck([
             'domains' => [
@@ -39,7 +34,7 @@ class DomainsCheckTest extends TestCase
             ],
         ]);
 
-        $this->assertSame($result, [
+        $this->assertSame($result, $this->addMappedCommonSuccessResponse([
             'avails' => [
                 $domain1   => '0',
                 $domain42  => '1',
@@ -47,11 +42,6 @@ class DomainsCheckTest extends TestCase
             'reasons' => [
                 $domain1   => 'In use',
             ],
-            'result_msg'    => 'Command completed successfully',
-            'result_code'   => '1000',
-            'result_lang'   => 'en-US',
-            'server_trid'   => 'SRO-1542720376580',
-            'client_trid'   => 'AA-00',
-        ]);
+        ]));
     }
 }
