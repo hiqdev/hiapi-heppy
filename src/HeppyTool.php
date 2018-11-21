@@ -93,14 +93,19 @@ class HeppyTool
      * @param string $command
      * @param array $input
      * @param array $returns
+     * @param array $payload
      * @return array
      */
-    public function commonRequest(string $command, array $input, array $returns = []): array
-    {
+    public function commonRequest(
+        string $command,
+        array $input,
+        array $returns = [],
+        array $payload = []
+    ): array {
         $response = $this->request($command, $input);
         $returns = $this->addCommonResponseFields($returns);
 
-        $res = [];
+        $res = $payload;
         foreach ($returns as $apiName => $eppName) {
             if (key_exists($eppName, $response)) {
                 $res[$apiName] = $eppName instanceof \Closure
@@ -174,5 +179,19 @@ class HeppyTool
     public function setClient($client): void
     {
         $this->_client = $client;
+    }
+
+    /**
+     * This method is for testing purpose only
+     *
+     * @param string $name
+     * @param AbstractModule $module
+     */
+    public function setModule(string $name, AbstractModule $module): void
+    {
+        if (!key_exists($name, $this->modules)) {
+            throw new InvalidCallException("module `$name` not found");
+        }
+        $this->modules[$name] = $module;
     }
 }

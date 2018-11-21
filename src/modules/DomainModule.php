@@ -102,7 +102,7 @@ class DomainModule extends AbstractModule
                 if (err::is($response)) {
                     return $response;
                 }
-                $remoteId = $response['id'];
+                $remoteId = $response['epp_id'];
                 $remoteIds[$contactId] = $remoteId;
             }
             $row[$type . '_remote_id'] = $remoteId;
@@ -206,10 +206,13 @@ class DomainModule extends AbstractModule
     {
         return $this->tool->commonRequest('domain:update', array_filter([
             'name'      => $row['domain'],
-            'add'       => $row['add'],
-            'rem'       => $row['rem'],
-            'chg'       => $row['chg'],
-        ]));
+            'add'       => $row['add'] ?? null,
+            'rem'       => $row['rem'] ?? null,
+            'chg'       => $row['chg'] ?? null,
+        ]), [], [
+            'id'        => $row['id'],
+            'domain'    => $row['domain'],
+        ]);
     }
 
     /**

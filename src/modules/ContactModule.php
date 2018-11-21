@@ -74,7 +74,7 @@ class ContactModule extends AbstractModule
             'pc'        => $row['postal_code'],
             'pw'        => $row['password'] ?: $this->generatePassword(),
         ], [
-            'id'            => 'id',
+            'epp_id'        => 'id',
             'created_date'  => 'crDate',
         ]);
     }
@@ -93,7 +93,9 @@ class ContactModule extends AbstractModule
             'add'       => $row['add'],
             'rem'       => $row['rem'],
             'chg'       => $row['chg'],
-        ]));
+        ]), [], [
+            'epp_id'    => $row['epp_id']
+        ]);
     }
 
     /**
