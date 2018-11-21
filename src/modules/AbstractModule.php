@@ -49,6 +49,7 @@ class AbstractModule
         };
     }
 
+
     /**
      * @param array $local
      * @param array $remote
@@ -79,5 +80,15 @@ class AbstractModule
         }
 
         return array_merge($local, array_filter($res));
+    }
+
+    /**
+     * This method is for testing purpose only
+     *
+     * @param HeppyTool $tool
+     */
+    public function setTool(HeppyTool $tool): void
+    {
+        $this->tool = $tool;
     }
 }

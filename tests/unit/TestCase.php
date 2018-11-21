@@ -63,4 +63,36 @@ class TestCase extends \PHPUnit\Framework\TestCase
 
         return $client;
     }
+
+    /**
+     * @param string $moduleClassName
+     * @param array $methods
+     * @return MockObject
+     */
+    protected function mockModule(string $moduleClassName, array $methods): MockObject
+    {
+        $module =  $this->getMockBuilder($moduleClassName)
+            ->disableOriginalConstructor()
+            ->setMethods($this->getMethodsNames($methods))
+            ->getMock();
+
+        foreach ($methods as $method) {
+            $module->method($method['methodName'])
+                ->with($method['inputData'])
+                ->willReturn($method['outputData']);
+        }
+
+        return $module;
+    }
+
+    private function getMethodsNames($methods): array
+    {
+        $methodNames = [];
+
+        foreach ($methods as $method) {
+            $methodNames[] = $method['methodName'];
+        }
+
+        return $methodNames;
+    }
 }
