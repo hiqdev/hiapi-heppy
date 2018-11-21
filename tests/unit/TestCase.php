@@ -4,6 +4,7 @@ namespace hiapi\heppy\tests\unit;
 
 use hiapi\heppy\HeppyTool;
 use hiapi\heppy\RabbitMQClient;
+use mrdpBase;
 use PHPUnit\Framework\MockObject\MockObject;
 
 class TestCase extends \PHPUnit\Framework\TestCase
@@ -22,7 +23,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
     public function createTool(
         array $requestData,
         array $responseData,
-        array $baseMethods = null)
+        array $baseMethods = [])
     {
         $base = $this->mockBase($baseMethods);
         $client = $this->mockClient($requestData, $responseData);
@@ -37,12 +38,9 @@ class TestCase extends \PHPUnit\Framework\TestCase
      * @param array|null $methods
      * @return MockObject
      */
-    protected function mockBase(array $methods=null): MockObject
+    protected function mockBase(array $methods = []): MockObject
     {
-        return $this->getMockBuilder(\mrdpBase::class)
-            ->disableOriginalConstructor()
-            ->setMethods($methods)
-            ->getMock();
+        return $this->mockEntity(mrdpBase::class, $methods);
     }
 
     /**
@@ -52,16 +50,13 @@ class TestCase extends \PHPUnit\Framework\TestCase
      */
     protected function mockClient(array $requestData, array $responseData): MockObject
     {
-        $client = $this->getMockBuilder(RabbitMQClient::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['request'])
-            ->getMock();
-
-        $client->method('request')
-            ->with($requestData)
-            ->willReturn($responseData);
-
-        return $client;
+        return $this->mockEntity(RabbitMQClient::class, [
+           [
+               'methodName' => 'request',
+               'inputData'  => $requestData,
+               'outputData' => $responseData
+           ]
+        ]);
     }
 
     /**
@@ -71,18 +66,28 @@ class TestCase extends \PHPUnit\Framework\TestCase
      */
     protected function mockModule(string $moduleClassName, array $methods): MockObject
     {
-        $module =  $this->getMockBuilder($moduleClassName)
+        return $this->mockEntity($moduleClassName, $methods);
+    }
+
+    /**
+     * @param string $entityName
+     * @param array $methods
+     * @return MockObject
+     */
+    private function mockEntity(string $entityName, array $methods): MockObject
+    {
+        $entity =  $this->getMockBuilder($entityName)
             ->disableOriginalConstructor()
             ->setMethods($this->getMethodsNames($methods))
             ->getMock();
 
         foreach ($methods as $method) {
-            $module->method($method['methodName'])
+            $entity->method($method['methodName'])
                 ->with($method['inputData'])
                 ->willReturn($method['outputData']);
         }
 
-        return $module;
+        return $entity;
     }
 
     /**
