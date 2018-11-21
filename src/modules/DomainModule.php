@@ -15,7 +15,7 @@ class DomainModule extends AbstractModule
     {
         return $this->tool->commonRequest('domain:info', array_filter([
             'name'      => $row['domain'],
-            'pw'        => $row['password']
+            'pw'        => $row['password'] ?? null,
         ], $this->getFilterCallback()), [
             'domain'            => 'name',
             'name'              => 'name',

@@ -5,30 +5,19 @@ namespace hiapi\heppy\tests\unit\modules\domain_module;
 use hiapi\heppy\modules\DomainModule;
 use hiapi\heppy\tests\unit\TestCase;
 
-class DomainSetNSsTest extends TestCase
+class DomainSetPasswordTest extends TestCase
 {
-    public function testDomainSetNSs()
+    public function testDomainSetPassword()
     {
-        $domain = 'silverfires42.me';
-
-        $apiData = [
-            'domain' => $domain,
-            'nss'    => [
-                'ns1.silverfires1.me' => 'ns1.silverfires1.me',
-                'ns2.silverfires1.me' => 'ns2.silverfires1.me',
-            ],
-            'id'     => 25844481,
-        ];
+        $domain = 'silverfires1.me';
 
         $domainModule = $this->mockModule(DomainModule::class, [
             [
                 'methodName' => 'domainInfo',
-                'inputData'  => $apiData,
+                'inputData'  => ['domain' => $domain],
                 'outputData' => [
                     'domain'     => $domain,
-                    'nss'        => [
-                        'ns3.silverfires1.me',
-                    ],
+                    'password'   => 'old_pass',
                     'result_msg' => 'Command completed successfully',
                 ],
             ],
@@ -36,22 +25,14 @@ class DomainSetNSsTest extends TestCase
 
         $tool = $this->createTool([
             'name'    => $domain,
-            'add'     => [
-                'nss' => [
-                    'ns1.silverfires1.me' => 'ns1.silverfires1.me',
-                    'ns2.silverfires1.me' => 'ns2.silverfires1.me',
-                ],
-            ],
-            'rem'     => [
-                'nss' => [
-                    0 => 'ns3.silverfires1.me',
-                ],
+            'chg'     => [
+                'pw' => 'new_pass',
             ],
             'command' => 'domain:update',
         ], [
             'result_lang' => 'en-US',
             'clTRID'      => 'AA-00',
-            'svTRID'      => 'SRW-425500000011747552',
+            'svTRID'      => 'SRW-425500000011746783',
             'result_code' => '1000',
             'result_msg'  => 'Command completed successfully',
         ]);
@@ -59,15 +40,21 @@ class DomainSetNSsTest extends TestCase
         $domainModule->setTool($tool);
         $tool->setModule('domain', $domainModule);
 
-        $result = $tool->domainSetNSs($apiData);
+        $result = $tool->domainSetPassword([
+            'domain'     => $domain,
+            'password'   => 'new_pass',
+            'pincode'    => '1234',
+            'id'         => 25844450,
+            'pincode_ok' => true,
+        ]);
 
         $this->assertSame($result, [
-            'id'          => 25844481,
+            'id'          => 25844450,
             'domain'      => $domain,
             'result_msg'  => 'Command completed successfully',
             'result_code' => '1000',
             'result_lang' => 'en-US',
-            'server_trid' => 'SRW-425500000011747552',
+            'server_trid' => 'SRW-425500000011746783',
             'client_trid' => 'AA-00',
         ]);
     }
