@@ -10,10 +10,13 @@ class ContactTestCase extends TestCase
 
     protected $contactData;
 
+    protected $changedData;
+
     public function __construct()
     {
         parent::__construct();
         $this->contactData = $this->getContactData();
+        $this->changedData = $this->getChangedData();
     }
 
     private function getContactData(): array
@@ -59,5 +62,17 @@ class ContactTestCase extends TestCase
             'update_time'   => '2018-11-22 14:34:18.974071',
             'remote'        => '',
         ];
+    }
+
+    private function getChangedData(): array
+    {
+        $changedData = $this->contactData;
+
+        $changedData['street2'] = 'Avenue2';
+        $changedData['street3'] = 'Avenue3';
+        $changedData['password'] = 'new_pass';
+        $changedData['province'] = 'California';
+
+        return $changedData;
     }
 }
