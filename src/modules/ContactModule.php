@@ -57,21 +57,21 @@ class ContactModule extends AbstractModule
      */
     public function contactCreate(array $row): array
     {
-        return $this->tool->commonRequest('contact:create', [
+        return $this->tool->commonRequest('contact:create', array_filter([
             'id'        => $row['epp_id'],
             'name'      => $row['name'],
             'email'     => $row['email'],
             'voice'     => $row['voice_phone'],
-            'fax'       => $row['fax_phone'],
-            'org'       => $row['org'],
-            'cc'        => $row['country'],
-            'city'      => $row['city'],
-            'street1'   => $row['street1'],
-            'street2'   => $row['street2'],
-            'street3'   => $row['street3'],
-            'pc'        => $row['postal_code'],
+            'fax'       => $row['fax_phone']    ?? null,
+            'org'       => $row['org']          ?? null,
+            'cc'        => $row['country']      ?? null,
+            'city'      => $row['city']         ?? null,
+            'street1'   => $row['street1']      ?? null,
+            'street2'   => $row['street2']      ?? null,
+            'street3'   => $row['street3']      ?? null,
+            'pc'        => $row['postal_code']  ?? null,
             'pw'        => $row['password'] ?: $this->generatePassword(),
-        ], [
+        ], $this->getFilterCallback()), [
             'epp_id'        => 'id',
             'created_date'  => 'crDate',
         ]);

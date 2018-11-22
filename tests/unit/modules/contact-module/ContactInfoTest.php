@@ -8,8 +8,10 @@ class ContactInfoTest extends TestCase
 {
     public function testContactInfo()
     {
+        $eppId = 'MR_25844511';
+
         $tool = $this->createTool([
-            'id'      => 'MR_25844511',
+            'id'      => $eppId,
             'command' => 'contact:info',
         ], $this->addCommonSuccessResponse([
             'city'     => 'Limassol',
@@ -24,7 +26,7 @@ class ContactInfoTest extends TestCase
             'clID'     => 'OTE1186-EP1',
             'street'   => 'Agios Fylaxeos 66 and Chr. Perevou 2, Kalia Court, off. 601',
             'voice'    => '+357.95713635',
-            'id'       => 'MR_25844511',
+            'id'       => $eppId,
             'statuses' => [
                 'ok'     => null,
                 'linked' => null,
@@ -33,12 +35,13 @@ class ContactInfoTest extends TestCase
         ]));
 
         $result = $tool->contactInfo([
-            'epp_id'   => 'MR_25844511',
+            'id'       => '25844511',
+            'epp_id'   => $eppId,
             'password' => '',
         ]);
 
         $this->assertSame($result, $this->addMappedCommonSuccessResponse([
-            'epp_id'      => 'MR_25844511',
+            'epp_id'      => $eppId,
             'name'        => 'WhoisProtectService.net',
             'password'    => 'bL0@kX8!mB',
             'email'       => 'silverfires21.me@whoisprotectservice.net',
