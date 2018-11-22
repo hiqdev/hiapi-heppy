@@ -28,9 +28,11 @@ class HostModule extends AbstractModule
      */
     public function hostCreate(array $row): array
     {
-        return $this->tool->request('host:create', [
+        return $this->tool->commonRequest('host:create', [
             'name'      => $row['host'],
             'ips'       => $row['ips'],
+        ], [], [
+            'host'      => $row['host']
         ]);
     }
 
@@ -98,10 +100,13 @@ class HostModule extends AbstractModule
      * @param array $row
      * @return array
      */
-    private function hostDelete(array $row): array
+    public function hostDelete(array $row): array
     {
         return $this->tool->commonRequest('host:delete', [
-            'name'      => $row['host'],
+            'name'  => $row['host'],
+        ], [], [
+            'id'    => $row['id'],
+            'host'  => $row['host'],
         ]);
     }
 }
