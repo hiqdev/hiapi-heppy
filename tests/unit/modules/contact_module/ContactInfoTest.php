@@ -2,17 +2,14 @@
 
 namespace hiapi\heppy\tests\unit\modules\contact_module;
 
-use hiapi\heppy\tests\unit\TestCase;
-
-class ContactInfoTest extends TestCase
+class ContactInfoTest extends ContactTestCase
 {
     public function testContactInfo()
     {
-        $eppId = 'MR_25844511';
-
         $tool = $this->createTool([
-            'id'      => $eppId,
+            'id'      => $this->eppId,
             'command' => 'contact:info',
+            'pw'      => 'rQ4&lP7*rZ',
         ], $this->addCommonSuccessResponse([
             'city'     => 'Limassol',
             'fax'      => '+357.95713635',
@@ -26,24 +23,20 @@ class ContactInfoTest extends TestCase
             'clID'     => 'OTE1186-EP1',
             'street'   => 'Agios Fylaxeos 66 and Chr. Perevou 2, Kalia Court, off. 601',
             'voice'    => '+357.95713635',
-            'id'       => $eppId,
+            'id'       => $this->eppId,
             'statuses' => [
                 'ok'     => null,
                 'linked' => null,
             ],
-            'pw'       => 'bL0@kX8!mB',
+            'pw'       => 'rQ4&lP7*rZ',
         ]));
 
-        $result = $tool->contactInfo([
-            'id'       => '25844511',
-            'epp_id'   => $eppId,
-            'password' => '',
-        ]);
+        $result = $tool->contactInfo($this->contactData);
 
         $this->assertSame($result, $this->addMappedCommonSuccessResponse([
-            'epp_id'      => $eppId,
+            'epp_id'      => $this->eppId,
             'name'        => 'WhoisProtectService.net',
-            'password'    => 'bL0@kX8!mB',
+            'password'    => 'rQ4&lP7*rZ',
             'email'       => 'silverfires21.me@whoisprotectservice.net',
             'fax_phone'   => '+357.95713635',
             'voice_phone' => '+357.95713635',
