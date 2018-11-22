@@ -48,9 +48,7 @@ class HostModule extends AbstractModule
             'roid'          => 'roid',
             'created_by'    => 'crID',
             'created_date'  => 'crDate',
-            'statuses'      => function ($data) {
-                implode(',', array_keys($data['statuses']));
-            },
+            'statuses'      => 'statuses',
         ]);
     }
 
