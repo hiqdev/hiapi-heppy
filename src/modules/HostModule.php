@@ -63,11 +63,13 @@ class HostModule extends AbstractModule
     {
         $row = $this->prepareDataForHostUpdate($row, $info);
         return $this->tool->commonRequest('host:update', array_filter([
-            'name'      => $row['host'],
-            'add'       => $row['add'],
-            'rem'       => $row['rem'],
-            'chg'       => $row['chg'],
-        ]));
+            'name'  => $row['host'],
+            'add'   => $row['add'] ?? null,
+            'rem'   => $row['rem'] ?? null,
+            'chg'   => $row['chg'] ?? null,
+        ]), [], [
+            'host'  => $row['host']
+        ]);
     }
 
     /**
