@@ -88,9 +88,9 @@ class ContactModule extends AbstractModule
 
         return $this->tool->commonRequest('contact:update', array_filter([
             'id'        => $row['epp_id'],
-            'add'       => $row['add'],
-            'rem'       => $row['rem'],
-            'chg'       => $row['chg'],
+            'add'       => $row['add'] ?? null,
+            'rem'       => $row['rem'] ?? null,
+            'chg'       => $row['chg'] ?? null,
         ]), [], [
             'epp_id'    => $row['epp_id']
         ]);

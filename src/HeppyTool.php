@@ -108,9 +108,7 @@ class HeppyTool
         $res = $payload;
         foreach ($returns as $apiName => $eppName) {
             if (key_exists($eppName, $response)) {
-                $res[$apiName] = $eppName instanceof \Closure
-                    ? $eppName($response)
-                    : $response[$eppName];
+                $res[$apiName] = $response[$eppName];
             }
         }
 
