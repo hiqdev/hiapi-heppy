@@ -47,9 +47,7 @@ class ContactModule extends AbstractModule
             'postal_code'   => 'pc',
             'street1'       => 'street',
             'province'      => 'sp',
-            'statuses'      => function ($data) {
-                implode(',', array_keys($data['statuses']));
-            },
+            'statuses'      => 'statuses',
         ]);
     }
 
