@@ -8,19 +8,21 @@ class HostDeleteTest extends TestCase
 {
     public function testHostDelete()
     {
+        $host = 'ns42.silverfires1.me';
+
         $tool = $this->createTool([
-            'name'    => 'ns42.silverfires1.me',
+            'name'    => $host,
             'command' => 'host:delete',
         ], $this->getCommonSuccessResponse());
 
         $result = $tool->hostDelete([
             'id'   => 25844515,
-            'host' => 'ns42.silverfires1.me',
+            'host' => $host,
         ]);
 
         $this->assertSame($result, $this->addMappedCommonSuccessResponse([
             'id'   => 25844515,
-            'host' => 'ns42.silverfires1.me',
+            'host' => $host,
         ]));
     }
 }

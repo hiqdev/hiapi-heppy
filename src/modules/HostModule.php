@@ -31,8 +31,8 @@ class HostModule extends AbstractModule
         return $this->tool->commonRequest('host:create', [
             'name'      => $row['host'],
             'ips'       => $row['ips'],
-        ], [], [
-            'host'      => $row['host']
+        ], [
+            'host'      => 'name',
         ]);
     }
 
