@@ -33,7 +33,7 @@ class HostUpdateTest extends TestCase
                 1 => '192.0.1.2',
             ],
             'domain_id' => 25844481,
-        ], [
+        ], $this->addCommonSuccessResponse([
             'host'         => 'ns42.silverfires1.me',
             'ips'          => [
                 0 => '192.0.4.2',
@@ -44,12 +44,7 @@ class HostUpdateTest extends TestCase
             'statuses'     => [
                 'ok' => null,
             ],
-            'result_msg'   => 'Command completed successfully',
-            'result_code'  => '1000',
-            'result_lang'  => 'en-US',
-            'server_trid'  => 'SRO-1542884993447',
-            'client_trid'  => 'AA-00',
-        ]);
+        ]));
 
         $this->assertSame($result, $this->addMappedCommonSuccessResponse([
             'host' => 'ns42.silverfires1.me',
