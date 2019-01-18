@@ -8,27 +8,25 @@
  * @copyright Copyright (c) 2017, HiQDev (http://hiqdev.com/)
  */
 
-return [
-    'container' => [
-        'singletons' => [
-            'heppyTool' => [
-                '__class' => \hiapi\heppy\HeppyTool::class,
-            ],
-            \hiapi\heppy\ClientInterface::class => [
-                '__class' => \hiapi\heppy\RabbitMQClient::class,
-                '__construct()' => [
-                    [
-                        'main' => [
-                            'host'      => $params['hiapi.heppy.rabbitmq.host'],
-                            'port'      => $params['hiapi.heppy.rabbitmq.port'],
-                            'user'      => $params['hiapi.heppy.rabbitmq.user'],
-                            'password'  => $params['hiapi.heppy.rabbitmq.password'],
-                            'vhost'     => $params['hiapi.heppy.rabbitmq.vhost'],
-                        ],
-                    ],
-                    $params['hiapi.heppy.rabbitmq.queue'],
+$singletons = [
+    'heppyTool' => [
+        '__class' => \hiapi\heppy\HeppyTool::class,
+    ],
+    \hiapi\heppy\ClientInterface::class => [
+        '__class' => \hiapi\heppy\RabbitMQClient::class,
+        '__construct()' => [
+            'connections' => [
+                'main' => [
+                    'host'      => $params['hiapi.heppy.rabbitmq.host'],
+                    'port'      => $params['hiapi.heppy.rabbitmq.port'],
+                    'user'      => $params['hiapi.heppy.rabbitmq.user'],
+                    'password'  => $params['hiapi.heppy.rabbitmq.password'],
+                    'vhost'     => $params['hiapi.heppy.rabbitmq.vhost'],
                 ],
             ],
+            'queue' => $params['hiapi.heppy.rabbitmq.queue'],
         ],
     ],
 ];
+
+return class_exists('Yii') ? ['container' => ['singletons' => $singletons]] : $singletons;
