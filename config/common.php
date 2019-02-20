@@ -8,7 +8,7 @@
  * @copyright Copyright (c) 2017, HiQDev (http://hiqdev.com/)
  */
 
-return [
+$singletons = [
     'heppyTool' => [
         '__class' => \hiapi\heppy\HeppyTool::class,
     ],
@@ -28,3 +28,5 @@ return [
         ],
     ],
 ];
+
+return class_exists('Yii') ? ['container' => ['singletons' => $singletons]] : $singletons;
