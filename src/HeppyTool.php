@@ -103,6 +103,11 @@ class HeppyTool
         array $payload = []
     ): array {
         $response = $this->request($command, $input);
+        $rc = substr($response['result_code'] ?? '9999', 0, 1);
+        if ($rc !== '1') {
+            //var_dump($command, $input, $response);
+            throw new \Exception("failed heppy request: $result_msg");
+        }
         $returns = $this->addCommonResponseFields($returns);
 
         $res = $payload;
