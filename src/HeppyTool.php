@@ -11,6 +11,7 @@
 namespace hiapi\heppy;
 
 use hiapi\heppy\exceptions\InvalidCallException;
+use hiapi\heppy\extensions\NamestoreExtension;
 use hiapi\heppy\modules\AbstractModule;
 use hiapi\heppy\modules\ContactModule;
 use hiapi\heppy\modules\DomainModule;
@@ -102,6 +103,7 @@ class HeppyTool
         array $returns = [],
         array $payload = []
     ): array {
+        $input = $this->applyExtensions($command, $input);
         $response = $this->request($command, $input);
         $rc = substr($response['result_code'] ?? '9999', 0, 1);
         if ($rc !== '1') {
@@ -118,6 +120,28 @@ class HeppyTool
         }
 
         return array_filter($res);
+    }
+
+    protected function applyExtensions(string $command, array $input): array
+    {
+        foreach ($this->getExtensions() as $extension) {
+            $input = $extension->apply($command, $input);
+        }
+
+        return $input;
+    }
+
+    private $extensions;
+
+    protected function getExtensions(): array
+    {
+        if ($this->extensions === null) {
+            $this->extensions = [
+                new NamestoreExtension()
+            ];
+        }
+
+        return $this->extensions;
     }
 
     /**

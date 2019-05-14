@@ -44,12 +44,14 @@ class DomainModule extends AbstractModule
      */
     public function domainsCheck(array $row): array
     {
-        return $this->tool->commonRequest('domain:check', [
+        $res = $this->tool->commonRequest('domain:check', [
             'names'     => $row['domains'],
         ], [
             'avails'    => 'avails',
             'reasons'   => 'reasons',
         ]);
+
+        return $res['avails'];
     }
 
     /**
