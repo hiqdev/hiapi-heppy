@@ -29,4 +29,4 @@ $singletons = [
     ],
 ];
 
-return class_exists('Yii') ? ['container' => ['singletons' => $singletons]] : $singletons;
+return class_exists('Yiisoft\Factory\Definitions\Reference') ? $singletons : ['container' => ['singletons' => $singletons]];
