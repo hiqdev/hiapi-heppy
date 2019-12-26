@@ -17,6 +17,7 @@ use hiapi\heppy\modules\AbstractModule;
 use hiapi\heppy\modules\ContactModule;
 use hiapi\heppy\modules\DomainModule;
 use hiapi\heppy\modules\HostModule;
+use hiapi\heppy\modules\PollModule;
 
 /**
  * hEPPy tool.
@@ -89,6 +90,14 @@ class HeppyTool
     public function getDefaultNss(): array
     {
         return $this->defaultNss;
+    }
+
+    /**
+     * @return string
+     */
+    public function getRegistrar() : ?string
+    {
+        return (string) $this->data['registrar'];
     }
 
     /**
