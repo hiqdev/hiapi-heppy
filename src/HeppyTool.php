@@ -146,7 +146,7 @@ class HeppyTool
     {
         if ($this->extensions === null) {
             $this->extensions = [
-                new NamestoreExtension()
+                new NamestoreExtension(),
             ];
         }
 
