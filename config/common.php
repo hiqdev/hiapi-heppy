@@ -8,7 +8,7 @@
  * @copyright Copyright (c) 2017, HiQDev (http://hiqdev.com/)
  */
 
-$singletons = [
+$definitions = [
     'heppyTool' => [
         '__class' => \hiapi\heppy\HeppyTool::class,
     ],
@@ -29,4 +29,5 @@ $singletons = [
     ],
 ];
 
-return class_exists('Yiisoft\Factory\Definitions\Reference') ? $singletons : ['container' => ['singletons' => $singletons]];
+return class_exists('Yiisoft\Factory\Definitions\Reference') ? $definitions : ['container' => ['definitions' => $definitions]];
+
