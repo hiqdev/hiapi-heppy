@@ -328,4 +328,11 @@ class DomainModule extends AbstractModule
             'clientHold' => null,
         ]);
     }
+
+    public function domainRestore(array $row): array
+    {
+        return $this->tool->commonRequest('domain:restore', [
+            'name'      => $row['domain'],
+        ]);
+    }
 }
