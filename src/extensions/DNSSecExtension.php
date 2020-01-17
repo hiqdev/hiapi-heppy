@@ -9,7 +9,7 @@ class DNSSecExtension
     {
         $zone = $this->findZone($command, $data);
         if ($zone) {
-            return $this->addNamestoreExt($data, $zone);
+            return $this->addDNSSexExt($data, $zone);
         }
 
         return $data;
@@ -25,7 +25,7 @@ class DNSSecExtension
      * @param string|null $zone
      * @return array
      */
-    public function addNamestoreExt(array $data, string $zone): array
+    public function addDNSSecExt(array $data, string $zone): array
     {
         $zone = strtoupper($zone);
         if (in_array($zone, ['COM', 'NET', 'CC', 'TV', 'NAME'])) {
