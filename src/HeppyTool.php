@@ -13,6 +13,8 @@ namespace hiapi\heppy;
 use hiapi\heppy\exceptions\EppErrorException;
 use hiapi\heppy\exceptions\InvalidCallException;
 use hiapi\heppy\extensions\NamestoreExtension;
+use hiapi\heppy\extensions\RGPExtension;
+use hiapi\heppy\extensions\FeeExtension;
 use hiapi\heppy\modules\AbstractModule;
 use hiapi\heppy\modules\ContactModule;
 use hiapi\heppy\modules\DomainModule;
@@ -146,7 +148,9 @@ class HeppyTool
     {
         if ($this->extensions === null) {
             $this->extensions = [
-                new NamestoreExtension()
+                new NamestoreExtension(),
+                new RGPExtension(),
+                new FeeExtension(),
             ];
         }
 

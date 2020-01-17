@@ -49,6 +49,7 @@ class DomainModule extends AbstractModule
         ], [
             'avails'    => 'avails',
             'reasons'   => 'reasons',
+            'fee'       => 'fee',
         ]);
 
         return $res['avails'];
@@ -326,6 +327,13 @@ class DomainModule extends AbstractModule
     {
         return $this->domainUpdateStatuses($row, 'rem', [
             'clientHold' => null,
+        ]);
+    }
+
+    public function domainRestore(array $row): array
+    {
+        return $this->tool->commonRequest('domain:restore', [
+            'name'      => $row['domain'],
         ]);
     }
 }

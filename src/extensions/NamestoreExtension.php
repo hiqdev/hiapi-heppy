@@ -28,7 +28,7 @@ class NamestoreExtension
     public function addNamestoreExt(array $data, string $zone): array
     {
         $zone = strtoupper($zone);
-        if (in_array($zone, ['COM', 'NET'])) {
+        if (in_array($zone, ['COM', 'NET', 'CC', 'TV', 'NAME'])) {
             $extension = [
                 'command' => 'namestoreExt',
                 'subProduct' => "dot$zone",
