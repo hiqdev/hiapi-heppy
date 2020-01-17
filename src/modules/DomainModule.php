@@ -49,6 +49,7 @@ class DomainModule extends AbstractModule
         ], [
             'avails'    => 'avails',
             'reasons'   => 'reasons',
+            'fee'       => 'fee',
         ]);
 
         return $res['avails'];
