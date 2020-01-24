@@ -1,61 +1,51 @@
 <?php
+/**
+ * hiAPI hEPPy plugin
+ *
+ * @link      https://github.com/hiqdev/hiapi-heppy
+ * @package   hiapi-heppy
+ * @license   BSD-3-Clause
+ * @copyright Copyright (c) 2017, HiQDev (http://hiqdev.com/)
+ */
 
 namespace hiapi\heppy\extensions;
 
+use hiapi\heppy\interfaces\ExtensionInterface;
 
-class NamestoreExtension
+/**
+ * Namestore class of EPP extension
+ */
+class NamestoreExtension extends AbstractExtension implements ExtensionInterface
 {
-    public function apply(string $command, array $data): array
-    {
-        $zone = $this->findZone($command, $data);
-        if ($zone) {
-            return $this->addNamestoreExt($data, $zone);
-        }
-
-        return $data;
-    }
-
-    public function isApplicable(string $command, array $data): bool
-    {
-        return !empty($this->findZone($command, $data));
-    }
+    public $availableCommands = [
+        'domain' => [
+            'create' => ['*' => true],
+            'update' => ['*' => true],
+            'check' => ['*' => true],
+            'info' => ['*' => true],
+            'transfer' => ['*' => true],
+            'delete' => ['*' => true],
+        ],
+    ];
 
     /**
      * @param array $data
      * @param string|null $zone
      * @return array
      */
-    public function addNamestoreExt(array $data, string $zone): array
+    public function addExtension(string $command, array $data): array
     {
-        $zone = strtoupper($zone);
-        if (in_array($zone, ['COM', 'NET', 'CC', 'TV', 'NAME'])) {
-            $extension = [
-                'command' => 'namestoreExt',
-                'subProduct' => "dot$zone",
-            ];
-            $data['extensions'][] = $extension;
+        $zone = $this->findZone($command, $data);
+        if (empty($zone)) {
+            return $data;
         }
+
+        $zone = mb_strtoupper($zone);
+        $data['extensions'][] = [
+            'command' => 'namestoreExt',
+            'subProduct' => "dot{$zone}",
+        ];
 
         return $data;
-    }
-
-    /**
-     * @param array $data
-     * @param string|null $name
-     * @return null|string
-     */
-    private function findZone(string $command, array $data, string $name = null): ?string
-    {
-        if (isset($data['zone'])) {
-            return $data['zone'];
-        }
-        if (!$name && isset($data['name'])) {
-            $name = $data['name'];
-        }
-        if (!$name && isset($data['names'])) {
-            $name = reset($data['names']);
-        }
-
-        return array_pop(explode('.', $name));
     }
 }

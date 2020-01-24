@@ -12,14 +12,17 @@ namespace hiapi\heppy;
 
 use hiapi\heppy\exceptions\EppErrorException;
 use hiapi\heppy\exceptions\InvalidCallException;
+use hiapi\heppy\extensions\AbstractExtension;
 use hiapi\heppy\extensions\NamestoreExtension;
 use hiapi\heppy\extensions\RGPExtension;
 use hiapi\heppy\extensions\FeeExtension;
+use hiapi\heppy\extensions\SecDNSExtension;
 use hiapi\heppy\modules\AbstractModule;
 use hiapi\heppy\modules\ContactModule;
 use hiapi\heppy\modules\DomainModule;
 use hiapi\heppy\modules\HostModule;
 use hiapi\heppy\modules\PollModule;
+use hiapi\heppy\modules\EPPModule;
 
 /**
  * hEPPy tool.
@@ -34,6 +37,46 @@ class HeppyTool
 
     private $data;
 
+    protected $ns;
+
+    protected $extURNNames = [
+        'secDNS' => 'urn:ietf:params:xml:ns:secDNS-1.1',
+        'rgp' => 'urn:ietf:params:xml:ns:rgp-1.0',
+        'launch' => 'urn:ietf:params:xml:ns:launch-1.0',
+        'idn' => 'urn:ietf:params:xml:ns:idn-1.0',
+        'verificationCode' => 'urn:ietf:params:xml:ns:verificationCode-1.0',
+        'fee05' => ['urn:ietf:params:xml:ns:fee-0.5', 'version' => '05'],
+        'fee06' => ['urn:ietf:params:xml:ns:fee-0.6', 'version' => '06'],
+        'fee07' => ['urn:ietf:params:xml:ns:fee-0.7', 'version' => '07'],
+        'fee08' => ['urn:ietf:params:xml:ns:fee-0.8', 'version' => '08'],
+        'fee09' => ['urn:ietf:params:xml:ns:fee-0.9', 'version' => '09'],
+        'fee11' => ['urn:ietf:params:xml:ns:fee-0.11','version' => '11'],
+        'fee21' => ['urn:ietf:params:xml:ns:fee-0.21','version' => '21'],
+        'coa' => 'urn:ietf:params:xml:ns:coa-1.0',
+        'idnLang' => 'http://www.verisign.com/epp/idnLang-1.0',
+        'premiumdomain' => 'http://www.verisign.com/epp/premiumdomain-1.0',
+        'namestore' => 'http://www.verisign-grs.com/epp/namestoreExt-1.1',
+        'neulevel' => 'urn:ietf:params:xml:ns:neulevel',
+        'neulevel10' => ['urn:ietf:params:xml:ns:neulevel-1.0', 'version' => '10'],
+    ];
+
+    /**
+     * List of available extensions classses
+     * @var array
+     */
+    private $extURNClasses = [
+        'secDNS' => SecDNSExtension::class,
+        'rgp' => RGPExtension::class,
+        'namestore' => NamestoreExtension::class,
+        'fee05' => FeeExtension::class,
+        'fee06' => FeeExtension::class,
+        'fee07' => FeeExtension::class,
+        'fee08' => FeeExtension::class,
+        'fee09' => FeeExtension::class,
+        'fee11' => FeeExtension::class,
+        'fee21' => FeeExtension::class,
+    ];
+
     protected $modules = [
         'domain'    => DomainModule::class,
         'domains'   => DomainModule::class,
@@ -43,7 +86,19 @@ class HeppyTool
         'hosts'     => HostModule::class,
         'poll'      => PollModule::class,
         'polls'     => PollModule::class,
+        'epp'       => EPPModule::class,
     ];
+
+    /**
+     * List of enabled extensions
+     * @var array of AbstractExtension
+     */
+    private $extensions;
+
+    /**
+     * @var array
+     */
+    private $helloData;
 
     public function __construct($base, $data)
     {
@@ -103,6 +158,51 @@ class HeppyTool
     }
 
     /**
+     * @param string
+     *
+     * @return [[AbstractExtension]]
+     */
+    public function createExtension(string $class, array $data = []): AbstractExtension
+    {
+        return new $class($data);
+    }
+
+    /**
+     * @return array
+     */
+    protected function getExtensions(): array
+    {
+        if ($this->extensions !== null) {
+            return $this->extensions;
+        }
+
+        if ($this->helloData === null) {
+            $this->helloData = $this->eppHello();
+        }
+
+        foreach ($this->extURNNames as $name => $data) {
+            $urlns = is_string($data) ? $data : array_shift($data);
+            $data = is_string($data) ? [$data] : $data;
+            if (!in_array($urlns, $this->helloData['extURIs'], true)) {
+                continue;
+            }
+
+            if (empty($this->extURNClasses[$name])) {
+                continue;
+            }
+
+            $extension = $this->extURNClasses[$name];
+            if (!is_object($extension)) {
+                $extension = $this->createExtension($extension, $data);
+            }
+
+            $this->extensions[$name] = $extension;
+        }
+
+        return $this->extensions;
+    }
+
+    /**
      * @param string $command
      * @param array $input
      * @param array $returns
@@ -121,6 +221,7 @@ class HeppyTool
         if ($rc !== '1') {
             throw new EppErrorException('failed heppy request: ' . var_export($response, true));
         }
+
         $returns = $this->addCommonResponseFields($returns);
 
         $res = $payload;
@@ -140,21 +241,6 @@ class HeppyTool
         }
 
         return $input;
-    }
-
-    private $extensions;
-
-    protected function getExtensions(): array
-    {
-        if ($this->extensions === null) {
-            $this->extensions = [
-                new NamestoreExtension(),
-                new RGPExtension(),
-                new FeeExtension(),
-            ];
-        }
-
-        return $this->extensions;
     }
 
     /**

@@ -35,6 +35,7 @@ class DomainModule extends AbstractModule
             'statuses'          => 'statuses',
             'nss'               => 'nss',
             'hosts'             => 'hosts',
+            'secDNS'            => 'secDNS',
         ]);
     }
 

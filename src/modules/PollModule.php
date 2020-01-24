@@ -10,6 +10,12 @@ class PollModule extends AbstractModule
     const POLL_QUEUE_EMPTY = 1300;
     const POLL_QUEUE_FULL = 1301;
 
+    /** @var array */
+    protected $unusedPolls = [
+        'Unused Objects Policy',
+        'Unused objects policy',
+    ];
+
     /**
      * @param array $row
      * @return array
@@ -77,7 +83,7 @@ class PollModule extends AbstractModule
         $rc = $this->pollReq();
         while ((int) $rc['result_code'] === self::POLL_QUEUE_FULL) {
             $poll = $this->_pollPostEvent($rc);
-            if ($poll['message'] !== 'Unused objects policy') {
+            if (!in_array($poll['message'],  $this->unusedPolls, true)) {
                 break;
             }
 
