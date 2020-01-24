@@ -49,7 +49,6 @@ class AbstractModule
         };
     }
 
-
     /**
      * @param array $local
      * @param array $remote

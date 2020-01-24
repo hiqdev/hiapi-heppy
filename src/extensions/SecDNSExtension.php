@@ -13,25 +13,19 @@ namespace hiapi\heppy\extensions;
 use hiapi\heppy\interfaces\ExtensionInterface;
 
 /**
- * RGP class of EPP extension
+ * SecDNS class of EPP extension
  */
-class RGPExtension extends AbstractExtension implements ExtensionInterface
+class SecDNSExtension extends AbstractExtension implements ExtensionInterface
 {
-    /** {@inheritdoc} */
     public $availableCommands = [
         'domain' => [
-            'restore' => ['*' => true],
-            'update' => ['restore' => true],
+            'update' => ['*' => true],
         ],
     ];
 
     /** {@inheritdoc} */
-    public function addExtension(string $command, array $data = []): array
+    public function addExtension(string $command, array $data): array
     {
-        $data['extensions'][] = [
-            'command' => 'rgp',
-        ];
-
         return $data;
     }
 }
