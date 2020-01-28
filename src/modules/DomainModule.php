@@ -2,6 +2,7 @@
 
 namespace hiapi\heppy\modules;
 
+use hiapi\heppy\exceptions\EppErrorException;
 use arr;
 use err;
 
@@ -13,7 +14,7 @@ class DomainModule extends AbstractModule
      */
     public function domainInfo(array $row): array
     {
-        return $this->tool->commonRequest('domain:info', array_filter([
+        $info =  $this->tool->commonRequest('domain:info', array_filter([
             'name'      => $row['domain'],
             'pw'        => $row['password'] ?? null,
         ], $this->getFilterCallback()), [
@@ -37,6 +38,39 @@ class DomainModule extends AbstractModule
             'hosts'             => 'hosts',
             'secDNS'            => 'secDNS',
         ]);
+
+        foreach (['domain', 'name'] as $key) {
+            if (!empty($info[$key])) {
+                $info[$key] = mb_strtolower($info[$key]);
+            }
+        }
+
+        foreach (['nss','hosts','statuses'] as $key) {
+            if (!empty($info[$key])) {
+                $info[$key] = implode(",", $info[$key]);
+            }
+        }
+
+        return $info;
+    }
+
+    public function domainGetInfo(array $row): array
+    {
+        return $this->domainInfo($row);
+    }
+
+    public function domainsGetInfo(array $rows): array
+    {
+        foreach ($rows as $id => $row) {
+            $res[$id] = $this->domainInfo($row);
+        }
+
+        return $res;
+    }
+
+    public function domainsLoadInfo(array $rows): array
+    {
+        return $rows;
     }
 
     /**
@@ -78,7 +112,8 @@ class DomainModule extends AbstractModule
             'tech'          => $row['tech_remote_id'],
             'billing'       => $row['billing_remote_id'],
             'nss'           => $row['nss'],
-            'pw'            => $row['password']
+            'pw'            => $row['password'],
+            'secDNS'        => $row['secDNS'],
         ]), [
             'domain'            => 'name',
             'created_date'      => 'crDate',

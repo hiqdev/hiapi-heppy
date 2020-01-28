@@ -26,6 +26,25 @@ class SecDNSExtension extends AbstractExtension implements ExtensionInterface
     /** {@inheritdoc} */
     public function addExtension(string $command, array $data): array
     {
+        if (empty($data['secDNS'])) {
+            return $data;
+        }
+
+        $row = $data['secDNS'];
+
+        $data['extensions'][] = [
+            'command' => $command === 'domain:create' ? 'secDNS:create' : 'secDNS:update',
+            $row['command'] => array_filter([
+                'maxSigLife' => $row['max_sig_life'],
+                'keyTag' => $row['key_tag'],
+                'keyAlg' => $row['key_alg'],
+                'digestAlg' => $row['digest_alg'],
+                'digest' => $row['digest'],
+                'digestType' => $row['digest_type'],
+                'pubKey' => $row['pub_key'],
+            ]),
+        ];
+
         return $data;
     }
 }
