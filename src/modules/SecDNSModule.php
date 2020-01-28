@@ -14,7 +14,7 @@ use hiapi\heppy\exceptions\EppErrorException;
 use arr;
 use err;
 
-class SecDNSModule extends DomainModule
+class SecDNSModule extends AbstractModule
 {
     /**
     * List of available extensions
