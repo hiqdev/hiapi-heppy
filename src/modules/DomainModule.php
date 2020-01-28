@@ -34,7 +34,7 @@ class DomainModule extends AbstractModule
             'password'          => 'pw',
             'epp_client_id'     => 'clID',
             'statuses'          => 'statuses',
-            'nss'               => 'nss',
+            'nameservers'       => 'nss',
             'hosts'             => 'hosts',
             'secDNS'            => 'secDNS',
         ]);
@@ -45,7 +45,7 @@ class DomainModule extends AbstractModule
             }
         }
 
-        foreach (['nss','hosts','statuses'] as $key) {
+        foreach (['nameservers','hosts','statuses'] as $key) {
             if (!empty($info[$key])) {
                 $info[$key] = implode(",", $info[$key]);
             }
