@@ -20,6 +20,7 @@ use hiapi\heppy\extensions\SecDNSExtension;
 use hiapi\heppy\modules\AbstractModule;
 use hiapi\heppy\modules\ContactModule;
 use hiapi\heppy\modules\DomainModule;
+use hiapi\heppy\modules\SecDNSModule;
 use hiapi\heppy\modules\HostModule;
 use hiapi\heppy\modules\PollModule;
 use hiapi\heppy\modules\EPPModule;
@@ -82,6 +83,8 @@ class HeppyTool
         'domains'   => DomainModule::class,
         'contact'   => ContactModule::class,
         'contacts'  => ContactModule::class,
+        'secdns'    => SecDNSModule::class,
+        'secdnss'   => SecDNSModule::class,
         'host'      => HostModule::class,
         'hosts'     => HostModule::class,
         'poll'      => PollModule::class,
@@ -170,7 +173,7 @@ class HeppyTool
     /**
      * @return array
      */
-    protected function getExtensions(): array
+    public function getExtensions(): array
     {
         if ($this->extensions !== null) {
             return $this->extensions;
