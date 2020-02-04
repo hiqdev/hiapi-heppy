@@ -36,49 +36,41 @@ final class LanguageHelper
         'af' => 'AFR', // Afrikaans
         'sq' => 'ALB', // Albanian
         'ar' => 'ARA', // Arabic
-        /** ARG - Aragonese */
+        'an' => 'ARG', // Aragonese
         'hy' => 'ARM', // Armenian
-        /**
-          ASM - Assamese
-          AST - Asturian
-          AVE - Avestan
-          AWA - Awadhi
-        **/
+        'as' => 'ASM', // Assamese
+        /** '' => 'AST', // Asturian **/
+        'ae' => 'AVE', // Avestan
+        /** '' => 'AWA', // Awadhi **/
         'az-Cyrl' => 'AZE', // Azerbaijani Cyr
         'az-Latn' => 'AZE', // Azerbaijani Lat
         /**
-          BAN - Balinese
-          BAL - Baluchi
-          BAS - Basa
-          BAK - Bashkir
+            '' => 'BAN', // Balinese
+            '' => 'BAL', // Baluchi
+            '' => 'BAS', // Basa
         **/
+        'ba' => 'BAK', // Bashkir
         'eu' => 'CAR', //Basque
         'be' => 'BEL', // Belarusian
         'bn' => 'BEN', // Bengali
-        /** BHO - Bhojpuri **/
+        /** '' => 'BHO', // Bhojpuri **/
         'bs-Cyrl' => 'BOS', // Bosnian Cyr
         'bs-Latn' => 'BOS', // Bosnian Lat
         'bg' => 'BUL', // Bulgarian
-        /**
-            BUR - Burmese
-            CAR - Carib
-        **/
+        'my' => 'BUR', // Burmese
+        /** '' => 'CAR', // Carib **/
         'ca' => 'CAT', // Catalan
-        /** CHE - Chechen **/
+        /** '' => 'CHE', // Chechen **/
         'zh-Hans' => 'CHI', // Chinese
         'zh-Hant' => 'CHI', // Chinese
-        /**
-            CHV - Chuvash
-            COP - Coptic
-        **/
+        'cv' => 'CHV', // Chuvash
+        /** '' => 'COP', // Coptic **/
         'co' => 'COS', // Corsican
         'hr' => 'SCR', // Croatian
         'cs' => 'CZE', // Czech
         'da' => 'DAN', // Danish
-        /**
-            DIV - Divehi
-            DOI - Dogri
-        **/
+        'dv' => 'DIV', // Divehi
+        /** '' => 'DOI', // Dogri **/
         'ca' => 'DUT', // Dutch
         'en' => 'ENG', // English
         'et' => 'EST', // Estonian
@@ -89,9 +81,9 @@ final class LanguageHelper
         'fy' => 'FRY', // Frisian
         'ga' => 'GLA', // Gaelic
         'gd' => 'GLA', // Gaelic
-        /** GEOGeorgian **/
+        'ka' => 'GEO', // Georgian
         'de' => 'GER', // German
-        /** GON - Gondi **/
+        /** '' => 'GON', // Gondi **/
         'el-monoton' => 'GRE', // Greek
         'el-polyton' => 'GRE', // Greek
         'gu' => 'GUJ', // Gujarati
@@ -99,78 +91,62 @@ final class LanguageHelper
         'hi' => 'HIN', // Hindi
         'hu' => 'HUN', // Hungarian
         'is' => 'ICE', // Icelandic
-        /** INC - Indic **/
+        /** '' => 'INC', // Indic **/
         'id' => 'IND', // Indonesian
-        /**
-            INH - Ingush
-            GLE - Irish
-        **/
+        /** '' => 'INH', // Ingush **/
+        'ga' => 'GLE', // Irish
         'it' => 'ITA', // Italian
         'ja' => 'JPN', // Japanese
         'jv' => 'JAV', // Javanese
-        /**
-            KAS - Kashmiri
-            KAZ - Kazakh
-        **/
+        'ks' => 'KAS', // Kashmiri
+        'kk' => 'KAZ', // Kazakh
         'km' => 'KHM', // Khmer
-        /** KIR - Kirghiz */
+        'ky' => 'KIR', // Kirghiz
         'ko' => 'KOR', // Korean
         'ku' => 'KUR', // Kurdish
         'lo' => 'LAO', // Lao
         'lv' => 'LAV', // Latvian
         'lt' => 'LIT', // Lithuanian
-        /**
-            LTZ Luxembourgish
-            MAC Macedonian
-        **/
+        'lt' => 'LTZ', // Luxembourgish
+        'mk' => 'MAC', // Macedonian
         'ms-Arabic' => 'MAY', // Malay
         'ms-Latn' => 'MAY', // Malay
-        /** MAL Malayalam **/
+        'ml' => 'MAL', // Malayalam
         'mt' => 'MLT', // Maltese
-        /**
-            MAO - Maori
-            MOL - Moldavian
-        **/
+        'mi' => 'MAO', // Maori
+        /** '' => 'MOL', // Moldavian **/
         'mn-Cyrl' => 'MON', // Mongolian
-        /** NEP - Nepali **/
+        'ne' => 'NEP', // Nepali
         'nb' => 'NOR', // Norwegian
         'nn' => 'NOR', // Norwegian
-        /**
-            ORI - Oriya
-            OSS - Ossetian
-            PAN - Panjabi
-        **/
+        'or' => 'ORI', // Oriya
+        'os' => 'OSS', // Ossetian
+        'pa' => 'PAN', // Panjabi
         'fa' => 'PER', // Persian
         'pl' => 'POL', // Polish
         'pt-BR' => 'POR', // Portuguese
         'pt-PT' => 'POR', // Portuguese
-        /**
-            PUS - Pushto
-            RAJ - Rajasthani
-        **/
+        'ps' => 'PUS', // Pushto
+        /** '' => 'RAJ', // Rajasthani **/
         'ro' => 'RUM', // Romanian
         'ru' => 'RUS', // Russian
-        /** SMO - Samoan **/
+        'sm' => 'SMO', // Samoan
         'sa' => 'SAN', // Sanskrit
-        /**
-            SRD - Sardinian
-            SCC - Serbian
-            SND - Sindhi
-            SIN - Sinhalese
-        **/
+        'sc' => 'SRD', // Sardinian
+        'sr' => 'SCC', // Serbian
+        'sd' => 'SND', // Sindhi
+        'si' => 'SIN', // Sinhalese
         'sk' => 'SLO', // Slovak
         'sl' => 'SLV', // Slovenian
         'so' => 'SOM', // Somali
         'es' => 'SPA', // Spanish
-        /** SWA - Swahili **/
+        'sw' => 'SWA', // Swahili **/
         'sv' => 'SWE', // Swedish
-        /**
-            SYRSyriac
-            TGKTajik
-            TAMTamil
-            TELTelugu
-            THAThai
-        **/
+        /** '' => 'SYR', // Syriac **/
+        'th' => 'TGK', // Tajik
+        'ta' => 'TAM', // Tamil
+        'te' => 'TEL', // Telugu
+        'th' => 'THA', // Thai
         'bo' => 'TIB', // Tibetan
         'tr' => 'TUR', // Turkish
         'uk' => 'UKR', // Ukrainian
@@ -178,7 +154,7 @@ final class LanguageHelper
         'uz' => 'UZB', // Uzbek
         'vi' => 'VIE', // Vietnamese
         'cy' => 'WEL', // Welsh
-        /** YID - Yiddish **/
+        'yi' => 'YID', // Yiddish
     ];
 
     /**
@@ -223,7 +199,7 @@ final class LanguageHelper
      * @param string
      * @return ?string
      */
-    public static getVerisignTag(string $tag = ''): ?string
+    public function getVerisignTag(string $tag = ''): ?string
     {
         return $this->_replace[$tag] ?? null;
     }
