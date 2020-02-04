@@ -29,7 +29,6 @@ class IDNLangExtension extends AbstractExtension implements ExtensionInterface
     /** {@inheritdoc} */
     public function addExtension(string $command, array $data): array
     {
-        $data = $this->clearData($data);
         $language = $data['language'] ?? $this->detectLanguage($data['name']);
         $data['extensions'][] = array_filter([
             'command' => "idnLang",
@@ -71,34 +70,4 @@ class IDNLangExtension extends AbstractExtension implements ExtensionInterface
         return LanguageHelper::getInstance()->detect($name);
     }
 
-    /**
-     * Clear contacts from data
-     *
-     * @param array
-     * @return array
-     */
-    protected function clearData(array $data): array
-    {
-        if ($this->isNamestoreAvailable() === false) {
-            return $data;
-        }
-
-        foreach (['registrant', 'admin', 'tech', 'support', 'billing'] as $type) {
-            unset($data[$type]);
-        }
-
-        return $data;
-    }
-
-    /**
-     * Check is NamestoreExtensions available
-     * Register of idn domain with NamestoreExtensions does not support contacts!
-     *
-     * @return bool
-     */
-    protected function isNamestoreAvailable(): bool
-    {
-        $extensions = $this->tool->getExtensions();
-        return !empty($extensions['namestore']);
-    }
 }
