@@ -15,8 +15,8 @@ namespace hiapi\heppy\helpers;
 use LanguageDetection\Language;
 
 /**
- * Fee class of EPP extension
- * Select right version of extension from urlns
+ * LanguageHelper
+ * Find right language code for domain name
  */
 final class LanguageHelper
 {

@@ -15,7 +15,6 @@ use hiapi\heppy\helpers\LanguageHelper;
 
 /**
  * IDNLang class of EPP extension
- * Select right version of extension from urlns
  */
 class IDNLangExtension extends AbstractExtension implements ExtensionInterface
 {

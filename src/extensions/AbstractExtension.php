@@ -81,6 +81,23 @@ abstract class AbstractExtension
     }
 
     /**
+     * @param array $data
+     * @param string|null $name
+     * @return null|string
+     */
+    protected function findFullZone(string $command, array $data, string $name = null): ?string
+    {
+        if (isset($data['zone'])) {
+            return $data['zone'];
+        }
+
+        $parts = $this->getNamesParts($data, $name);
+        array_shift($parts);
+
+        return implode(".", $parts);
+    }
+
+    /**
      * @param string $command
      * @param array $data
      * @param string $name
