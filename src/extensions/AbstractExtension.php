@@ -94,10 +94,9 @@ abstract class AbstractExtension
     }
 
     /**
-     * @param string $command
      * @param array $data
      * @param string $name
-     * @return null|string
+     * @return array
      */
     protected function getNamesParts(array $data, string $name = null): array
     {
