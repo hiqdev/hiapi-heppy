@@ -74,13 +74,41 @@ abstract class AbstractExtension
         if (isset($data['zone'])) {
             return $data['zone'];
         }
+
+        $parts = $this->getNamesParts($data, $name);
+
+        return array_pop($parts);
+    }
+
+    /**
+     * @param string $command
+     * @param array $data
+     * @param string $name
+     * @return null|string
+     */
+    protected function findName(string $command, array $data, string $name = null): ?string
+    {
+        $parts = $this->getNamesParts($data, $name);
+
+        return array_shift($parts);
+    }
+
+    /**
+     * @param string $command
+     * @param array $data
+     * @param string $name
+     * @return null|string
+     */
+    protected function getNamesParts(array $data, string $name = null): array
+    {
         if (!$name && isset($data['name'])) {
             $name = $data['name'];
         }
+
         if (!$name && isset($data['names'])) {
             $name = reset($data['names']);
         }
 
-        return array_pop(explode('.', $name));
+        return explode('.', $name);
     }
 }
