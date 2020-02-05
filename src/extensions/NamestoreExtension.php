@@ -41,10 +41,29 @@ class NamestoreExtension extends AbstractExtension implements ExtensionInterface
         }
 
         $zone = mb_strtoupper($zone);
+        if ($data['clearContact'] === true) {
+            $data = $this->clearContacts($data);
+        }
+
         $data['extensions'][] = [
             'command' => 'namestoreExt',
             'subProduct' => "dot{$zone}",
         ];
+
+        return $data;
+    }
+
+    /**
+     * Clear contacts from data
+     *
+     * @param array
+     * @return array
+     */
+    protected function clearContacts(array $data): array
+    {
+        foreach (['registrant', 'admin', 'tech', 'billing'] as $type) {
+            unset($data[$type]);
+        }
 
         return $data;
     }

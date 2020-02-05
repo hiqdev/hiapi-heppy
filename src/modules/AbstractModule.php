@@ -90,4 +90,16 @@ class AbstractModule
     {
         $this->tool = $tool;
     }
+
+    /**
+     * Check is NameStore Extension enabled
+     *
+     * @return bool
+     */
+    public function isNamestoreExtensionEnabled()
+    {
+        $extensions = $this->tool->getExtensions();
+
+        return !empty($extensions['namestore']);
+    }
 }

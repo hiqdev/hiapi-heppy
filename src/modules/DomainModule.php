@@ -104,7 +104,7 @@ class DomainModule extends AbstractModule
         }
         $row = $this->domainPrepareContacts($row);
 
-        return $this->tool->commonRequest('domain:create', array_filter([
+        return $this->domainPerformOperation'domain:create', array_filter([
             'name'          => $row['domain'],
             'period'        => $row['period'],
             'registrant'    => $row['registrant_remote_id'],
@@ -119,7 +119,6 @@ class DomainModule extends AbstractModule
             'created_date'      => 'crDate',
             'expiration_date'   => 'exDate',
         ]);
-
     }
 
     /**
@@ -371,5 +370,30 @@ class DomainModule extends AbstractModule
         return $this->tool->commonRequest('domain:restore', [
             'name'      => $row['domain'],
         ]);
+    }
+
+    protected function domainPerformOperation(
+        string $command,
+        array $input,
+        array $returns = [],
+        array $payload = [],
+        bool $clearContact = false
+    ): array {
+        $input['clearContact'] = $this->isNamestoreExtensionEnabled() && $clearContact;
+        try {
+            return $this->tool->commonRequest($command, $input, $returns, $payload);
+        } catch (EppErrorException $e) {
+            if (strpos($e->getMessage(), 'does NOT support contact') === false) {
+                throw new EppErrorException($e->getMessage());
+            }
+
+            if (!$this->isNamestoreExtensionEnabled() || $input['clearContact'] === true) {
+                throw new EppErrorException($e->getMessage());
+            }
+
+            return $this->domainPerformOperation($command, $input, $returns, $payload, true);
+        }
+
+        throw new \Exception('FIX Domain Perfom Code!');
     }
 }

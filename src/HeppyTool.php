@@ -17,6 +17,7 @@ use hiapi\heppy\extensions\NamestoreExtension;
 use hiapi\heppy\extensions\RGPExtension;
 use hiapi\heppy\extensions\FeeExtension;
 use hiapi\heppy\extensions\SecDNSExtension;
+use hiapi\heppy\extensions\IDNLangExtension;
 use hiapi\heppy\modules\AbstractModule;
 use hiapi\heppy\modules\ContactModule;
 use hiapi\heppy\modules\DomainModule;
@@ -76,6 +77,7 @@ class HeppyTool
         'fee09' => FeeExtension::class,
         'fee11' => FeeExtension::class,
         'fee21' => FeeExtension::class,
+        'idnLang' => IDNLangExtension::class,
     ];
 
     protected $modules = [

@@ -83,7 +83,8 @@ class SecDNSModule extends AbstractModule
     }
 
     /**
-     * @return bool|| Raiser EppErrorException
+     * @return bool
+     * @throw EppErrorException
      */
     protected function isSecDNSAvailable(): bool
     {
