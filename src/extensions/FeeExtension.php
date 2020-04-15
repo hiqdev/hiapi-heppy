@@ -40,9 +40,9 @@ class FeeExtension extends AbstractExtension implements ExtensionInterface
         $data['extensions'][] = array_filter([
             'command' => "fee{$this->version}:" . substr($command, 7),
             'name' => $data['name'] ?? reset($data['names']),
-            'currency' => $this->tool->getCurrency ?? 'USD',
+            'currency' => $this->tool->getCurrency() ?? 'USD',
             'fee' => $data['fee'],
-            'period' => $data['period'],
+            'period' => $data['period'] ?? ($data['amount'] ?? 1),
             'action' => $data['fee-action'] ?? ($command === 'domain:renew' ? 'renew' : 'create'),
         ]);
 

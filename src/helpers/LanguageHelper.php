@@ -160,7 +160,7 @@ final class LanguageHelper
     /**
      * Gets the instance via lazy initialization (created on first usage)
      */
-    public static function getInstance(): Singleton
+    public static function getInstance(): self
     {
         if (static::$instance === null) {
             static::$instance = new static();

@@ -8,6 +8,8 @@ use err;
 
 class DomainModule extends AbstractModule
 {
+    const DOMAIN_STANDART = 'standard';
+    const DOMAIN_PREMIUM = 'premium';
     /**
      * @param array $row
      * @return array
@@ -79,15 +81,11 @@ class DomainModule extends AbstractModule
      */
     public function domainsCheck(array $row): array
     {
-        $res = $this->tool->commonRequest('domain:check', [
-            'names'     => $row['domains'],
-        ], [
-            'avails'    => 'avails',
-            'reasons'   => 'reasons',
-            'fee'       => 'fee',
-        ]);
+        foreach ($row['domains'] as $domain) {
+            $res[$domain] = $this->domainCheck($domain);
+        }
 
-        return $res['avails'];
+        return $res;
     }
 
     /**
@@ -104,7 +102,7 @@ class DomainModule extends AbstractModule
         }
         $row = $this->domainPrepareContacts($row);
 
-        return $this->domainPerformOperation'domain:create', array_filter([
+        return $this->domainPerformOperation('domain:create', array_filter([
             'name'          => $row['domain'],
             'period'        => $row['period'],
             'registrant'    => $row['registrant_remote_id'],
@@ -395,5 +393,55 @@ class DomainModule extends AbstractModule
         }
 
         throw new \Exception('FIX Domain Perfom Code!');
+    }
+
+    protected function domainCheck(string $domain) : array
+    {
+            $res = $this->tool->commonRequest('domain:check', [
+                'names'     => [$domain],
+            ], [
+                'avails'    => 'avails',
+                'reasons'   => 'reasons',
+                'fee'       => 'fee',
+            ]);
+
+            if ((int) $res['avails'][$domain] === 0) {
+                return [
+                    'avail' => (int) $res['avails'][$domain],
+                    'reason' => $res['reasons'][$domain] ?? null,
+                ];
+            }
+
+            if (empty($res['fee'])) {
+                return [
+                    'avail' => (int) $res['avails'][$domain],
+                ];
+            }
+
+            if (empty($res['fee'][$domain])) {
+                return [
+                    'avail' => (int) $res['avails'][$domain],
+                ];
+            }
+
+            if (!empty($res['fee'][$domain]['class'])) {
+                if ($res['fee'][$domain]['class'] === self::DOMAIN_STANDART) {
+                    return [
+                        'avail' => (int) $res['avails'][$domain],
+                    ];
+                }
+
+                $res['fee'][$domain]['is_premium'] = 1;
+                return [
+                    'avail' => (int) $res['avails'][$domain],
+                    'reason' => 'PREMIUM DOMAIN',
+                    'fee' => $res['fee'][$domain],
+                ];
+            }
+
+            return [
+                'avail' => (int) $res['avails'][$domain],
+                'reason' => $res['reasons'][$domain] ?? null,
+            ];
     }
 }
