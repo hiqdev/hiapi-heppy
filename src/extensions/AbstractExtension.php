@@ -10,6 +10,8 @@
 
 namespace hiapi\heppy\extensions;
 
+use hiapi\heppy\HeppyTool;
+
 /**
  * Abstract class of EPP extension
  */
@@ -24,10 +26,11 @@ abstract class AbstractExtension
     /** @var array */
     public $availableCommands = [];
 
-    public function __construct(array $data)
+    public function __construct(array $data, HeppyTool $tool)
     {
         $this->version = $data['version'] ?? '';
         $this->urlns = $data['urlns'] ?? array_shift($data);
+        $this->tool = $tool;
     }
 
     /** {@inheritdoc} */

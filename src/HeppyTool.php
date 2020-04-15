@@ -163,13 +163,21 @@ class HeppyTool
     }
 
     /**
+     * @return string
+     */
+    public function getCurrency() : string
+    {
+        return (string) ($this->data['currency'] ?? 'USD');
+    }
+
+    /**
      * @param string
      *
      * @return [[AbstractExtension]]
      */
     public function createExtension(string $class, array $data = []): AbstractExtension
     {
-        return new $class($data);
+        return new $class($data, $this);
     }
 
     /**
