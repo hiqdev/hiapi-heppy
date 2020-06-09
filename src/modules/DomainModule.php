@@ -397,51 +397,71 @@ class DomainModule extends AbstractModule
 
     protected function domainCheck(string $domain) : array
     {
-            $res = $this->tool->commonRequest('domain:check', [
-                'names'     => [$domain],
-            ], [
-                'avails'    => 'avails',
-                'reasons'   => 'reasons',
-                'fee'       => 'fee',
-            ]);
-
-            if ((int) $res['avails'][$domain] === 0) {
-                return [
-                    'avail' => (int) $res['avails'][$domain],
-                    'reason' => $res['reasons'][$domain] ?? null,
-                ];
-            }
-
-            if (empty($res['fee'])) {
-                return [
-                    'avail' => (int) $res['avails'][$domain],
-                ];
-            }
-
-            if (empty($res['fee'][$domain])) {
-                return [
-                    'avail' => (int) $res['avails'][$domain],
-                ];
-            }
-
-            if (!empty($res['fee'][$domain]['class'])) {
-                if ($res['fee'][$domain]['class'] === self::DOMAIN_STANDART) {
-                    return [
-                        'avail' => (int) $res['avails'][$domain],
-                    ];
-                }
-
-                $res['fee'][$domain]['is_premium'] = 1;
-                return [
-                    'avail' => (int) $res['avails'][$domain],
-                    'reason' => 'PREMIUM DOMAIN',
-                    'fee' => $res['fee'][$domain],
-                ];
-            }
-
+        $res = $this->_domainCheck($domain, true);
+        if ((int) $res['avails'][$domain] === 0) {
             return [
                 'avail' => (int) $res['avails'][$domain],
                 'reason' => $res['reasons'][$domain] ?? null,
             ];
+        }
+
+        $checkPremium = $this->_domainCheck($domain);
+        if (!empty($checkPremium['price'])) {
+            return $this->_parseCheckPrice($domain, $res, $checkPremium);
+        }
+
+        return $this->_parseCheckFee($domain, $res, $checkPremium);
+    }
+
+    protected function _parseCheckFee(string $domain, array $data, array $res) : array
+    {
+        if (empty($res['fee']) || empty($res['fee'][$domain]) || empty($res['fee'][$domain]['class'])) {
+            return [
+                'avail' => (int) $data['avails'][$domain],
+            ];
+        }
+
+        if ($res['fee'][$domain]['class'] === self::DOMAIN_STANDART) {
+            return [
+                'avail' => (int) $data['avails'][$domain],
+            ];
+        }
+
+        $res['fee'][$domain]['premium'] = 1;
+        return [
+            'avail' => (int) $data['avails'][$domain],
+            'reason' => 'PREMIUM DOMAIN',
+            'fee' => $res['fee'][$domain],
+        ];
+    }
+
+    protected function _parseCheckPrice(string $domain, array $data, array $res) : array
+    {
+        $priceD = [];
+        foreach ($res['price'][$domain] as $key => $value) {
+            $key = str_replace('Price', '', $key);
+            $priceD[$key] = $value;
+        }
+
+        $res['fee'][$domain] = $priceD;
+        return [
+            'avail' => (int) $data['avails'][$domain],
+            'reason' => 'PREMIUM DOMAIN',
+            'fee' => $res['fee'][$domain],
+        ];
+    }
+
+    protected function _domainCheck(string $domain, $withoutExt = false) : array
+    {
+        return $this->tool->commonRequest('domain:check', [
+            'names'     => [$domain],
+            'reasons'   => 'reasons',
+            'withoutExt' => $withoutExt,
+        ], [
+            'avails'    => 'avails',
+            'reasons'   => 'reasons',
+            'fee'       => 'fee',
+            'price'     => 'price',
+        ]);
     }
 }
