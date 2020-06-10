@@ -100,6 +100,6 @@ class AbstractModule
     {
         $extensions = $this->tool->getExtensions();
 
-        return !empty($extensions['namestore']);
+       return !empty($extensions['namestore']);
     }
 }

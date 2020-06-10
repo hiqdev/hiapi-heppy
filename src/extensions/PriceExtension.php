@@ -16,7 +16,7 @@ use hiapi\heppy\interfaces\ExtensionInterface;
  * Fee class of EPP extension
  * Select right version of extension from urlns
  */
-class FeeExtension extends AbstractExtension implements ExtensionInterface
+class PriceExtension extends AbstractExtension implements ExtensionInterface
 {
     /** {@inheritdoc} */
     public $availableCommands = [
@@ -30,32 +30,30 @@ class FeeExtension extends AbstractExtension implements ExtensionInterface
         ],
     ];
 
-    public $unsupportedExtensions = ['price'];
-
     /** {@inheritdoc} */
     public function addExtension(string $command, array $data): array
     {
-        if (empty($this->version)) {
-            return $data;
-        }
-
         if ($data['withoutExt'] === true) {
             return $data;
         }
 
-        foreach ($data['extensions'] as $ext) {
-            if (strpos($ext['command'], 'price') !== false) {
-                return $data;
+        $d = [];
+        foreach ($data['extensions'] as $id => $extension) {
+            if (strpos($extension['command'], 'fee') !== false) {
+                unset($data[$id]);
+                continue;
             }
+
+            $d[] = $extension;
         }
 
+        $data['extensions'] = $d;
         $data['extensions'][] = array_filter([
-            'command' => "fee{$this->version}:" . substr($command, 7),
+            'command' => "price:" .  substr($command, 7),
             'name' => $data['name'] ?? reset($data['names']),
             'currency' => $this->tool->getCurrency() ?? 'USD',
             'fee' => $data['fee'],
             'period' => $data['period'] ?? ($data['amount'] ?? 1),
-            'action' => $data['fee-action'] ?? ($command === 'domain:renew' ? 'renew' : 'create'),
         ]);
 
         return $data;
