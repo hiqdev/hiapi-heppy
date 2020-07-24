@@ -17,6 +17,11 @@ class DomainModule extends AbstractModule
         'domain_hm' => 'http://hostmaster.ua/epp/domain-1.1',
     ];
 
+    public $extURIs = [
+        'secDNS' => 'urn:ietf:params:xml:ns:rgp-1.0',
+        'secDNS_hm' => 'http://hostmaster.ua/epp/rgp-1.1',
+    ];
+
     /**
      * @param array $row
      * @return array
@@ -393,8 +398,23 @@ class DomainModule extends AbstractModule
 
     public function domainRestore(array $row): array
     {
+        $res = $this->tool->commonRequest("{$this->object}:restore", [
+            'name'      => $row['domain'],
+            'rgp'       => [
+                'command' => "{$this->extension}:request",
+            ],
+        ]);
+
+        if (!$chouldbecheck) {
+            return $row;
+        }
+
         return $this->tool->commonRequest("{$this->object}:restore", [
             'name'      => $row['domain'],
+            'rgp'       => [
+                'command' => "{$this->extension}:report",
+                // SHOUD BE DATA HERE
+            ],
         ]);
     }
 

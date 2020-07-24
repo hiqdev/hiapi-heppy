@@ -36,21 +36,6 @@ class SecDNSModule extends AbstractModule
 
     protected $extension;
 
-    /** {@inheritdoc} */
-    public function init()
-    {
-        parent::init();
-        $exts = $this->tool->getExtensions();
-        foreach ($extURIs as $obj => $uri) {
-            if (!empty($exts[$obj])) {
-                $this->extension = $obj;
-                return $this;
-            }
-        }
-
-        return $this;
-    }
-
     /**
      * Set SecDNS refresh
      *

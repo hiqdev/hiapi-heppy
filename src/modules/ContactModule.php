@@ -12,11 +12,14 @@ class ContactModule extends AbstractModule
         'contact_hm' => 'http://hostmaster.ua/epp/contact-1.1',
     ];
 
+    public $extURIs = [
+        'namestoreExt' => 'http://www.verisign-grs.com/epp/namestoreExt-1.1',
+    ];
+
     /** {@inheritdoc} */
     public function isAvailable() : bool
     {
-        $extensions = $this->tool->getExtensions();
-        return empty($extensions['namestoreExt']);
+        return empty($this->extension);
     }
 
     /**

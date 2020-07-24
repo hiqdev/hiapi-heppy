@@ -15,6 +15,9 @@ class AbstractModule
     /** @var string $object */
     protected $object = null;
 
+    /** @var string $extension */
+    protected $extension = null;
+
     public function __construct(HeppyTool $tool)
     {
         $this->tool = $tool;
@@ -22,12 +25,30 @@ class AbstractModule
         $this->init();
     }
 
-    public function init()
+    /**
+     * Initiate module with object and required ext
+     *
+     * @param void
+     * @return self
+     */
+    public function init() : self
     {
         $uris = $this->tool->getObjects();
         foreach ($this->uris as $object => $uri) {
             if (in_array($uri, $uris, true)) {
                 $this->object = $object;
+                return $this;
+            }
+        }
+
+        if (empty($this->extURIs)) {
+            return $this;
+        }
+
+        $exts = $this->tool->getExtensions();
+        foreach ($this->extURIs as $obj => $uri) {
+            if (!empty($exts[$obj])) {
+                $this->extension = $obj;
                 return $this;
             }
         }

@@ -21,6 +21,9 @@ class SecDNSExtension extends AbstractExtension implements ExtensionInterface
         'domain' => [
             'update' => ['*' => true],
         ],
+        'domain_hm' => [
+            'update' => ['*' => true],
+        ],
     ];
 
     /** {@inheritdoc} */

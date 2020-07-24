@@ -244,6 +244,8 @@ class HeppyTool
         }
 
         $this->objects = $this->helloData['objURIs'];
+
+        return $this->objects;
     }
 
     /**
