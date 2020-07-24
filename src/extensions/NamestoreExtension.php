@@ -26,6 +26,13 @@ class NamestoreExtension extends AbstractExtension implements ExtensionInterface
             'transfer' => ['*' => true],
             'delete' => ['*' => true],
         ],
+        'host' => [
+            'check' => ['*' => true],
+            'create' => ['*' => true],
+            'update' => ['*' => true],
+            'info' => ['*' => true],
+            'delete' => ['*' => true],
+        ],
     ];
 
     /**

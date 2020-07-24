@@ -16,14 +16,42 @@ use err;
 
 class SecDNSModule extends AbstractModule
 {
+    public $extURIs = [
+        'secDNS' => 'urn:ietf:params:xml:ns:secDNS-1.1',
+        'secDNS10' => 'urn:ietf:params:xml:ns:secDNS-1.0',
+        'secDNShm' => 'http://hostmaster.ua/epp/secDNS-1.1',
+    ];
     /**
     * List of available extensions
     */
     protected $availableExtension = [
         'secDNS' => '1.1',
         'secDNS10' => '1.0',
-        'secDNSUA' => 'HostMaster',
+        'secDNShm' => 'HostMaster',
     ];
+
+    /** {@inheritdoc} */
+    public $uris = [
+        'domain' => 'urn:ietf:params:xml:ns:domain-1.0',
+        'domainhm' => 'http://hostmaster.ua/epp/domain-1.1',
+    ];
+
+    protected $extension;
+
+    /** {@inheritdoc} */
+    public function init()
+    {
+        parent::init();
+        $exts = $this->tool->getExtensions();
+        foreach ($extURIs as $obj => $uri) {
+            if (!empty($exts[$obj])) {
+                $this->extension = $obj;
+                return $this;
+            }
+        }
+
+        return $this;
+    }
 
     /**
      * Set SecDNS refresh
@@ -34,10 +62,11 @@ class SecDNSModule extends AbstractModule
     public function secdnsChange(array $row): array
     {
         $this->isSecDNSAvailable();
-        return $this->tool->commonRequest('domain:update', array_filter([
+        return $this->tool->commonRequest("{$this->object}:update", array_filter([
             'name'      => $row['domain'],
             'secDNS'    => array_merge($row, [
                 'command' => 'chg',
+                'xmlns' => $this->extension,
             ]),
         ]), [], [
             'domain'    => $row['domain'],
@@ -53,10 +82,11 @@ class SecDNSModule extends AbstractModule
     public function secdnsCreate(array $row): array
     {
         $this->isSecDNSAvailable();
-        return $this->tool->commonRequest('domain:update', array_filter([
+        return $this->tool->commonRequest("{$this->object}:update", array_filter([
             'name'      => $row['domain'],
             'secDNS'    => array_merge($row, [
                 'command' => 'add',
+                'xmlns' => $this->extension,
             ]),
         ]), [], [
             'domain'    => $row['domain'],
@@ -72,10 +102,11 @@ class SecDNSModule extends AbstractModule
     public function secdnsDelete(array $row): array
     {
         $this->isSecDNSAvailable();
-        return $this->tool->commonRequest('domain:update', array_filter([
+        return $this->tool->commonRequest("{$this->object}:update", array_filter([
             'name'      => $row['domain'],
             'secDNS'    => array_merge($row, [
                 'command' => 'rem',
+                'xmlns' => $this->extension,
             ]),
         ]), [], [
             'domain'    => $row['domain'],
@@ -88,11 +119,8 @@ class SecDNSModule extends AbstractModule
      */
     protected function isSecDNSAvailable(): bool
     {
-        $extensions = $this->tool->getExtensions();
-        foreach ($this->availableExtension as $key => $version) {
-            if (!empty($extensions[$key])) {
-                return true;
-            }
+        if ($this->extension) {
+            return true;
         }
 
         throw new EppErrorException('SecDNS not provided by registry');

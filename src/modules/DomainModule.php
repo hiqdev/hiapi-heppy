@@ -10,13 +10,20 @@ class DomainModule extends AbstractModule
 {
     const DOMAIN_STANDART = 'standard';
     const DOMAIN_PREMIUM = 'premium';
+
+    /** {@inheritdoc} */
+    public $uris = [
+        'domain' => 'urn:ietf:params:xml:ns:domain-1.0',
+        'domainhm' => 'http://hostmaster.ua/epp/domain-1.1',
+    ];
+
     /**
      * @param array $row
      * @return array
      */
     public function domainInfo(array $row): array
     {
-        $info =  $this->tool->commonRequest('domain:info', array_filter([
+        $info =  $this->tool->commonRequest("{$this->object}:info", array_filter([
             'name'      => $row['domain'],
             'pw'        => $row['password'] ?? null,
         ], $this->getFilterCallback()), [
@@ -102,7 +109,7 @@ class DomainModule extends AbstractModule
         }
         $row = $this->domainPrepareContacts($row);
 
-        return $this->domainPerformOperation('domain:create', array_filter([
+        return $this->domainPerformOperation("{$this->object}:create", array_filter([
             'name'          => $row['domain'],
             'period'        => $row['period'],
             'registrant'    => $row['registrant_remote_id'],
@@ -153,7 +160,7 @@ class DomainModule extends AbstractModule
      */
     public function domainDelete(array $row): array
     {
-        return $this->tool->commonRequest('domain:delete', [
+        return $this->tool->commonRequest("{$this->object}:delete", [
             'name'     => $row['domain'],
         ]);
     }
@@ -164,7 +171,7 @@ class DomainModule extends AbstractModule
      */
     public function domainRenew(array $row): array
     {
-        return $this->tool->commonRequest('domain:renew', [
+        return $this->tool->commonRequest("{$this->object}:renew", [
             'name'          => $row['domain'],
             'curExpDate'    => $row['expires'],
             'period'        => $row['period'],
@@ -181,7 +188,7 @@ class DomainModule extends AbstractModule
      */
     private function performTransfer(array $row, string $op): array
     {
-        return $this->tool->commonRequest('domain:transfer', [
+        return $this->tool->commonRequest("{$this->object}:transfer", [
             'op'        => $op,
             'name'      => $row['domain'],
             'pw'        => $row['password'],
@@ -240,7 +247,7 @@ class DomainModule extends AbstractModule
      */
     private function domainUpdate(array $row): array
     {
-        return $this->tool->commonRequest('domain:update', array_filter([
+        return $this->tool->commonRequest("{$this->object}:update", array_filter([
             'name'      => $row['domain'],
             'add'       => $row['add'] ?? null,
             'rem'       => $row['rem'] ?? null,
@@ -365,7 +372,7 @@ class DomainModule extends AbstractModule
 
     public function domainRestore(array $row): array
     {
-        return $this->tool->commonRequest('domain:restore', [
+        return $this->tool->commonRequest("{$this->object}:restore", [
             'name'      => $row['domain'],
         ]);
     }
@@ -428,6 +435,7 @@ class DomainModule extends AbstractModule
         }
 
         $res['fee'][$domain]['premium'] = 1;
+        $res['fee'][$domain]['currency'] = $this->tool->getCurrency();
         return [
             'avail' => (int) $data['avails'][$domain],
             'reason' => 'PREMIUM DOMAIN',
@@ -443,7 +451,9 @@ class DomainModule extends AbstractModule
             $priceD[$key] = $value;
         }
 
-        $res['fee'][$domain] = $priceD;
+        $res['fee'][$domain] = array_merge($priceD, [
+            'currency' => $this->tool->getCurrency(),
+        ]);
         return [
             'avail' => (int) $data['avails'][$domain],
             'reason' => 'PREMIUM DOMAIN',
@@ -453,7 +463,7 @@ class DomainModule extends AbstractModule
 
     protected function _domainCheck(string $domain, $withoutExt = false) : array
     {
-        return $this->tool->commonRequest('domain:check', [
+        return $this->tool->commonRequest("{$this->object}:check", [
             'names'     => [$domain],
             'reasons'   => 'reasons',
             'withoutExt' => $withoutExt,

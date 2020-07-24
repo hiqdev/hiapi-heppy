@@ -32,8 +32,14 @@ class SecDNSExtension extends AbstractExtension implements ExtensionInterface
 
         $row = $data['secDNS'];
 
+        $version = $row['xmlns'] ?? null;
+
+        if (empty($version)) {
+            return $data;
+        }
+
         $data['extensions'][] = [
-            'command' => $command === 'domain:create' ? 'secDNS:create' : 'secDNS:update',
+            'command' => strpos($command, ':create') !== false ? "{$version}:create" : "{$version}:update",
             $row['command'] => array_filter([
                 'maxSigLife' => $row['max_sig_life'],
                 'keyTag' => $row['key_tag'],

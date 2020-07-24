@@ -9,10 +9,41 @@ class AbstractModule
     public $tool;
     public $base;
 
+    /** @var array of [object => uri] */
+    public $uris = [];
+
+    /** @var string $object */
+    protected $object = null;
+
     public function __construct(HeppyTool $tool)
     {
         $this->tool = $tool;
         $this->base = $tool->getBase();
+        $this->init();
+    }
+
+    public function init()
+    {
+        $uris = $this->tool->getObjects();
+        foreach ($this->uris as $object => $uri) {
+            if (in_array($uri, $uris, true)) {
+                $this->object = $object;
+                return $this;
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * Check if module is available
+     *
+     * @param void
+     * @return bool
+     */
+    public function isAvailable() : bool
+    {
+        return true;
     }
 
     /**
