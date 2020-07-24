@@ -18,22 +18,20 @@ class SecDNSModule extends AbstractModule
 {
     public $extURIs = [
         'secDNS' => 'urn:ietf:params:xml:ns:secDNS-1.1',
-        'secDNS10' => 'urn:ietf:params:xml:ns:secDNS-1.0',
-        'secDNShm' => 'http://hostmaster.ua/epp/secDNS-1.1',
+        'secDNS_hm' => 'http://hostmaster.ua/epp/secDNS-1.1',
     ];
     /**
     * List of available extensions
     */
     protected $availableExtension = [
         'secDNS' => '1.1',
-        'secDNS10' => '1.0',
-        'secDNShm' => 'HostMaster',
+        'secDNS_hm' => 'HostMaster',
     ];
 
     /** {@inheritdoc} */
     public $uris = [
         'domain' => 'urn:ietf:params:xml:ns:domain-1.0',
-        'domainhm' => 'http://hostmaster.ua/epp/domain-1.1',
+        'domain_hm' => 'http://hostmaster.ua/epp/domain-1.1',
     ];
 
     protected $extension;

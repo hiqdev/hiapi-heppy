@@ -14,7 +14,7 @@ class DomainModule extends AbstractModule
     /** {@inheritdoc} */
     public $uris = [
         'domain' => 'urn:ietf:params:xml:ns:domain-1.0',
-        'domainhm' => 'http://hostmaster.ua/epp/domain-1.1',
+        'domain_hm' => 'http://hostmaster.ua/epp/domain-1.1',
     ];
 
     /**
@@ -239,6 +239,27 @@ class DomainModule extends AbstractModule
     public function domainRejectTransfer(array $row): array
     {
         return $this->performTransfer($row, 'reject');
+    }
+
+    public function domainSaveContacts($row) : array
+    {
+        $contactModule = $this->tool->getModule('contact');
+        var_dump($row);
+        if (!$contactModule->isAvailable()) {
+            return $row;
+        }
+
+        return $row;
+    }
+
+    public function domainSetContacts($row) : array
+    {
+        $contactModule = $this->tool->getModule('contact');
+        if (!$contactModule->isAvailable()) {
+            return $row;
+        }
+
+        return $row;
     }
 
     /**

@@ -9,7 +9,7 @@ class ContactModule extends AbstractModule
     /** {@inheritdoc} */
     public $uris = [
         'contact' => 'urn:ietf:params:xml:ns:contact-1.0',
-        'contacthm' => 'http://hostmaster.ua/epp/contact-1.1',
+        'contact_hm' => 'http://hostmaster.ua/epp/contact-1.1',
     ];
 
     /** {@inheritdoc} */

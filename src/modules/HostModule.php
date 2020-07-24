@@ -9,7 +9,7 @@ class HostModule extends AbstractModule
     /** {@inheritdoc} */
     public $uris = [
         'host' => 'urn:ietf:params:xml:ns:host-1.0',
-        'hosthm' => 'http://hostmaster.ua/epp/host-1.1',
+        'host_hm' => 'http://hostmaster.ua/epp/host-1.1',
     ];
 
     /**
@@ -44,7 +44,7 @@ class HostModule extends AbstractModule
             throw new \Exception($e->getMessage());
         }
 
-        return  (int) $check['avail'] === 0 ? $this->hostCreate($row) : $this->hostUpdate($row)
+        return  (int) $check['avail'] === 0 ? $this->hostCreate($row) : $this->hostUpdate($row);
     }
 
     /**
