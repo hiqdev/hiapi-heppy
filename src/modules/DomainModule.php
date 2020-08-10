@@ -18,9 +18,11 @@ class DomainModule extends AbstractModule
     ];
 
     public $extURIs = [
-        'secDNS' => 'urn:ietf:params:xml:ns:rgp-1.0',
-        'secDNS_hm' => 'http://hostmaster.ua/epp/rgp-1.1',
+        'rgp' => 'urn:ietf:params:xml:ns:rgp-1.0',
+        'rgp_hm' => 'http://hostmaster.ua/epp/rgp-1.1',
     ];
+
+    protected $contactTypes = ['registrant', 'admin', 'tech', 'billing'];
 
     /**
      * @param array $row
@@ -59,8 +61,12 @@ class DomainModule extends AbstractModule
             }
         }
 
-        foreach (['nameservers','hosts','statuses'] as $key) {
+        foreach (['nameservers', 'hosts'] as $key) {
             if (!empty($info[$key])) {
+                if ($key === 'nameservers') {
+                    $info['nss'] = $info['nameservers'];
+                }
+
                 $info[$key] = implode(",", $info[$key]);
             }
         }
@@ -249,12 +255,35 @@ class DomainModule extends AbstractModule
     public function domainSaveContacts($row) : array
     {
         $contactModule = $this->tool->getModule('contact');
-        var_dump($row);
         if (!$contactModule->isAvailable()) {
             return $row;
         }
 
-        return $row;
+        if (empty($row['contacts'])) {
+            return $this->base->_simple_domainSaveContacts($row);
+        }
+
+        foreach ($this->tool->getContactsTypes() as $type) {
+            $epp_id = $this->fixContactID($row['contacts']["{$type}_eppid"]);
+            if (empty($epp_id)) {
+                continue;
+            }
+
+            if ($saved[$epp_id]) {
+                $contacts[$type] = $epp_id;
+                continue;
+            }
+
+            $this->contactSet(array_merge($row['contacts'][$type], [
+                'epp_id' => $row['contacts']["{$type}_eppid"],
+                'whois_protected' => $row['whois_protected'],
+            ]));
+
+            $contacts[$type] = $epp_id;
+            $saved[$epp_id] = $epp_id;
+        }
+
+        return $this->domainSetContacts($row);
     }
 
     public function domainSetContacts($row) : array
@@ -264,7 +293,31 @@ class DomainModule extends AbstractModule
             return $row;
         }
 
-        return $row;
+        $info = $this->domainInfo($row);
+
+        $contactTypes = $this->tool->getContactsTypes();
+
+        foreach ($contactTypes as $type) {
+            $row[$type] = $this->fixContactID($row[$type]);
+        }
+
+        if (!empty($row['registrant']) && in_array('registrant', $contactTypes, true)) {
+            $this->domainUpdate([
+                'domain' => $row['domain'],
+                'chg' => [
+                    'registrant' => $row['registrant'],
+                ],
+            ]);
+            unset($contactTypes['registrant']);
+        }
+
+        if (empty($contactTypes)) {
+            return $row;
+        }
+
+        $row = $this->prepareDataForUpdate($row, $info, $contactTypes);
+
+        return $this->domainUpdate($row);
     }
 
     /**
@@ -273,6 +326,14 @@ class DomainModule extends AbstractModule
      */
     private function domainUpdate(array $row): array
     {
+        $data = array_filter([
+            'add'       => $row['add'] ?? null,
+            'rem'       => $row['rem'] ?? null,
+            'chg'       => $row['chg'] ?? null,
+        ]);
+        if (empty($data)) {
+            return $row;
+        }
         return $this->tool->commonRequest("{$this->object}:update", array_filter([
             'name'      => $row['domain'],
             'add'       => $row['add'] ?? null,
@@ -305,6 +366,22 @@ class DomainModule extends AbstractModule
      */
     public function domainSetNSs(array $row): array
     {
+        $extensions = $this->tool->getExtensions();
+        foreach ($row['nss'] as $host) {
+            $avail = $this->tool->hostCheck([
+                'host' => $host,
+                'zone' => array_pop(explode(".", $row['domain'])),
+            ]);
+
+            if ((int) $avail['avail'] === 1) {
+                $this->tool->hostCreate([
+                    'host' => $host,
+                    'zone' => array_pop(explode(".", $row['domain'])),
+                ]);
+            }
+
+        }
+
         $info = $this->domainInfo($row);
 
         $row = $this->prepareDataForUpdate($row, $info, [
@@ -380,9 +457,9 @@ class DomainModule extends AbstractModule
      */
     public function domainEnableHold(array $row): array
     {
-        return $this->domainUpdateStatuses($row, 'add', [
+        return $this->domainUpdateStatuses($row, 'add', [[
             'clientHold' => null,
-        ]);
+        ]]);
     }
 
     /**
@@ -391,9 +468,9 @@ class DomainModule extends AbstractModule
      */
     public function domainDisableHold(array $row): array
     {
-        return $this->domainUpdateStatuses($row, 'rem', [
+        return $this->domainUpdateStatuses($row, 'rem', [[
             'clientHold' => null,
-        ]);
+        ]]);
     }
 
     public function domainRestore(array $row): array
@@ -405,7 +482,9 @@ class DomainModule extends AbstractModule
             ],
         ]);
 
-        if (!$chouldbecheck) {
+        $info = $this->domainInfo($row);
+
+        if (empty($info['statuses']['pendingRestore'])) {
             return $row;
         }
 
@@ -413,9 +492,14 @@ class DomainModule extends AbstractModule
             'name'      => $row['domain'],
             'rgp'       => [
                 'command' => "{$this->extension}:report",
-                // SHOUD BE DATA HERE
+                'preData' => $row['domain'],
+                'postData' => $row['domain'],
+                'delTime' => date("Y-m-d\TH:i:s\Z", strtotime($row['delete_time'])),
+                'resTime' => date("Y-m-d\TH:i:s\Z"),
             ],
         ]);
+
+        return $row;
     }
 
     protected function domainPerformOperation(

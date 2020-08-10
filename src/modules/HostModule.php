@@ -21,14 +21,13 @@ class HostModule extends AbstractModule
         $res = $this->tool->commonRequest("{$this->object}:check", [
             'names' => [$row['host']],
             'reasons' => 'reasons',
+            'zone' => $row['zone'] ?? null,
         ], [
             'avails' => 'avails',
-            'reasons' => 'reasons',
         ]);
 
         return [
             'avail' => $res['avails'][$row['host']],
-            'reason' => $res['reasons'][$row['host']],
         ];
     }
 
@@ -56,6 +55,7 @@ class HostModule extends AbstractModule
         return $this->tool->commonRequest("{$this->object}:create", [
             'name'      => $row['host'],
             'ips'       => $row['ips'],
+            'zone'      => $row['zone'] ?? null,
         ], [
             'host'      => 'name',
         ]);

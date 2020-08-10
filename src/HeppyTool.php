@@ -366,4 +366,17 @@ class HeppyTool
         }
         $this->modules[$name] = $module;
     }
+
+    public function getContactTypes()
+    {
+        foreach (['registrar', 'admin', 'tech', 'billing'] as $type) {
+            if (!empty($this->contacts['disabled']) && in_array($type, $this->contacts['disabled'], true)) {
+                continue;
+            }
+
+            $contacts[$type] = $type;
+        }
+
+        return $contacts ?? [];
+    }
 }
