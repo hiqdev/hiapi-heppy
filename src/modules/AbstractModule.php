@@ -9,10 +9,62 @@ class AbstractModule
     public $tool;
     public $base;
 
+    /** @var array of [object => uri] */
+    public $uris = [];
+
+    /** @var string $object */
+    protected $object = null;
+
+    /** @var string $extension */
+    protected $extension = null;
+
     public function __construct(HeppyTool $tool)
     {
         $this->tool = $tool;
         $this->base = $tool->getBase();
+        $this->init();
+    }
+
+    /**
+     * Initiate module with object and required ext
+     *
+     * @param void
+     * @return self
+     */
+    public function init() : self
+    {
+        $uris = $this->tool->getObjects();
+        foreach ($this->uris as $object => $uri) {
+            if (in_array($uri, $uris, true)) {
+                $this->object = $object;
+                break;
+            }
+        }
+
+        if (empty($this->extURIs)) {
+            return $this;
+        }
+
+        $exts = $this->tool->getExtensions();
+        foreach ($this->extURIs as $obj => $uri) {
+            if (!empty($exts[$obj])) {
+                $this->extension = $obj;
+                return $this;
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * Check if module is available
+     *
+     * @param void
+     * @return bool
+     */
+    public function isAvailable() : bool
+    {
+        return true;
     }
 
     /**
@@ -65,12 +117,13 @@ class AbstractModule
 
         foreach ($map as $apiName => $eppName) {
             if (is_array($local[$apiName])) {
-                $remote[$apiName] = $remote[$apiName] ?? [];
+                $remote[$apiName] = $remote[$apiName] ?? $remote[$eppName] ?? [];
+                $remote[$apiName] = is_array($remote[$apiName]) ? $remote[$apiName] : explode(",", $remote[$apiName]);
                 if ($add = array_diff($local[$apiName], $remote[$apiName])) {
-                    $res['add'][$eppName] = $add;
+                    $res['add'][][$eppName] = $add;
                 }
                 if ($rem = array_diff($remote[$apiName], $local[$apiName])) {
-                    $res['rem'][$eppName] = $rem;
+                    $res['rem'][][$eppName] = $rem;
                 }
             } else if (key_exists($apiName, $local) &&
                 strcasecmp((string)$local[$apiName], (string)$remote[$apiName])) {
@@ -92,6 +145,17 @@ class AbstractModule
     }
 
     /**
+     * Fix contact ID
+     *
+     * @param string
+     * @return string
+     */
+    public function fixContactID($epp_id)
+    {
+        return strtolower(str_replace("_", "-", $epp_id));
+    }
+
+    /**
      * Check is NameStore Extension enabled
      *
      * @return bool
@@ -100,6 +164,6 @@ class AbstractModule
     {
         $extensions = $this->tool->getExtensions();
 
-       return !empty($extensions['namestore']);
+        return !empty($extensions['namestore']);
     }
 }

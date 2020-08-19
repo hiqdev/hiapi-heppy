@@ -23,15 +23,18 @@ class RGPExtension extends AbstractExtension implements ExtensionInterface
             'restore' => ['*' => true],
             'update' => ['restore' => true],
         ],
+        'domain_hm' => [
+            'restore' => ['*' => true],
+            'update' => ['restore' => true],
+        ],
+
     ];
 
     /** {@inheritdoc} */
     public function addExtension(string $command, array $data = []): array
     {
-        $data['extensions'][] = [
-            'command' => 'rgp',
-        ];
-
+        $data['extensions'][] = array_filter($data['rgp']);
+        unset($data['rgp']);
         return $data;
     }
 }

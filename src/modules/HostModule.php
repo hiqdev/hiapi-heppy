@@ -6,20 +6,44 @@ use err;
 
 class HostModule extends AbstractModule
 {
+    /** {@inheritdoc} */
+    public $uris = [
+        'host' => 'urn:ietf:params:xml:ns:host-1.0',
+        'host_hm' => 'http://hostmaster.ua/epp/host-1.1',
+    ];
+
+    /**
+     * @param array $row
+     * @return $array
+     */
+    public function hostCheck($row): array
+    {
+        $res = $this->tool->commonRequest("{$this->object}:check", [
+            'names' => [$row['host']],
+            'reasons' => 'reasons',
+            'zone' => $row['zone'] ?? null,
+        ], [
+            'avails' => 'avails',
+        ]);
+
+        return [
+            'avail' => $res['avails'][$row['host']],
+        ];
+    }
+
     /**
      * @param array $row
      * @return array
      */
     public function hostSet(array $row): array
     {
-        $info = $this->hostInfo($row);
-        if (err::is($info) || empty($info['host'])) {
-            $res = $this->hostCreate($row);
-        } else {
-            $res = $this->hostUpdate($row, $info);
+        try {
+            $check = $this->hostCheck($row);
+        } catch (\Throwable $e) {
+            throw new \Exception($e->getMessage());
         }
 
-        return $res;
+        return  (int) $check['avail'] === 0 ? $this->hostCreate($row) : $this->hostUpdate($row);
     }
 
     /**
@@ -28,9 +52,10 @@ class HostModule extends AbstractModule
      */
     public function hostCreate(array $row): array
     {
-        return $this->tool->commonRequest('host:create', [
+        return $this->tool->commonRequest("{$this->object}:create", [
             'name'      => $row['host'],
             'ips'       => $row['ips'],
+            'zone'      => $row['zone'] ?? null,
         ], [
             'host'      => 'name',
         ]);
@@ -42,7 +67,7 @@ class HostModule extends AbstractModule
      */
     public function hostInfo(array $row): array
     {
-        return $this->tool->commonRequest('host:info', [
+        return $this->tool->commonRequest("{$this->object}:info", [
             'name'      => $row['host'],
         ], [
             'host'          => 'name',
@@ -59,10 +84,14 @@ class HostModule extends AbstractModule
      * @param array $info
      * @return array
      */
-    public function hostUpdate(array $row, array $info): array
+    public function hostUpdate(array $row, array $info = null): array
     {
+        if (empty($info)) {
+            $info = $this->hostInfo($row);
+        }
+
         $row = $this->prepareDataForHostUpdate($row, $info);
-        return $this->tool->commonRequest('host:update', array_filter([
+        return $this->tool->commonRequest("{$this->object}:update", array_filter([
             'name'  => $row['host'],
             'add'   => $row['add'] ?? null,
             'rem'   => $row['rem'] ?? null,
@@ -104,7 +133,7 @@ class HostModule extends AbstractModule
      */
     public function hostDelete(array $row): array
     {
-        return $this->tool->commonRequest('host:delete', [
+        return $this->tool->commonRequest("{$this->object}:delete", [
             'name'  => $row['host'],
         ], [], [
             'id'    => $row['id'],

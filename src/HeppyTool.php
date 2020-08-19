@@ -42,8 +42,11 @@ class HeppyTool
 
     protected $ns;
 
+    protected $objects;
+
     protected $extURNNames = [
         'secDNS' => 'urn:ietf:params:xml:ns:secDNS-1.1',
+        'secDNShm' => ['http://hostmaster.ua/epp/secDNS-1.1', 'hm'],
         'rgp' => 'urn:ietf:params:xml:ns:rgp-1.0',
         'launch' => 'urn:ietf:params:xml:ns:launch-1.0',
         'idn' => 'urn:ietf:params:xml:ns:idn-1.0',
@@ -70,6 +73,7 @@ class HeppyTool
      */
     private $extURNClasses = [
         'secDNS' => SecDNSExtension::class,
+        'secDNShm' => SecDNSExtension::class,
         'rgp' => RGPExtension::class,
         'namestore' => NamestoreExtension::class,
         'fee05' => FeeExtension::class,
@@ -184,6 +188,9 @@ class HeppyTool
     }
 
     /**
+     * Get extensions URIs
+     *
+     * @param void
      * @return array
      */
     public function getExtensions(): array
@@ -195,7 +202,7 @@ class HeppyTool
         $this->extensions = [];
 
         if ($this->helloData === null) {
-            $this->helloData = $this->eppHello();
+            $this->helloData = $this->request('epp:hello', []);
         }
 
         foreach ($this->extURNNames as $name => $data) {
@@ -218,6 +225,27 @@ class HeppyTool
         }
 
         return $this->extensions;
+    }
+
+    /**
+     * Get objects URI
+     *
+     * @param void
+     * @return array
+     */
+    public function getObjects()
+    {
+        if ($this->objects !== null) {
+            return $this->objects;
+        }
+
+        if ($this->helloData === null) {
+            $this->helloData = $this->request('epp:hello', []);
+        }
+
+        $this->objects = $this->helloData['objURIs'];
+
+        return $this->objects;
     }
 
     /**
@@ -337,5 +365,18 @@ class HeppyTool
             throw new InvalidCallException("module `$name` not found");
         }
         $this->modules[$name] = $module;
+    }
+
+    public function getContactTypes()
+    {
+        foreach (['registrar', 'admin', 'tech', 'billing'] as $type) {
+            if (!empty($this->contacts['disabled']) && in_array($type, $this->contacts['disabled'], true)) {
+                continue;
+            }
+
+            $contacts[$type] = $type;
+        }
+
+        return $contacts ?? [];
     }
 }

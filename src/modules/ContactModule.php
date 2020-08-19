@@ -6,6 +6,22 @@ use err;
 
 class ContactModule extends AbstractModule
 {
+    /** {@inheritdoc} */
+    public $uris = [
+        'contact' => 'urn:ietf:params:xml:ns:contact-1.0',
+        'contact_hm' => 'http://hostmaster.ua/epp/contact-1.1',
+    ];
+
+    public $extURIs = [
+        'namestoreExt' => 'http://www.verisign-grs.com/epp/namestoreExt-1.1',
+    ];
+
+    /** {@inheritdoc} */
+    public function isAvailable() : bool
+    {
+        return empty($this->extension);
+    }
+
     /**
      * @param array $row
      * @return array
@@ -29,7 +45,7 @@ class ContactModule extends AbstractModule
      */
     public function contactInfo(array $row): array
     {
-        return $this->tool->commonRequest('contact:info', array_filter([
+        return $this->tool->commonRequest("{$this->object}:info", array_filter([
             'id'        => $row['epp_id'],
             'pw'        => $row['password'],
         ]), [
@@ -57,7 +73,7 @@ class ContactModule extends AbstractModule
      */
     public function contactCreate(array $row): array
     {
-        return $this->tool->commonRequest('contact:create', array_filter([
+        return $this->tool->commonRequest("{$this->object}:create", array_filter([
             'id'        => $row['epp_id'],
             'name'      => $row['name'],
             'email'     => $row['email'],
@@ -86,13 +102,24 @@ class ContactModule extends AbstractModule
     {
         $row = $this->prepareDataForContactUpdate($row, $info);
 
-        return $this->tool->commonRequest('contact:update', array_filter([
+        return $this->tool->commonRequest("{$this->object}:update", array_filter([
             'id'        => $row['epp_id'],
             'add'       => $row['add'] ?? null,
             'rem'       => $row['rem'] ?? null,
             'chg'       => $row['chg'] ?? null,
         ]), [], [
             'epp_id'    => $row['epp_id']
+        ]);
+    }
+
+    /**
+     * @param array $row
+     * @return array
+     */
+    public function contactDelete(array $row): array
+    {
+        return $this->tool->commonRequest("{$this->object}:delete", [
+            'id'    => $row['epp_id'],
         ]);
     }
 
@@ -119,14 +146,5 @@ class ContactModule extends AbstractModule
         ]);
     }
 
-    /**
-     * @param array $row
-     * @return array
-     */
-    public function contactDelete(array $row): array
-    {
-        return $this->tool->commonRequest('contact:delete', [
-            'id'    => $row['epp_id'],
-        ]);
-    }
+
 }
