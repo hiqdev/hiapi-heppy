@@ -113,11 +113,9 @@ class DomainModule extends AbstractModule
     public function domainRegister(array $row): array
     {
         if (!$row['nss']) {
-            $row['nss'] = arr::get($this->base->domainGetNSs($row),'nss');
-        }
-        if (!$row['nss']) {
             $row['nss'] = $this->tool->getDefaultNss();
         }
+
         $row = $this->domainPrepareContacts($row);
 
         return $this->domainPerformOperation("{$this->object}:create", array_filter([
@@ -143,19 +141,17 @@ class DomainModule extends AbstractModule
      */
     public function domainPrepareContacts(array $row): array
     {
-        $contacts = $this->base->domainGetWPContactsInfo($row);
-        if (err::is($contacts)) {
-            return $contacts;
-        }
         $remoteIds = [];
-        foreach ($this->base->getContactTypes() as $type) {
-            $contactId = $contacts[$type]['id'];
+        foreach ($this->tool->getContactTypes() as $type) {
+            $contactId = $contacts["{$type}_info"]['id'];
             $remoteId = $remoteIds[$contactId];
             if (!$remoteId) {
-                $response = $this->tool->contactSet($contacts[$type]);
-                if (err::is($response)) {
-                    return $response;
+                try {
+                    $response = $this->tool->contactSet($row["{$type}_info"]);
+                } catch (\Throwable $e) {
+                    throw new \Exception($e->getMessage());
                 }
+
                 $remoteId = $response['epp_id'];
                 $remoteIds[$contactId] = $remoteId;
             }
@@ -296,6 +292,10 @@ class DomainModule extends AbstractModule
         $info = $this->domainInfo($row);
 
         $contactTypes = $this->tool->getContactsTypes();
+
+        if (empty($contactTypes)) {
+            return $row;
+        }
 
         foreach ($contactTypes as $type) {
             $row[$type] = $this->fixContactID($row[$type]);
@@ -509,7 +509,8 @@ class DomainModule extends AbstractModule
         array $payload = [],
         bool $clearContact = false
     ): array {
-        $input['clearContact'] = $this->isNamestoreExtensionEnabled() && $clearContact;
+        $input['clearContact'] = $this->isNamestoreExtensionEnabled() || $clearContact;
+
         try {
             return $this->tool->commonRequest($command, $input, $returns, $payload);
         } catch (EppErrorException $e) {
