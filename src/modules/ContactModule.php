@@ -90,7 +90,7 @@ class ContactModule extends AbstractModule
             'street2'   => $row['street2']      ?? null,
             'street3'   => $row['street3']      ?? null,
             'pc'        => $row['postal_code']  ?? null,
-            'pw'        => $row['password'] ?: $this->generatePassword(),
+            'pw'        => $row['password'] ?: $this->generatePassword(16),
         ], $this->getFilterCallback()), [
             'epp_id'        => 'id',
             'created_date'  => 'crDate',
@@ -134,6 +134,7 @@ class ContactModule extends AbstractModule
      */
     private function prepareDataForContactUpdate(array $local, array $remote): array
     {
+        $local['password'] = $local['password'] ?? $this->generatePassword();
         return $this->prepareDataForUpdate($local, $remote, [
             'name'          => 'name',
             'organization'  => 'org',
@@ -147,6 +148,7 @@ class ContactModule extends AbstractModule
             'street2'       => 'street2',
             'street3'       => 'street3',
             'province'      => 'sp',
+            'password'      => 'pw'
         ]);
     }
 
