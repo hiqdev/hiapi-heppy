@@ -297,28 +297,30 @@ class DomainModule extends AbstractModule
 
         foreach ($contactTypes as $type) {
             $row[$type] = $this->fixContactID($row[$type]);
+            if ($type === 'registrant') {
+                continue;
+            }
+
             $row[$type] = [$row[$type]];
             $info[$type] = [$info[$type]];
         }
 
-        if (!empty($row['registrant']) && in_array('registrant', $contactTypes, true)) {
-            if ($info['registrant'] !== $row['registrant']) {
-                $this->domainUpdate([
-                    'domain' => $row['domain'],
-                    'chg' => [
-                        'registrant' => $row['registrant'],
-                    ],
-                ]);
-            }
+        $row = $this->prepareDataForUpdate($row, $info, $contactTypes);
 
-            unset($contactTypes['registrant']);
+        if (!empty($row['chg']) && !empty($row['registrant']) && in_array('registrant', $contactTypes, true)) {
+            $this->domainUpdate([
+                'domain' => $row['domain'],
+                'chg' => [
+                    'registrant' => $row['registrant'],
+                ],
+            ]);
+
+            unset($row['chg']);
         }
 
-        if (empty($contactTypes)) {
+        if (empty($row['add']) && empty($row['rem'])) {
             return $row;
         }
-
-        $row = $this->prepareDataForUpdate($row, $info, $contactTypes);
 
         return $this->domainUpdate($row);
     }
