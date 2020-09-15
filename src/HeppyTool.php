@@ -62,7 +62,7 @@ class HeppyTool
         'coa' => 'urn:ietf:params:xml:ns:coa-1.0',
         'idnLang' => 'http://www.verisign.com/epp/idnLang-1.0',
         'premiumdomain' => 'http://www.verisign.com/epp/premiumdomain-1.0',
-        'namestore' => 'http://www.verisign-grs.com/epp/namestoreExt-1.1',
+        'namestoreExt' => 'http://www.verisign-grs.com/epp/namestoreExt-1.1',
         'neulevel' => 'urn:ietf:params:xml:ns:neulevel',
         'neulevel10' => ['urn:ietf:params:xml:ns:neulevel-1.0', 'version' => '10'],
     ];
@@ -75,7 +75,7 @@ class HeppyTool
         'secDNS' => SecDNSExtension::class,
         'secDNShm' => SecDNSExtension::class,
         'rgp' => RGPExtension::class,
-        'namestore' => NamestoreExtension::class,
+        'namestoreExt' => NamestoreExtension::class,
         'fee05' => FeeExtension::class,
         'fee06' => FeeExtension::class,
         'fee07' => FeeExtension::class,
@@ -369,7 +369,7 @@ class HeppyTool
 
     public function getContactTypes()
     {
-        foreach (['registrar', 'admin', 'tech', 'billing'] as $type) {
+        foreach (['registrant', 'admin', 'tech', 'billing'] as $type) {
             if (!empty($this->contacts['disabled']) && in_array($type, $this->contacts['disabled'], true)) {
                 continue;
             }
