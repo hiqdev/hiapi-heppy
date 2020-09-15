@@ -53,9 +53,9 @@ class IDNLangExtension extends AbstractExtension implements ExtensionInterface
      * @param array
      * @return bool
      */
-    protected function isDomainIDN(array $data): bool
+    protected function isDomainIDN(string $name): bool
     {
-        return idn_to_utf8($data['name']) !== idn_to_ascii($data['name']);
+        return idn_to_utf8($name) !== idn_to_ascii($name);
     }
 
     /**
