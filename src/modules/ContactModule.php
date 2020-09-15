@@ -32,7 +32,7 @@ class ContactModule extends AbstractModule
             return $row;
         }
 
-        $row['epp_id'] = $this->_fixEPPID($row['epp_id']);
+        $row['epp_id'] = $this->fixContactID($row['epp_id']);
 
         try {
             $info = $this->tool->contactInfo($row);
@@ -50,7 +50,7 @@ class ContactModule extends AbstractModule
     public function contactInfo(array $row): array
     {
         return $this->tool->commonRequest("{$this->object}:info", array_filter([
-            'id'        => $this->_fixEPPID($row['epp_id']),
+            'id'        => $this->fixContactID($row['epp_id']),
             'pw'        => $row['password'],
         ]), [
             'epp_id'        => 'id',
@@ -78,7 +78,7 @@ class ContactModule extends AbstractModule
     public function contactCreate(array $row): array
     {
         return $this->tool->commonRequest("{$this->object}:create", array_filter([
-            'id'        => $this->_fixEPPID($row['epp_id']),
+            'id'        => $this->fixContactID($row['epp_id']),
             'name'      => $row['name'],
             'email'     => $row['email'],
             'voice'     => $row['voice_phone'],
@@ -112,7 +112,7 @@ class ContactModule extends AbstractModule
             'rem'       => $row['rem'] ?? null,
             'chg'       => $row['chg'] ?? null,
         ]), [], [
-            'epp_id'    => $this->_fixEPPID($row['epp_id']),
+            'epp_id'    => $this->fixContactID($row['epp_id']),
         ]);
     }
 
@@ -123,7 +123,7 @@ class ContactModule extends AbstractModule
     public function contactDelete(array $row): array
     {
         return $this->tool->commonRequest("{$this->object}:delete", [
-            'id'    => $this->_fixEPPID($row['epp_id']),
+            'id'    => $this->fixContactID($row['epp_id']),
         ]);
     }
 
@@ -152,8 +152,4 @@ class ContactModule extends AbstractModule
         ]);
     }
 
-    private function _fixEPPID(string $id) : string
-    {
-        return strtolower(str_replace("_", "-", $id));
-    }
 }
