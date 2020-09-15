@@ -19,7 +19,7 @@ class ContactModule extends AbstractModule
     /** {@inheritdoc} */
     public function isAvailable() : bool
     {
-        return empty($this->extension);
+        return !$this->isNamestoreExtensionEnabled();
     }
 
     /**
@@ -28,15 +28,19 @@ class ContactModule extends AbstractModule
      */
     public function contactSet(array $row): array
     {
-        $info = $this->tool->contactInfo($row);
-
-        if (err::is($info) || empty($info['epp_id'])) {
-            $res = $this->contactCreate($row);
-        } else {
-            $res = $this->contactUpdate($row, $info);
+        if (!$this->isAvailable()) {
+            return $row;
         }
 
-        return $res;
+        $row['epp_id'] = $this->_fixEPPID($row['epp_id']);
+
+        try {
+            $info = $this->tool->contactInfo($row);
+        } catch (\Throwable $e) {
+            return $this->contactCreate($row);
+        }
+
+        return $this->contactUpdate($row, $info);
     }
 
     /**
@@ -46,7 +50,7 @@ class ContactModule extends AbstractModule
     public function contactInfo(array $row): array
     {
         return $this->tool->commonRequest("{$this->object}:info", array_filter([
-            'id'        => $row['epp_id'],
+            'id'        => $this->_fixEPPID($row['epp_id']),
             'pw'        => $row['password'],
         ]), [
             'epp_id'        => 'id',
@@ -74,7 +78,7 @@ class ContactModule extends AbstractModule
     public function contactCreate(array $row): array
     {
         return $this->tool->commonRequest("{$this->object}:create", array_filter([
-            'id'        => $row['epp_id'],
+            'id'        => $this->_fixEPPID($row['epp_id']),
             'name'      => $row['name'],
             'email'     => $row['email'],
             'voice'     => $row['voice_phone'],
@@ -108,7 +112,7 @@ class ContactModule extends AbstractModule
             'rem'       => $row['rem'] ?? null,
             'chg'       => $row['chg'] ?? null,
         ]), [], [
-            'epp_id'    => $row['epp_id']
+            'epp_id'    => $this->_fixEPPID($row['epp_id']),
         ]);
     }
 
@@ -119,7 +123,7 @@ class ContactModule extends AbstractModule
     public function contactDelete(array $row): array
     {
         return $this->tool->commonRequest("{$this->object}:delete", [
-            'id'    => $row['epp_id'],
+            'id'    => $this->_fixEPPID($row['epp_id']),
         ]);
     }
 
@@ -146,5 +150,8 @@ class ContactModule extends AbstractModule
         ]);
     }
 
-
+    private function _fixEPPID(string $id) : string
+    {
+        return strtolower(str_replace("_", "-", $id));
+    }
 }
