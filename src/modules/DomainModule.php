@@ -484,7 +484,7 @@ class DomainModule extends AbstractModule
 
         $info = $this->domainInfo($row);
 
-        if (empty($info['statuses']['pendingRestore'])) {
+        if (empty($info['statuses']['pendingRestore']) && !in_array('rgp', $info['statuses'], true)) {
             return $row;
         }
 
