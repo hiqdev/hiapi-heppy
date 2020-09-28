@@ -259,24 +259,23 @@ class DomainModule extends AbstractModule
             return $this->base->_simple_domainSaveContacts($row);
         }
 
-        foreach ($this->tool->getContactsTypes() as $type) {
+        foreach ($this->tool->getContactTypes() as $type) {
             $epp_id = $this->fixContactID($row['contacts']["{$type}_eppid"]);
             if (empty($epp_id)) {
                 continue;
             }
 
-            if ($saved[$epp_id]) {
+            if (!$saved[$epp_id]) {
                 $contacts[$type] = $epp_id;
-                continue;
+                $this->tool->contactSet(array_merge($row['contacts'][$type], [
+                    'epp_id' => $row['contacts']["{$type}_eppid"],
+                    'whois_protected' => $row['whois_protected'],
+                ]));
+                $contacts[$type] = $epp_id;
+                $saved[$epp_id] = $epp_id;
             }
 
-            $this->contactSet(array_merge($row['contacts'][$type], [
-                'epp_id' => $row['contacts']["{$type}_eppid"],
-                'whois_protected' => $row['whois_protected'],
-            ]));
-
-            $contacts[$type] = $epp_id;
-            $saved[$epp_id] = $epp_id;
+            $row[$type] = $epp_id;
         }
 
         return $this->domainSetContacts($row);
@@ -291,7 +290,10 @@ class DomainModule extends AbstractModule
 
         $info = $this->domainInfo($row);
 
-        $contactTypes = $this->tool->getContactsTypes();
+        $contactTypes = $this->tool->getContactTypes();
+        if (empty($contactTypes)) {
+            return $row;
+        }
 
         if (empty($contactTypes)) {
             return $row;
@@ -299,23 +301,30 @@ class DomainModule extends AbstractModule
 
         foreach ($contactTypes as $type) {
             $row[$type] = $this->fixContactID($row[$type]);
+            if ($type === 'registrant') {
+                continue;
+            }
+
+            $row[$type] = [$row[$type]];
+            $info[$type] = [$info[$type]];
         }
 
-        if (!empty($row['registrant']) && in_array('registrant', $contactTypes, true)) {
+        $row = $this->prepareDataForUpdate($row, $info, $contactTypes);
+
+        if (!empty($row['chg']) && !empty($row['registrant']) && in_array('registrant', $contactTypes, true)) {
             $this->domainUpdate([
                 'domain' => $row['domain'],
                 'chg' => [
                     'registrant' => $row['registrant'],
                 ],
             ]);
-            unset($contactTypes['registrant']);
+
+            unset($row['chg']);
         }
 
-        if (empty($contactTypes)) {
+        if (empty($row['add']) && empty($row['rem'])) {
             return $row;
         }
-
-        $row = $this->prepareDataForUpdate($row, $info, $contactTypes);
 
         return $this->domainUpdate($row);
     }
