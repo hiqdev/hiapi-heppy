@@ -295,6 +295,10 @@ class DomainModule extends AbstractModule
             return $row;
         }
 
+        if (empty($contactTypes)) {
+            return $row;
+        }
+
         foreach ($contactTypes as $type) {
             $row[$type] = $this->fixContactID($row[$type]);
             if ($type === 'registrant') {
@@ -489,7 +493,7 @@ class DomainModule extends AbstractModule
 
         $info = $this->domainInfo($row);
 
-        if (empty($info['statuses']['pendingRestore'])) {
+        if (empty($info['statuses']['pendingRestore']) && !in_array('rgp', $info['statuses'], true)) {
             return $row;
         }
 

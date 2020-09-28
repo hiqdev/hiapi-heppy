@@ -151,5 +151,4 @@ class ContactModule extends AbstractModule
             'password'      => 'pw'
         ]);
     }
-
 }
