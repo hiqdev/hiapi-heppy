@@ -19,6 +19,7 @@ use hiapi\heppy\extensions\FeeExtension;
 use hiapi\heppy\extensions\SecDNSExtension;
 use hiapi\heppy\extensions\IDNLangExtension;
 use hiapi\heppy\extensions\PriceExtension;
+use hiapi\heppy\extensions\KeySysExtension;
 use hiapi\heppy\modules\AbstractModule;
 use hiapi\heppy\modules\ContactModule;
 use hiapi\heppy\modules\DomainModule;
@@ -65,6 +66,7 @@ class HeppyTool
         'namestoreExt' => 'http://www.verisign-grs.com/epp/namestoreExt-1.1',
         'neulevel' => 'urn:ietf:params:xml:ns:neulevel',
         'neulevel10' => ['urn:ietf:params:xml:ns:neulevel-1.0', 'version' => '10'],
+        'keysys' => 'http://www.key-systems.net/epp/keysys-1.0',
     ];
 
     /**
@@ -85,6 +87,7 @@ class HeppyTool
         'fee21' => FeeExtension::class,
         'idnLang' => IDNLangExtension::class,
         'price' => PriceExtension::class,
+        'keysys' => KeySysExtension::class,
     ];
 
     protected $modules = [
@@ -262,10 +265,12 @@ class HeppyTool
         array $payload = []
     ): array {
         $input = $this->applyExtensions($command, $input);
+
         $response = $this->request($command, $input);
         $rc = substr($response['result_code'] ?? '9999', 0, 1);
+
         if ($rc !== '1') {
-            throw new EppErrorException('failed heppy request: ' . var_export($response, true));
+            throw new EppErrorException('failed heppy request: ' . var_export($response, true), (int) $response['result_code'], $response);
         }
 
         $returns = $this->addCommonResponseFields($returns);

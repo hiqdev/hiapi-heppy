@@ -23,7 +23,7 @@ class FeeExtension extends AbstractExtension implements ExtensionInterface
         'domain' => [
             'check' => ['*' => true],
             'create' => ['*' => true],
-            'renew' => ['*' => true],
+//            'renew' => ['*' => true],
             'transer' => ['request' => true, 'query' => 'true'],
             // 'update' => ['restore' => true],
             // 'restore' => ['*' => true],
@@ -47,6 +47,10 @@ class FeeExtension extends AbstractExtension implements ExtensionInterface
             if (strpos($ext['command'], 'price') !== false) {
                 return $data;
             }
+        }
+
+        if ($command !== 'domain:check' && empty($data['fee'])) {
+            return $data;
         }
 
         $data['extensions'][] = array_filter([

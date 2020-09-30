@@ -11,6 +11,8 @@ class DomainModule extends AbstractModule
     const DOMAIN_STANDART = 'standard';
     const DOMAIN_PREMIUM = 'premium';
 
+    const RENEW_DOMAIN_NOT_AVAILABLE_EXCEPTION = "Invalid command name; Renew Domain not available";
+
     /** {@inheritdoc} */
     public $uris = [
         'domain' => 'urn:ietf:params:xml:ns:domain-1.0',
@@ -70,6 +72,10 @@ class DomainModule extends AbstractModule
                 $info[$key] = implode(",", $info[$key]);
             }
         }
+
+        $info['contact']['registrant'] = $this->tool->contactInfo([
+            'epp_id' => $info['registrant'],
+        ]);
 
         return $info;
     }
@@ -178,14 +184,27 @@ class DomainModule extends AbstractModule
      */
     public function domainRenew(array $row): array
     {
-        return $this->tool->commonRequest("{$this->object}:renew", [
-            'name'          => $row['domain'],
-            'curExpDate'    => $row['expires'],
-            'period'        => $row['period'],
-        ], [
-            'domain'            => 'name',
-            'expiration_date'   => 'exDate',
-        ]);
+        try {
+            return $this->tool->commonRequest("{$this->object}:renew", [
+                'name'          => $row['domain'],
+                'curExpDate'    => $row['expires'],
+                'period'        => $row['period'],
+            ], [
+                'domain'            => 'name',
+                'expiration_date'   => 'exDate',
+            ]);
+        } catch (EppErrorException $e) {
+            if ($e->getMessage() !== self::RENEW_DOMAIN_NOT_AVAILABLE_EXCEPTION || !$this->isKeySysExtensionEnabled()) {
+                throw $e;
+            }
+
+            return $this->domainUpdate([
+                'domain' => $row['domain'],
+            ], [
+                'command' => 'keysys:ren',
+                'renewalmode' => 'RENEWONCE',
+            ]);
+        }
     }
 
     /**
@@ -267,15 +286,15 @@ class DomainModule extends AbstractModule
 
             if (!$saved[$epp_id]) {
                 $contacts[$type] = $epp_id;
-                $this->tool->contactSet(array_merge($row['contacts'][$type], [
+                $data = $this->tool->contactSet(array_merge($row['contacts'][$type], [
                     'epp_id' => $row['contacts']["{$type}_eppid"],
                     'whois_protected' => $row['whois_protected'],
                 ]));
-                $contacts[$type] = $epp_id;
-                $saved[$epp_id] = $epp_id;
+                $contacts[$type] = $data['epp_id'];
+                $saved[$epp_id] = $data['epp_id'];
             }
 
-            $row[$type] = $epp_id;
+            $row[$type] = $saved[$epp_id];
         }
 
         return $this->domainSetContacts($row);
@@ -333,21 +352,24 @@ class DomainModule extends AbstractModule
      * @param array $row
      * @return array
      */
-    private function domainUpdate(array $row): array
+    private function domainUpdate(array $row, array $keysys = null): array
     {
         $data = array_filter([
             'add'       => $row['add'] ?? null,
             'rem'       => $row['rem'] ?? null,
             'chg'       => $row['chg'] ?? null,
+            'keysys'    => $keysys,
         ]);
         if (empty($data)) {
             return $row;
         }
+
         return $this->tool->commonRequest("{$this->object}:update", array_filter([
             'name'      => $row['domain'],
             'add'       => $row['add'] ?? null,
             'rem'       => $row['rem'] ?? null,
             'chg'       => $row['chg'] ?? null,
+            'keysys'    => $keysys ?? null,
         ]), [], [
             'id'        => $row['id'],
             'domain'    => $row['domain'],
