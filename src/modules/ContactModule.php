@@ -49,17 +49,13 @@ class ContactModule extends AbstractModule
      */
     public function contactInfo(array $row): array
     {
-        return $this->tool->commonRequest("{$this->object}:info", array_filter([
-            'id'        => $this->fixContactID($row['epp_id']),
-            'pw'        => $row['password'],
-        ]), [
-            'epp_id'        => 'id',
+        if (!$this->isAvailable()) {
+            return $row;
+        }
+
+        $map = [
             'name'          => 'name',
             'organization'  => 'org',
-            'password'      => 'pw',
-            'email'         => 'email',
-            'fax_phone'     => 'fax',
-            'voice_phone'   => 'voice',
             'country'       => 'cc',
             'city'          => 'city',
             'org'           => 'org',
@@ -67,8 +63,36 @@ class ContactModule extends AbstractModule
             'postal_code'   => 'pc',
             'street1'       => 'street',
             'province'      => 'sp',
+        ];
+
+        $res = $this->tool->commonRequest("{$this->object}:info", array_filter([
+            'id'        => $this->fixContactID($row['epp_id']),
+            'pw'        => $row['password'],
+        ]), array_merge([
+            'epp_id'        => 'id',
+            'password'      => 'password',
+            'fax_phone'     => 'fax',
+            'voice_phone'   => 'voice',
             'statuses'      => 'statuses',
-        ]);
+            'loc'           => 'loc',
+            'int'           => 'int',
+            'disclose'      => 'disclose',
+        ], $map));
+
+        $map = array_flip($map);
+
+        if (!empty($res['loc'])) {
+            foreach ($res['loc']['addr'] as $name => $value) {
+                if (empty($res[$map[$name]])) {
+                    $res[$map[$name]] = $value;
+                }
+            }
+
+            $res['name'] = $res['name'] ?? $res['loc']['name'];
+            $res['org'] = $res['org'] ?? $res['loc']['org'];
+        }
+
+        return $res;
     }
 
     /**
@@ -77,6 +101,10 @@ class ContactModule extends AbstractModule
      */
     public function contactCreate(array $row): array
     {
+        if (!$this->isAvailable()) {
+            return $row;
+        }
+
         return $this->tool->commonRequest("{$this->object}:create", array_filter([
             'id'        => $this->fixContactID($row['epp_id']),
             'name'      => $row['name'],
@@ -91,6 +119,7 @@ class ContactModule extends AbstractModule
             'street3'   => $row['street3']      ?? null,
             'pc'        => $row['postal_code']  ?? null,
             'pw'        => $row['password'] ?: $this->generatePassword(16),
+            'disclose'  => $row['whois_protected'] ? 1 : 0,
         ], $this->getFilterCallback()), [
             'epp_id'        => 'id',
             'created_date'  => 'crDate',
@@ -104,6 +133,10 @@ class ContactModule extends AbstractModule
      */
     public function contactUpdate(array $row, array $info): array
     {
+        if (!$this->isAvailable()) {
+            return $row;
+        }
+
         $row = $this->prepareDataForContactUpdate($row, $info);
 
         return $this->tool->commonRequest("{$this->object}:update", array_filter([
@@ -122,6 +155,10 @@ class ContactModule extends AbstractModule
      */
     public function contactDelete(array $row): array
     {
+        if (!$this->isAvailable()) {
+            return $row;
+        }
+
         return $this->tool->commonRequest("{$this->object}:delete", [
             'id'    => $this->fixContactID($row['epp_id']),
         ]);
@@ -148,7 +185,8 @@ class ContactModule extends AbstractModule
             'street2'       => 'street2',
             'street3'       => 'street3',
             'province'      => 'sp',
-            'password'      => 'pw'
+            'password'      => 'pw',
+            'disclose'      => 'disclose',
         ]);
     }
 }

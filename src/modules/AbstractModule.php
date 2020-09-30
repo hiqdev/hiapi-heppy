@@ -71,7 +71,7 @@ class AbstractModule
      * @param int $length
      * @return string
      */
-    public function generatePassword(int $length = 10): string
+    public function generatePassword(int $length = 16): string
     {
         $charsets = [
             'abcdefghijklmnopqrstuvwxyz',
@@ -150,9 +150,9 @@ class AbstractModule
      * @param string
      * @return string
      */
-    public function fixContactID($epp_id)
+    public function fixContactID($epp_id) : string
     {
-        return strtolower(str_replace("_", "-", $epp_id));
+        return strtoupper(str_replace("_", "-", $epp_id));
     }
 
     /**
@@ -160,10 +160,32 @@ class AbstractModule
      *
      * @return bool
      */
-    public function isNamestoreExtensionEnabled()
+    public function isNamestoreExtensionEnabled() : bool
+    {
+        return $this->isExtensionEnabled('namestoreExt');
+    }
+
+    /**
+     * Check is KeySYS Extension enabled
+     *
+     * @return bool
+     */
+    public function isKeySysExtensionEnabled() : bool
+    {
+        return $this->isExtensionEnabled('keysys');
+    }
+
+    /**
+     * Check is Extension enabled
+     *
+     * @param string $extension
+     * @return bool
+     */
+    public function isExtensionEnabled(string $extension) : bool
     {
         $extensions = $this->tool->getExtensions();
 
-        return !empty($extensions['namestoreExt']);
+        return !empty($extensions[$extension]);
     }
+
 }
