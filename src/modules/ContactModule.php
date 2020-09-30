@@ -79,19 +79,6 @@ class ContactModule extends AbstractModule
             'disclose'      => 'disclose',
         ], $map));
 
-        $map = array_flip($map);
-
-        if (!empty($res['loc'])) {
-            foreach ($res['loc']['addr'] as $name => $value) {
-                if (empty($res[$map[$name]])) {
-                    $res[$map[$name]] = $value;
-                }
-            }
-
-            $res['name'] = $res['name'] ?? $res['loc']['name'];
-            $res['org'] = $res['org'] ?? $res['loc']['org'];
-        }
-
         return $res;
     }
 
