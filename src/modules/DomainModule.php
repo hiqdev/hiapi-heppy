@@ -24,6 +24,8 @@ class DomainModule extends AbstractModule
         'rgp_hm' => 'http://hostmaster.ua/epp/rgp-1.1',
     ];
 
+    public $object = 'domain';
+
     protected $contactTypes = ['registrant', 'admin', 'tech', 'billing'];
 
     /**
@@ -73,9 +75,12 @@ class DomainModule extends AbstractModule
             }
         }
 
-        $info['contact']['registrant'] = $this->tool->contactInfo([
-            'epp_id' => $info['registrant'],
-        ]);
+        try {
+            $info['contact']['registrant'] = $this->tool->contactInfo([
+                'epp_id' => $info['registrant'],
+            ]);
+        } catch (\Throwable $e) {
+        }
 
         return $info;
     }
@@ -515,7 +520,7 @@ class DomainModule extends AbstractModule
 
         $info = $this->domainInfo($row);
 
-        if (empty($info['statuses']['pendingRestore']) && !in_array('rgp', $info['statuses'], true)) {
+        if (empty($info['statuses']['pendingRestore']) && !in_array('rgp', $info['statuses'], true) && !in_array('pendingDelete', $info['statuses'], true)) {
             return $row;
         }
 
@@ -529,8 +534,6 @@ class DomainModule extends AbstractModule
                 'resTime' => date("Y-m-d\TH:i:s\Z"),
             ],
         ]);
-
-        return $row;
     }
 
     protected function domainPerformOperation(

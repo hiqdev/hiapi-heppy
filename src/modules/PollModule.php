@@ -9,6 +9,7 @@ class PollModule extends AbstractModule
 {
     const POLL_QUEUE_EMPTY = 1300;
     const POLL_QUEUE_FULL = 1301;
+    const M024_MAINTENANCE = "M024: The maintenance window Registry Scheduled Maintenance";
 
     /** @var array */
     protected $unusedPolls = [
@@ -83,7 +84,7 @@ class PollModule extends AbstractModule
         $rc = $this->pollReq();
         while ((int) $rc['result_code'] === self::POLL_QUEUE_FULL) {
             $poll = $this->_pollPostEvent($rc);
-            if (!in_array($poll['message'],  $this->unusedPolls, true)) {
+            if (!in_array($poll['message'],  $this->unusedPolls, true) && strpos($poll['message'], self::M024_MAINTENANCE) === false) {
                 break;
             }
 
