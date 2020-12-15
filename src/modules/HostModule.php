@@ -12,6 +12,8 @@ class HostModule extends AbstractModule
         'host_hm' => 'http://hostmaster.ua/epp/host-1.1',
     ];
 
+    public $object = 'host';
+
     /**
      * @param array $row
      * @return $array

@@ -16,6 +16,8 @@ class ContactModule extends AbstractModule
         'namestoreExt' => 'http://www.verisign-grs.com/epp/namestoreExt-1.1',
     ];
 
+    public $object = 'contact';
+
     /** {@inheritdoc} */
     public function isAvailable() : bool
     {
@@ -37,6 +39,10 @@ class ContactModule extends AbstractModule
         try {
             $info = $this->tool->contactInfo($row);
         } catch (\Throwable $e) {
+            if (strpos($e->getMessage(), 'Broken pipe') !== false) {
+                return $this->contactSet($row);
+            }
+
             return $this->contactCreate($row);
         }
 
