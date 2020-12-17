@@ -353,7 +353,7 @@ class DomainModule extends AbstractModule
                 'domain' => $row['domain'],
                 'chg' => [
                     'registrant' => $row['registrant'],
-                ]
+                ],
             ]);
 
             unset($row['chg']);
