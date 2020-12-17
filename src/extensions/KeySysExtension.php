@@ -27,6 +27,7 @@ class KeySysExtension extends AbstractExtension implements ExtensionInterface
         'domain' => [
             'create' => ['*' => true],
             'update' => ['*' => true],
+            'delete' => ['*' => true],
         ],
     ];
 
@@ -35,7 +36,6 @@ class KeySysExtension extends AbstractExtension implements ExtensionInterface
         if (empty($data['keysys'])) {
             return $data;
         }
-
 
         $data['extensions'][] = $data['keysys'];
         return $data;
