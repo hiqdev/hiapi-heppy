@@ -69,6 +69,7 @@ class ContactModule extends AbstractModule
             'postal_code'   => 'pc',
             'street1'       => 'street',
             'province'      => 'sp',
+            'password'      => 'pw',
         ];
 
         $res = $this->tool->commonRequest("{$this->object}:info", array_filter([
@@ -104,7 +105,7 @@ class ContactModule extends AbstractModule
             'email'     => $row['email'],
             'voice'     => $row['voice_phone'],
             'fax'       => $row['fax_phone']    ?? null,
-            'org'       => $row['org']          ?? null,
+            'org'       => $row['organization'] ?? null,
             'cc'        => $row['country']      ?? null,
             'city'      => $row['city']         ?? null,
             'street1'   => $row['street1']      ?? null,

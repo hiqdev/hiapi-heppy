@@ -28,6 +28,12 @@ class DomainModule extends AbstractModule
 
     protected $contactTypes = ['registrant', 'admin', 'tech', 'billing'];
 
+    protected $KeySYSDelete = [
+        'de' => 'TRANSIT',
+        'at' => 'REGISTRY',
+        'uk' => 'DETAGGED',
+    ];
+
     /**
      * @param array $row
      * @return array
@@ -178,9 +184,16 @@ class DomainModule extends AbstractModule
      */
     public function domainDelete(array $row): array
     {
-        return $this->tool->commonRequest("{$this->object}:delete", [
+        return $this->tool->commonRequest("{$this->object}:delete", array_filter([
             'name'     => $row['domain'],
-        ]);
+            $this->isKeySysExtensionEnabled() !== true || empty($this->KeySYSDelete[$this->getDomainTopZone($row['domain'])])
+                ? null
+                : 'keysys' => [
+                    'command' => 'keysys:delete',
+                    'target' => $this->KeySYSDelete[$this->getDomainTopZone($row['domain'])],
+                ],
+
+        ]));
     }
 
     /**
@@ -633,5 +646,11 @@ class DomainModule extends AbstractModule
             'fee'       => 'fee',
             'price'     => 'price',
         ]);
+    }
+
+    protected function getDomainTopZone(string $domain) : string
+    {
+        $parts = explode('.', $domain);
+        return array_pop($parts);
     }
 }
