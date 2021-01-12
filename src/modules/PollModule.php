@@ -27,15 +27,17 @@ class PollModule extends AbstractModule
             return err::set($row, 'array is empty');
         }
 
-        $id = check::id($row['id']);
+        $id = $row['id'];
         if (err::is($id)) {
             return err::set($row, err::get($id));
         }
 
-        return $this->tool->commonRequest('epp:poll', [
+        $res = $this->tool->commonRequest('epp:poll', [
             'op' => 'ack',
             'msgID' => (string) $id,
         ]);
+
+        return $res;
     }
 
     public function pollReq(array $row = []) : array
@@ -64,11 +66,16 @@ class PollModule extends AbstractModule
     {
         $polls = [];
         $rc = $this->pollReq();
+        $i = 1;
         while ((int) $rc['result_code'] === self::POLL_QUEUE_FULL) {
             $poll = $rc;
             $this->pollAck($rc);
             $rc = $this->pollReq();
             $polls[$poll['id']] = $this->_pollPostEvent($poll);
+            $i++;
+            if ($i > 10) {
+                break;
+            }
         }
 
         return $polls;
@@ -82,6 +89,7 @@ class PollModule extends AbstractModule
     {
         $polls = [];
         $rc = $this->pollReq();
+        $i = 1;
         while ((int) $rc['result_code'] === self::POLL_QUEUE_FULL) {
             $poll = $this->_pollPostEvent($rc);
             if (!in_array($poll['message'],  $this->unusedPolls, true) && strpos($poll['message'], self::M024_MAINTENANCE) === false) {
@@ -90,7 +98,11 @@ class PollModule extends AbstractModule
 
             $this->pollAck($poll);
             $rc = $this->pollReq();
+            $i++;
             $polls[] = $poll;
+            if ($i > 10) {
+                break;
+            }
         }
 
         return $polls;
@@ -110,6 +122,7 @@ class PollModule extends AbstractModule
             $row[$key] = date("Y-m-d H:i:s", strtotime($row[$key]));
         }
 
+        $row['class'] = 'domain';
         return $row;
     }
 }
