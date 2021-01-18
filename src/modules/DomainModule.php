@@ -3,8 +3,6 @@
 namespace hiapi\heppy\modules;
 
 use hiapi\heppy\exceptions\EppErrorException;
-use arr;
-use err;
 
 class DomainModule extends AbstractModule
 {
@@ -82,9 +80,11 @@ class DomainModule extends AbstractModule
         }
 
         try {
-            $info['contact']['registrant'] = $this->tool->contactInfo([
-                'epp_id' => $info['registrant'],
-            ]);
+            if (!empty($info['registrant'])) {
+                $info['contact']['registrant'] = $this->tool->contactInfo([
+                    'epp_id' => $info['registrant'],
+                ]);
+            }
         } catch (\Throwable $e) {
         }
 
@@ -237,7 +237,6 @@ class DomainModule extends AbstractModule
             'name'      => $row['domain'],
             'pw'        => $row['password'],
             'period'    => $row['period'],
-            'roid'      => $row['roid'],
         ], [
             'domain'            => 'name',
             'expiration_date'   => 'exDate',
@@ -247,6 +246,18 @@ class DomainModule extends AbstractModule
             'request_client_id' => 'reID',
             'transfer_status'   => 'trStatus'
         ]);
+    }
+
+    public function domainCheckTransfer(array $row) : array
+    {
+        $check = $this->domainCheck($row['domain']);
+        if ($premium['avail'] === 1) {
+            throw new Excepion('Object does not exist');
+        }
+
+        $premium = $this->_domainCheck($row['domain'], false, 'transfer');
+
+        return $this->domainInfo($row);
     }
 
     /**
@@ -634,12 +645,13 @@ class DomainModule extends AbstractModule
         ];
     }
 
-    protected function _domainCheck(string $domain, $withoutExt = false) : array
+    protected function _domainCheck(string $domain, $withoutExt = false, string $action = 'create') : array
     {
         return $this->tool->commonRequest("{$this->object}:check", [
             'names'     => [$domain],
             'reasons'   => 'reasons',
             'withoutExt' => $withoutExt,
+            'fee-action' => $action,
         ], [
             'avails'    => 'avails',
             'reasons'   => 'reasons',
