@@ -160,7 +160,7 @@ class DomainModule extends AbstractModule
     {
         $remoteIds = [];
         foreach ($this->tool->getContactTypes() as $type) {
-            $contactId = $contacts["{$type}_info"]['id'];
+            $contactId = $row["{$type}_info"]['id'];
             $remoteId = $remoteIds[$contactId];
             if (!$remoteId) {
                 try {
@@ -319,6 +319,7 @@ class DomainModule extends AbstractModule
                     'epp_id' => $row['contacts']["{$type}_eppid"],
                     'whois_protected' => $row['whois_protected'],
                 ]));
+
                 $contacts[$type] = $data['epp_id'];
                 $saved[$epp_id] = $data['epp_id'];
             }
@@ -335,6 +336,8 @@ class DomainModule extends AbstractModule
         if (!$contactModule->isAvailable()) {
             return $row;
         }
+
+        $this->domainSetWhoisProtect($row, $row['whois_protected']);
 
         $info = $this->domainInfo($row);
 
@@ -360,7 +363,7 @@ class DomainModule extends AbstractModule
         $row = $this->prepareDataForUpdate($row, $info, $contactTypes);
 
         if (!empty($row['chg']) && !empty($row['registrant']) && in_array('registrant', $contactTypes, true)) {
-            $this->domainUpdate([
+            $res = $this->domainUpdate([
                 'domain' => $row['domain'],
                 'chg' => [
                     'registrant' => $row['registrant'],
@@ -462,9 +465,53 @@ class DomainModule extends AbstractModule
         string $action,
         array $statuses
     ): array {
-        $row[$action]['statuses'] = $statuses;
+        $info = $this->domainInfo($row);
+        $this->domainDisableUpdateProhibited($info);
+
+        $old_statuses = array_filter($info['statuses'], function($k, $v) {
+            $states = [
+                self::CLIENT_TRANSFER_PROHIBITED => self::CLIENT_TRANSFER_PROHIBITED,
+                self::CLIENT_DELETE_PROHIBITED => self::CLIENT_DELETE_PROHIBITED,
+                self::CLIENT_HOLD => self::CLIENT_HOLD,
+            ];
+
+            return array_key_exists($k, $states) || in_array($v, $states, true) ? $v : null;
+        }, ARRAY_FILTER_USE_BOTH);
+
+        $new_states = array_filter($statuses, function($k, $v) use ($old_statuses, $action) {
+            if ($action === 'rem') {
+                return array_key_exists($k, $old_statuses) || in_array($v, $old_statuses, true);
+            }
+
+            if (empty($old_statuses)) {
+                return true;
+            }
+
+            return !(array_key_exists($k, $old_statuses) || in_array($v, $old_statuses, true));
+
+            return array_key_exists($k, $old_statuses) || in_array($v, $old_statuses, true);
+        }, ARRAY_FILTER_USE_BOTH);
+
+        $row = [
+            'domain' => $row['domain'],
+            $action => [['statuses' => $new_states]],
+        ];
 
         return $this->domainUpdate($row);
+    }
+
+    private function domainDisableUpdateProhibited(array $row)
+    {
+        if (!array_key_exists(self::CLIENT_UPDATE_PROHIBITED, $row['statuses']) && !in_array(self::CLIENT_UPDATE_PROHIBITED, $row['statuses'], true)) {
+            return $row;
+        }
+
+        $data = $row;
+        $data['rem'] = [['statuses' => [
+            self::CLIENT_UPDATE_PROHIBITED => self::CLIENT_UPDATE_PROHIBITED,
+        ]]];
+
+        return $this->domainUpdate($data);
     }
 
     /**
@@ -493,8 +540,8 @@ class DomainModule extends AbstractModule
     public function domainsEnableLock(array $rows): array
     {
         return $this->domainsUpdateStatuses($rows, 'add', [
-           'clientDeleteProhibited'     => null,
-           'clientTransferProhibited'   => null,
+            self::CLIENT_TRANSFER_PROHIBITED => self::CLIENT_TRANSFER_PROHIBITED,
+            self::CLIENT_DELETE_PROHIBITED => self::CLIENT_DELETE_PROHIBITED,
         ]);
     }
 
@@ -505,9 +552,9 @@ class DomainModule extends AbstractModule
     public function domainsDisableLock(array $rows): array
     {
         return $this->domainsUpdateStatuses($rows, 'rem', [
-            'clientUpdateProhibited'    => null,
-            'clientDeleteProhibited'    => null,
-            'clientTransferProhibited'  => null,
+            self::CLIENT_TRANSFER_PROHIBITED => self::CLIENT_TRANSFER_PROHIBITED,
+            self::CLIENT_DELETE_PROHIBITED => self::CLIENT_DELETE_PROHIBITED,
+            self::CLIENT_UPDATE_PROHIBITED => self::CLIENT_UPDATE_PROHIBITED,
         ]);
     }
 
@@ -557,6 +604,48 @@ class DomainModule extends AbstractModule
                 'delTime' => date("Y-m-d\TH:i:s\Z", strtotime($row['delete_time'])),
                 'resTime' => date("Y-m-d\TH:i:s\Z"),
             ],
+        ]);
+    }
+
+    public function domainEnableWhoisProtect($row)
+    {
+        return $this->domainSetWhoisProtect($row, true);
+    }
+
+    public function domainDisableWhoisProtect($row)
+    {
+        $this->domainSetWhoisProtect($row, false);
+    }
+
+    public function domainsEnableWhoisProtect($row)
+    {
+        return $this->domainsSetWhoisProtect($row, true);
+    }
+
+    public function domainsDisableWhoisProtect($row)
+    {
+        return $this->domainsSetWhoisProtect($row, false);
+    }
+
+    public function domainsSetWhoisProtect($rows, $enable = null)
+    {
+        $res = [];
+        foreach ($rows as $k=>$row) {
+            $res[$k] = $this->tool->domainSetWhoisProtect($row, $enable);
+        }
+
+        return $res;
+    }
+
+    public function domainSetWhoisProtect($row, $enable = null)
+    {
+        if (!$this->isKeySysExtensionEnabled()) {
+            return $row;
+        }
+
+        return $this->domainUpdate($row, [
+            'command' => 'keysys:whoisprotect',
+            'whois-privacy' => $enable ? '0' : '1',
         ]);
     }
 

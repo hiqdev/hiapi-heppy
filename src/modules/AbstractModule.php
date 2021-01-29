@@ -6,6 +6,12 @@ use hiapi\heppy\HeppyTool;
 
 class AbstractModule
 {
+    /** Object statuses */
+    const CLIENT_TRANSFER_PROHIBITED = 'clientTransferProhibited';
+    const CLIENT_UPDATE_PROHIBITED = 'clientTransferProhibited';
+    const CLIENT_DELETE_PROHIBITED = 'clientDeleteProhibited';
+    const CLIENT_HOLD = 'clientHold';
+
     public $tool;
     public $base;
 
