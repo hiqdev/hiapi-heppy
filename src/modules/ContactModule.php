@@ -132,6 +132,7 @@ class ContactModule extends AbstractModule
         }
 
         $row = $this->prepareDataForContactUpdate($row, $info);
+        $row['chg']['disclose'] = strval((int) (!$row['whois_protected']));
 
         return $this->tool->commonRequest("{$this->object}:update", array_filter([
             'id'        => $row['epp_id'],

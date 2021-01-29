@@ -119,6 +119,7 @@ class HeppyTool
     {
         $this->base = $base;
         $this->data = $data;
+        $this->contacts = $this->data['contacts'] ?? [];
     }
 
     public function __call($command, $args): array
