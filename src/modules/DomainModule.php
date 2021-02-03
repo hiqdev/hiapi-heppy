@@ -133,15 +133,16 @@ class DomainModule extends AbstractModule
             $row['nss'] = $this->tool->getDefaultNss();
         }
 
+        $row = $this->_domainPrepareNSs($row);
         $row = $this->domainPrepareContacts($row);
 
         return $this->domainPerformOperation("{$this->object}:create", array_filter([
             'name'          => $row['domain'],
             'period'        => $row['period'],
             'registrant'    => $row['registrant_remote_id'],
-            'admin'         => $row['admin_remote_id'],
-            'tech'          => $row['tech_remote_id'],
-            'billing'       => $row['billing_remote_id'],
+            'admin'         => [$row['admin_remote_id']],
+            'tech'          => [$row['tech_remote_id']],
+            'billing'       => [$row['billing_remote_id']],
             'nss'           => $row['nss'],
             'pw'            => $row['password'],
             'secDNS'        => $row['secDNS'],
@@ -164,7 +165,9 @@ class DomainModule extends AbstractModule
             $remoteId = $remoteIds[$contactId];
             if (!$remoteId) {
                 try {
-                    $response = $this->tool->contactSet($row["{$type}_info"]);
+                    $response = $this->tool->contactSet(array_merge($row["{$type}_info"], [
+                        'whois_protected' => $row['whois_protected'] ? 1 : 0,
+                    ]));
                 } catch (\Throwable $e) {
                     throw new \Exception($e->getMessage());
                 }
@@ -318,6 +321,7 @@ class DomainModule extends AbstractModule
                 $data = $this->tool->contactSet(array_merge($row['contacts'][$type], [
                     'epp_id' => $row['contacts']["{$type}_eppid"],
                     'whois_protected' => $row['whois_protected'],
+                    'email' => $row['whois_protected'] ? $row['contacts']['wp'][$type]['email'] : $row['contacts'][$type]['email'],
                 ]));
 
                 $contacts[$type] = $data['epp_id'];
@@ -430,21 +434,7 @@ class DomainModule extends AbstractModule
     public function domainSetNSs(array $row): array
     {
         $extensions = $this->tool->getExtensions();
-        foreach ($row['nss'] as $host) {
-            $avail = $this->tool->hostCheck([
-                'host' => $host,
-                'zone' => array_pop(explode(".", $row['domain'])),
-            ]);
-
-            if ((int) $avail['avail'] === 1) {
-                $this->tool->hostCreate([
-                    'host' => $host,
-                    'zone' => array_pop(explode(".", $row['domain'])),
-                ]);
-            }
-
-        }
-
+        $row = $this->_domainPrepareNSs($row);
         $info = $this->domainInfo($row);
 
         $row = $this->prepareDataForUpdate($row, $info, [
@@ -753,5 +743,25 @@ class DomainModule extends AbstractModule
     {
         $parts = explode('.', $domain);
         return array_pop($parts);
+    }
+
+    protected function _domainPrepareNSs($row)
+    {
+        foreach ($row['nss'] as $host) {
+            $avail = $this->tool->hostCheck([
+                'host' => $host,
+                'zone' => array_pop(explode(".", $row['domain'])),
+            ]);
+
+            if ((int) $avail['avail'] === 1) {
+                $this->tool->hostCreate([
+                    'host' => $host,
+                    'zone' => array_pop(explode(".", $row['domain'])),
+                ]);
+            }
+
+        }
+
+        return $row;
     }
 }

@@ -83,7 +83,7 @@ class AbstractModule
             'abcdefghijklmnopqrstuvwxyz',
             'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
             '0123456789',
-            '!@#$%^&*',
+            '!@#$%&*',
         ];
 
         $result = '';
@@ -158,7 +158,7 @@ class AbstractModule
      */
     public function fixContactID($epp_id) : string
     {
-        return strtoupper(str_replace("_", "-", $epp_id));
+        return strtolower(str_replace("_", "-", $epp_id));
     }
 
     /**
