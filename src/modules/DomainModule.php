@@ -10,6 +10,7 @@ class DomainModule extends AbstractModule
     const DOMAIN_PREMIUM = 'premium';
 
     const RENEW_DOMAIN_NOT_AVAILABLE_EXCEPTION = "Invalid command name; Renew Domain not available";
+    const RENEW_DOMAIN_AUTORENEW_RENEWONCE_EXCEPTION = "Invalid attribute value; explicit renewals not allowed for this TLD; please set domain to AUTORENEW or RENEWONCE";
 
     /** {@inheritdoc} */
     public $uris = [
@@ -164,9 +165,13 @@ class DomainModule extends AbstractModule
             $contactId = $row["{$type}_info"]['id'];
             $remoteId = $remoteIds[$contactId];
             if (!$remoteId) {
+
                 try {
+                    $email = $row['whois_protected'] && !$this->isKeySysExtensionEnabled() ? $row['contacts']['wp'][$type]['email'] : $row['contacts'][$type]['email'];
                     $response = $this->tool->contactSet(array_merge($row["{$type}_info"], [
                         'whois_protected' => $row['whois_protected'] ? 1 : 0,
+                        'email' => $email,
+
                     ]));
                 } catch (\Throwable $e) {
                     throw new \Exception($e->getMessage());
@@ -215,14 +220,14 @@ class DomainModule extends AbstractModule
                 'expiration_date'   => 'exDate',
             ]);
         } catch (EppErrorException $e) {
-            if ($e->getMessage() !== self::RENEW_DOMAIN_NOT_AVAILABLE_EXCEPTION || !$this->isKeySysExtensionEnabled()) {
+            if (!in_array($e->getMessage(), [self::RENEW_DOMAIN_NOT_AVAILABLE_EXCEPTION, self::RENEW_DOMAIN_AUTORENEW_RENEWONCE_EXCEPTION], true) || !$this->isKeySysExtensionEnabled()) {
                 throw $e;
             }
 
             return $this->domainUpdate([
                 'domain' => $row['domain'],
             ], [
-                'command' => 'keysys:ren',
+                'command' => 'keysys:renew',
                 'renewalmode' => 'RENEWONCE',
             ]);
         }
@@ -318,10 +323,11 @@ class DomainModule extends AbstractModule
 
             if (!$saved[$epp_id]) {
                 $contacts[$type] = $epp_id;
+                $email = $row['whois_protected'] && !$this->isKeySysExtensionEnabled() ? $row['contacts']['wp'][$type]['email'] : $row['contacts'][$type]['email'];
                 $data = $this->tool->contactSet(array_merge($row['contacts'][$type], [
                     'epp_id' => $row['contacts']["{$type}_eppid"],
                     'whois_protected' => $row['whois_protected'],
-                    'email' => $row['whois_protected'] ? $row['contacts']['wp'][$type]['email'] : $row['contacts'][$type]['email'],
+                    'email' => $email,
                 ]));
 
                 $contacts[$type] = $data['epp_id'];
