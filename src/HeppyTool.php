@@ -27,6 +27,7 @@ use hiapi\heppy\modules\SecDNSModule;
 use hiapi\heppy\modules\HostModule;
 use hiapi\heppy\modules\PollModule;
 use hiapi\heppy\modules\EPPModule;
+use hiapi\heppy\modules\BalanceModule;
 
 /**
  * hEPPy tool.
@@ -102,6 +103,7 @@ class HeppyTool
         'poll'      => PollModule::class,
         'polls'     => PollModule::class,
         'epp'       => EPPModule::class,
+        'balance'   => BalanceModule::class,
     ];
 
     /**
@@ -165,12 +167,19 @@ class HeppyTool
         return $this->defaultNss;
     }
 
-    /**
-     * @return string
-     */
     public function getRegistrar() : ?string
     {
         return (string) $this->data['registrar'];
+    }
+
+    public function getContract() : ?string
+    {
+        return (string) $this->data['contract'];
+    }
+
+    public function getMinBalance() : ?float
+    {
+        return (float) $this->data['balancelimit'];
     }
 
     /**
