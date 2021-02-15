@@ -10,11 +10,18 @@ class PollModule extends AbstractModule
     const POLL_QUEUE_EMPTY = 1300;
     const POLL_QUEUE_FULL = 1301;
     const M024_MAINTENANCE = "M024: The maintenance window Registry Scheduled Maintenance";
+    const M027_MAINTENANCE = "M027: The domain";
 
     /** @var array */
     protected $unusedPolls = [
         'Unused Objects Policy',
         'Unused objects policy',
+    ];
+
+    /** @var array */
+    protected $MXYZ_MAINTENANCE = [
+        'M024' => self::M024_MAINTENANCE,
+        'M027' => self::M027_MAINTENANCE,
     ];
 
     /**
@@ -92,7 +99,7 @@ class PollModule extends AbstractModule
         $i = 1;
         while ((int) $rc['result_code'] === self::POLL_QUEUE_FULL) {
             $poll = $this->_pollPostEvent($rc);
-            if (!in_array($poll['message'],  $this->unusedPolls, true) && strpos($poll['message'], self::M024_MAINTENANCE) === false) {
+            if ($this->_pollCheckUnsupported($poll['message']) === false) {
                 break;
             }
 
@@ -124,5 +131,20 @@ class PollModule extends AbstractModule
 
         $row['class'] = 'domain';
         return $row;
+    }
+
+    protected function _pollCheckUnsupported(string $message) : bool
+    {
+        if (in_array($message,  $this->unusedPolls, true)) {
+            return true;
+        }
+
+        foreach ($this->MXYZ_MAINTENANCE as $name => $str) {
+            if (strpos($message, $str) !== false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
