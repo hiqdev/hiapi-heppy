@@ -394,4 +394,13 @@ class HeppyTool
 
         return $contacts ?? [];
     }
+
+    public function getDisabledWP(): array
+    {
+        if (empty($this->contacts['disabled_wp'])) {
+            return [];
+        }
+
+        return $this->contacts['disabled_wp'];
+    }
 }

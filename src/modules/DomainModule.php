@@ -168,11 +168,11 @@ class DomainModule extends AbstractModule
 
                 try {
                     $email = $row['whois_protected'] && !$this->isKeySysExtensionEnabled() ? $row['contacts']['wp'][$type]['email'] : $row['contacts'][$type]['email'];
-                    $response = $this->tool->contactSet(array_merge($row["{$type}_info"], [
+                    $response = $this->tool->contactSet(array_merge($row["{$type}_info"], array_filter([
                         'whois_protected' => $row['whois_protected'] ? 1 : 0,
                         'email' => $email,
 
-                    ]));
+                    ], function($v) {return $v !== null;})));
                 } catch (\Throwable $e) {
                     throw new \Exception($e->getMessage());
                 }
@@ -636,6 +636,14 @@ class DomainModule extends AbstractModule
     public function domainSetWhoisProtect($row, $enable = null)
     {
         if (!$this->isKeySysExtensionEnabled()) {
+            return $row;
+        }
+
+        if (in_array($this->getDomainTopZone($row['domain']), $this->tool->getDisabledWP(), true)) {
+            return $row;
+        }
+
+        if (in_array($this->getDomainTopZone($row['domain']), ['es'], true)) {
             return $row;
         }
 
