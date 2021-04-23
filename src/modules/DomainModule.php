@@ -168,11 +168,11 @@ class DomainModule extends AbstractModule
 
                 try {
                     $email = $row['whois_protected'] && !$this->isKeySysExtensionEnabled() ? $row['contacts']['wp'][$type]['email'] : $row['contacts'][$type]['email'];
-                    $response = $this->tool->contactSet(array_merge($row["{$type}_info"], [
+                    $response = $this->tool->contactSet(array_merge($row["{$type}_info"], array_filter([
                         'whois_protected' => $row['whois_protected'] ? 1 : 0,
                         'email' => $email,
 
-                    ]));
+                    ], function($v) {return $v !== null;})));
                 } catch (\Throwable $e) {
                     throw new \Exception($e->getMessage());
                 }
@@ -639,6 +639,10 @@ class DomainModule extends AbstractModule
             return $row;
         }
 
+        if (in_array($this->getDomainZone($row['domain']), $this->tool->getDisabledWPZones(), true)) {
+            return $row;
+        }
+
         return $this->domainUpdate($row, [
             'command' => 'keysys:whoisprotect',
             'whois-privacy' => $enable ? '0' : '1',
@@ -671,7 +675,7 @@ class DomainModule extends AbstractModule
         throw new \Exception('FIX Domain Perfom Code!');
     }
 
-    protected function domainCheck(string $domain) : array
+    protected function domainCheck(string $domain): array
     {
         $res = $this->_domainCheck($domain, true);
         if ((int) $res['avails'][$domain] === 0) {
@@ -689,7 +693,7 @@ class DomainModule extends AbstractModule
         return $this->_parseCheckFee($domain, $res, $checkPremium);
     }
 
-    protected function _parseCheckFee(string $domain, array $data, array $res) : array
+    protected function _parseCheckFee(string $domain, array $data, array $res): array
     {
         if (empty($res['fee']) || empty($res['fee'][$domain]) || empty($res['fee'][$domain]['class'])) {
             return [
@@ -712,7 +716,7 @@ class DomainModule extends AbstractModule
         ];
     }
 
-    protected function _parseCheckPrice(string $domain, array $data, array $res) : array
+    protected function _parseCheckPrice(string $domain, array $data, array $res): array
     {
         $priceD = [];
         foreach ($res['price'][$domain] as $key => $value) {
@@ -730,7 +734,7 @@ class DomainModule extends AbstractModule
         ];
     }
 
-    protected function _domainCheck(string $domain, $withoutExt = false, string $action = 'create') : array
+    protected function _domainCheck(string $domain, $withoutExt = false, string $action = 'create'): array
     {
         return $this->tool->commonRequest("{$this->object}:check", [
             'names'     => [$domain],
@@ -745,10 +749,15 @@ class DomainModule extends AbstractModule
         ]);
     }
 
-    protected function getDomainTopZone(string $domain) : string
+    protected function getDomainTopZone(string $domain): string
     {
         $parts = explode('.', $domain);
         return array_pop($parts);
+    }
+
+    protected function getDomainZone(string $domain): string
+    {
+        return substr($domain,strpos($domain,'.'));
     }
 
     protected function _domainPrepareNSs($row)

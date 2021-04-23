@@ -11,17 +11,19 @@ class PollModule extends AbstractModule
     const POLL_QUEUE_FULL = 1301;
     const M024_MAINTENANCE = "M024: The maintenance window Registry Scheduled Maintenance";
     const M027_MAINTENANCE = "M027: The domain";
+    const DOMAIN_RENEWAL_SUCCESSFUL = 'DOMAIN_RENEWAL_SUCCESSFUL';
 
     /** @var array */
-    protected $unusedPolls = [
+    protected array $unusedPolls = [
         'Unused Objects Policy',
         'Unused objects policy',
     ];
 
     /** @var array */
-    protected $MXYZ_MAINTENANCE = [
+    protected array $MXYZ_MAINTENANCE = [
         'M024' => self::M024_MAINTENANCE,
         'M027' => self::M027_MAINTENANCE,
+        'DRS' => self::DOMAIN_RENEWAL_SUCCESSFUL,
     ];
 
     /**
