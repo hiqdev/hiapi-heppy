@@ -47,8 +47,8 @@ abstract class AbstractExtension
     public function isApplicable(string $command, array $data): bool
     {
         [$object, $command] = explode(":", $command, 2);
-        $object = $this->availableCommands['*'] ? '*' : $object;
-        $command = $this->availableCommands[$object]['*'] ? '*' : $command;
+        $object = !empty($this->availableCommands['*']) ? '*' : $object;
+        $command = !empty($this->availableCommands[$object]['*']) ? '*' : $command;
 
         if (!empty($this->availableCommands[$object][$command]['*'])) {
             return true;
