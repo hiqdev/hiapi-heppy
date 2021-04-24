@@ -54,7 +54,7 @@ abstract class AbstractExtension
             return true;
         }
 
-        if (!empty($this->availableCommands[$object][$command][$data['op']])) {
+        if (isset($data['op']) && !empty($this->availableCommands[$object][$command][$data['op']])) {
             return true;
         }
 

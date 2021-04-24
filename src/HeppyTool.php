@@ -221,6 +221,10 @@ class HeppyTool
         foreach ($this->extURNNames as $name => $data) {
             $urlns = is_string($data) ? $data : array_shift($data);
             $data = is_string($data) ? [$data] : $data;
+            if (!isset($this->helloData['extURIs'])) {
+                continue;
+            }
+
             if (!in_array($urlns, $this->helloData['extURIs'], true)) {
                 continue;
             }
@@ -256,7 +260,7 @@ class HeppyTool
             $this->helloData = $this->request('epp:hello', []);
         }
 
-        $this->objects = $this->helloData['objURIs'];
+        $this->objects = $this->helloData['objURIs'] ?? [];
 
         return $this->objects;
     }
@@ -277,7 +281,11 @@ class HeppyTool
         $input = $this->applyExtensions($command, $input);
 
         $response = $this->request($command, $input);
-        $rc = substr($response['result_code'] ?? '9999', 0, 1);
+        if (isset($response['result_code'])) {
+            $rc = substr($response['result_code'] ?? '9999', 0, 1);
+        } else {
+            throw new EppErrorException('failed heppy request: no answer');
+        }
 
         if ($rc !== '1') {
             throw new EppErrorException('failed heppy request: ' . var_export($response, true), (int) $response['result_code'], $response);

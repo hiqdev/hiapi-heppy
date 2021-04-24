@@ -74,7 +74,7 @@ class ContactModule extends AbstractModule
 
         $res = $this->tool->commonRequest("{$this->object}:info", array_filter([
             'id'        => $this->fixContactID($row['epp_id']),
-            'pw'        => $row['password'],
+            'pw'        => $row['password'] ?? null,
         ]), array_merge([
             'epp_id'        => 'id',
             'password'      => 'password',

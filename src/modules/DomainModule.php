@@ -321,7 +321,7 @@ class DomainModule extends AbstractModule
                 continue;
             }
 
-            if (!$saved[$epp_id]) {
+            if (empty($saved[$epp_id])) {
                 $contacts[$type] = $epp_id;
                 $email = $row['whois_protected'] && !$this->isKeySysExtensionEnabled() ? $row['contacts']['wp'][$type]['email'] : $row['contacts'][$type]['email'];
                 $data = $this->tool->contactSet(array_merge($row['contacts'][$type], [
