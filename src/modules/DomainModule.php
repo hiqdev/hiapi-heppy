@@ -412,10 +412,10 @@ class DomainModule extends AbstractModule
             'rem'       => $row['rem'] ?? null,
             'chg'       => $row['chg'] ?? null,
             'keysys'    => $keysys ?? null,
-        ]), [], [
-            'id'        => $row['id'],
+        ]), [], array_filter([
+            'id'        => $row['id'] ?? null,
             'domain'    => $row['domain'],
-        ]);
+        ]));
     }
 
     /**
