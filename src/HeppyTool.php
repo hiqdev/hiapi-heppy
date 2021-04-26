@@ -282,7 +282,7 @@ class HeppyTool
 
         $response = $this->request($command, $input);
         if (isset($response['result_code'])) {
-            $rc = substr($response['result_code'] ?? '9999', 0, 1);
+            $rc = substr($response['result_code'], 0, 1);
         } else {
             throw new EppErrorException('failed heppy request: no answer');
         }
