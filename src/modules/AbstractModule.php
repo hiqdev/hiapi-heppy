@@ -83,12 +83,11 @@ class AbstractModule
             'abcdefghijklmnopqrstuvwxyz',
             'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
             '0123456789',
-            '!@#$%&*',
         ];
 
         $result = '';
         for ($i = 0; $i < $length; $i++) {
-            $n = $i % 4;
+            $n = $i % 3;
             $max = strlen($charsets[$n]) - 1;
             $index = rand(0, $max);
             $result .= substr($charsets[$n], $index, 1);

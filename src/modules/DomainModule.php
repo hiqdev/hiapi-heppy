@@ -165,13 +165,13 @@ class DomainModule extends AbstractModule
             $contactId = $row["{$type}_info"]['id'];
             $remoteId = $remoteIds[$contactId];
             if (!$remoteId) {
-
                 try {
-                    $email = $row['whois_protected'] && !$this->isKeySysExtensionEnabled() ? $row['contacts']['wp'][$type]['email'] : $row['contacts'][$type]['email'];
+                    $email = $row['whois_protected'] && !$this->isKeySysExtensionEnabled()
+                        ? ($row['contacts']['wp'][$type]['email'] ?? $row['contacts'][$type]['email'])
+                        : $row['contacts'][$type]['email'];
                     $response = $this->tool->contactSet(array_merge($row["{$type}_info"], array_filter([
                         'whois_protected' => $row['whois_protected'] ? 1 : 0,
                         'email' => $email,
-
                     ], function($v) {return $v !== null;})));
                 } catch (\Throwable $e) {
                     throw new \Exception($e->getMessage());
@@ -323,7 +323,9 @@ class DomainModule extends AbstractModule
 
             if (empty($saved[$epp_id])) {
                 $contacts[$type] = $epp_id;
-                $email = $row['whois_protected'] && !$this->isKeySysExtensionEnabled() ? $row['contacts']['wp'][$type]['email'] : $row['contacts'][$type]['email'];
+                $email = ($row['whois_protected'] && !$this->isKeySysExtensionEnabled())
+                    ? ($row['contacts']['wp'][$type]['email'] ?? $row['contacts'][$type]['email'])
+                    : $row['contacts'][$type]['email'];
                 $data = $this->tool->contactSet(array_merge($row['contacts'][$type], [
                     'epp_id' => $row['contacts']["{$type}_eppid"],
                     'whois_protected' => $row['whois_protected'],
@@ -356,12 +358,9 @@ class DomainModule extends AbstractModule
             return $row;
         }
 
-        if (empty($contactTypes)) {
-            return $row;
-        }
-
         foreach ($contactTypes as $type) {
             $row[$type] = $this->fixContactID($row[$type]);
+            $info[$type] = $this->fixContactID($info[$type]);
             if ($type === 'registrant') {
                 continue;
             }
