@@ -167,7 +167,7 @@ class ContactModule extends AbstractModule
     private function prepareDataForContactUpdate(array $local, array $remote): array
     {
         $local['password'] = $local['password'] ?? $this->generatePassword();
-        return $this->prepareDataForUpdate($local, $remote, [
+        return $this->prepareDataForUpdate($local, $remote, array_filter([
             'name'          => 'name',
             'organization'  => 'org',
             'email'         => 'email',
@@ -182,6 +182,6 @@ class ContactModule extends AbstractModule
             'province'      => 'sp',
             'password'      => 'pw',
             'disclose'      => 'disclose',
-        ]);
+        ]));
     }
 }
