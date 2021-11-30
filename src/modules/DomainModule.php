@@ -373,7 +373,7 @@ class DomainModule extends AbstractModule
 
         foreach ($contactTypes as $type) {
             $row[$type] = $this->fixContactID($row[$type]);
-            $info[$type] = !empty($info[$type]) ? $this->fixContactID($info[$type]) : null;
+            $info[$type] = !empty($info[$type]) ? $info[$type] : null;
             if ($type === 'registrant') {
                 continue;
             }
