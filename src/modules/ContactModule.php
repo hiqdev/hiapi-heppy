@@ -7,6 +7,8 @@ use Exception;
 
 class ContactModule extends AbstractModule
 {
+    const NON_ALPHANUMERIC_EXCEPTION = 'authInfo code is invalid: password must contain at least one non-alphanumeric character';
+
     /** {@inheritdoc} */
     public $uris = [
         'contact' => 'urn:ietf:params:xml:ns:contact-1.0',
@@ -74,7 +76,7 @@ class ContactModule extends AbstractModule
         ];
 
         $res = $this->tool->commonRequest("{$this->object}:info", array_filter([
-            'id'        => $this->fixContactID($row['epp_id']),
+            'id'        => $row['epp_id'],
             'pw'        => $row['password'] ?? null,
         ]), array_merge([
             'epp_id'        => 'id',
@@ -84,10 +86,11 @@ class ContactModule extends AbstractModule
             'statuses'      => 'statuses',
             'loc'           => 'loc',
             'int'           => 'int',
+            'email'         => 'email',
             'disclose'      => 'disclose',
         ], $map));
 
-        return $res;
+        return $this->parseEPPInfo($res, $map);
     }
 
     /**
@@ -98,10 +101,6 @@ class ContactModule extends AbstractModule
     {
         if (!$this->isAvailable()) {
             return $row;
-        }
-
-        if ($addsympols === true) {
-            $this->generatePassword(16, true);
         }
 
         try {
@@ -118,7 +117,7 @@ class ContactModule extends AbstractModule
                 'street2'   => $row['street2']      ?? null,
                 'street3'   => $row['street3']      ?? null,
                 'pc'        => $row['postal_code']  ?? null,
-                'pw'        => $row['password'] ?: $this->generatePassword(16),
+                'pw'        => $row['password'] ?: $this->generatePassword(16, $addsympols),
                 'disclose'  => $row['whois_protected'] ? 1 : 0,
             ], $this->getFilterCallback()), [
                 'epp_id'        => 'id',
@@ -195,5 +194,33 @@ class ContactModule extends AbstractModule
             'password'      => 'pw',
             'disclose'      => 'disclose',
         ]));
+    }
+
+    private function parseEPPInfo(array $info, array $map): array
+    {
+        foreach (['int', 'loc'] as $type) {
+            if (empty($info[$type])) {
+                continue;
+            }
+
+            if (isset($info[$type]['name']) && empty($first_name)) {
+                [$first_name, $last_name] = explode(" ", $info[$type]['name'], 2);
+            }
+
+            $org = $org ?? ($info[$type]['org'] ?? null);
+            $addr = $addr ?? ($info[$type]['addr'] ?? null);
+        }
+
+        $data['organization'] = $org ?? null;
+        foreach ($map as $api => $epp) {
+            if (isset($addr[$epp])) {
+                $data[$api] = $addr[$epp];
+            }
+        }
+
+        return array_merge([
+            'first_name' => $first_name,
+            'last_name' => $last_name,
+        ], $data, $info);
     }
 }
