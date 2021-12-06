@@ -3,6 +3,8 @@
 namespace hiapi\heppy\modules;
 
 use hiapi\heppy\exceptions\EppErrorException;
+use Exception;
+use Throwable;
 
 class DomainModule extends AbstractModule
 {
@@ -11,6 +13,8 @@ class DomainModule extends AbstractModule
 
     const RENEW_DOMAIN_NOT_AVAILABLE_EXCEPTION = "Invalid command name; Renew Domain not available";
     const RENEW_DOMAIN_AUTORENEW_RENEWONCE_EXCEPTION = "Invalid attribute value; explicit renewals not allowed for this TLD; please set domain to AUTORENEW or RENEWONCE";
+
+    const DOMAIN_PREMIUM_REASON = 'PREMIUM DOMAIN';
 
     /** {@inheritdoc} */
     public $uris = [
@@ -86,7 +90,7 @@ class DomainModule extends AbstractModule
                     'epp_id' => $info['registrant'],
                 ]);
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
         }
 
         return $info;
@@ -173,8 +177,8 @@ class DomainModule extends AbstractModule
                         'whois_protected' => $row['whois_protected'] ? 1 : 0,
                         'email' => $email,
                     ], function($v) {return $v !== null;})));
-                } catch (\Throwable $e) {
-                    throw new \Exception($e->getMessage());
+                } catch (Throwable $e) {
+                    throw new Exception($e->getMessage());
                 }
 
                 $remoteId = $response['epp_id'];
@@ -210,15 +214,18 @@ class DomainModule extends AbstractModule
      */
     public function domainRenew(array $row): array
     {
+        $row = $this->_domainSetFee($row, 'renew');
+
         try {
-            return $this->tool->commonRequest("{$this->object}:renew", [
+            return $this->tool->commonRequest("{$this->object}:renew", array_filter([
                 'name'          => $row['domain'],
                 'curExpDate'    => $row['expires'],
                 'period'        => $row['period'],
-            ], [
+                'fee'           => $row['fee'] ?? null,
+            ]), array_filter([
                 'domain'            => 'name',
                 'expiration_date'   => 'exDate',
-            ]);
+            ]));
         } catch (EppErrorException $e) {
             if (!in_array($e->getMessage(), [self::RENEW_DOMAIN_NOT_AVAILABLE_EXCEPTION, self::RENEW_DOMAIN_AUTORENEW_RENEWONCE_EXCEPTION], true) || !$this->isKeySysExtensionEnabled()) {
                 throw $e;
@@ -240,12 +247,13 @@ class DomainModule extends AbstractModule
      */
     private function performTransfer(array $row, string $op): array
     {
-        return $this->tool->commonRequest("{$this->object}:transfer", [
+        return $this->tool->commonRequest("{$this->object}:transfer", array_filter([
             'op'        => $op,
             'name'      => $row['domain'],
             'pw'        => $row['password'],
             'period'    => $row['period'],
-        ], [
+            'fee'       => $row['fee'] ?? null,
+        ]), [
             'domain'            => 'name',
             'expiration_date'   => 'exDate',
             'action_date'       => 'acDate',
@@ -263,9 +271,13 @@ class DomainModule extends AbstractModule
             throw new Excepion('Object does not exist');
         }
 
-        $premium = $this->_domainCheck($row['domain'], false, 'transfer');
+        try {
+            $res = $this->domainInfo($row);
+        } catch (Throwable $e) {
+            throw new Exception($e->getMessage());
+        }
 
-        return $this->domainInfo($row);
+        return $this->_domainSetFee($res, 'transfer');
     }
 
     /**
@@ -274,6 +286,7 @@ class DomainModule extends AbstractModule
      */
     public function domainTransfer(array $row): array
     {
+        $row = $this->_domainSetFee($res, 'transfer');
         return $this->performTransfer($row, 'request');
     }
 
@@ -360,7 +373,7 @@ class DomainModule extends AbstractModule
 
         foreach ($contactTypes as $type) {
             $row[$type] = $this->fixContactID($row[$type]);
-            $info[$type] = $this->fixContactID($info[$type]);
+            $info[$type] = !empty($info[$type]) ? $info[$type] : null;
             if ($type === 'registrant') {
                 continue;
             }
@@ -380,6 +393,25 @@ class DomainModule extends AbstractModule
             ]);
 
             unset($row['chg']);
+        }
+
+        foreach (['add', 'rem'] as $op) {
+            foreach ($row[$op] as $id => $value) {
+                foreach ($contactTypes as $type) {
+                    if (empty($row[$op][$id][$type])) {
+                        continue;
+                    }
+
+                    $row[$op][$id][$type] = array_filter($row[$op][$id][$type]);
+                }
+
+                $row[$op][$id] = array_filter($row[$op][$id]);
+            }
+
+            $row[$op] = array_filter($row[$op]);
+            if (empty($row[$op])) {
+                unset($row[$op]);
+            }
         }
 
         if (empty($row['add']) && empty($row['rem'])) {
@@ -671,20 +703,25 @@ class DomainModule extends AbstractModule
             return $this->domainPerformOperation($command, $input, $returns, $payload, true);
         }
 
-        throw new \Exception('FIX Domain Perfom Code!');
+        throw new Exception('FIX Domain Perfom Code!');
     }
 
-    protected function domainCheck(string $domain): array
+    protected function domainCheck(string $domain, ?string $command = null): array
     {
+        try {
         $res = $this->_domainCheck($domain, true);
-        if ((int) $res['avails'][$domain] === 0) {
+        if ((int) $res['avails'][$domain] === 0 && $command === null) {
             return [
                 'avail' => (int) $res['avails'][$domain],
                 'reason' => $res['reasons'][$domain] ?? null,
             ];
         }
 
-        $checkPremium = $this->_domainCheck($domain);
+        $checkPremium = $this->_domainCheck($domain, false, $command ?? 'create');
+        } catch (Throwable $e) {
+            var_dump($e->getMessage());
+            throw new Exception($e->getMessage());
+        }
         if (!empty($checkPremium['price'])) {
             return $this->_parseCheckPrice($domain, $res, $checkPremium);
         }
@@ -710,7 +747,7 @@ class DomainModule extends AbstractModule
         $res['fee'][$domain]['currency'] = $this->tool->getCurrency();
         return [
             'avail' => (int) $data['avails'][$domain],
-            'reason' => 'PREMIUM DOMAIN',
+            'reason' => self::DOMAIN_PREMIUM_REASON,
             'fee' => $res['fee'][$domain],
         ];
     }
@@ -728,7 +765,7 @@ class DomainModule extends AbstractModule
         ]);
         return [
             'avail' => (int) $data['avails'][$domain],
-            'reason' => 'PREMIUM DOMAIN',
+            'reason' => self::DOMAIN_PREMIUM_REASON,
             'fee' => $res['fee'][$domain],
         ];
     }
@@ -759,7 +796,7 @@ class DomainModule extends AbstractModule
         return substr($domain,strpos($domain,'.'));
     }
 
-    protected function _domainPrepareNSs($row)
+    protected function _domainPrepareNSs($row): array
     {
         foreach ($row['nss'] as $host) {
             $avail = $this->tool->hostCheck([
@@ -777,5 +814,22 @@ class DomainModule extends AbstractModule
         }
 
         return $row;
+    }
+
+    protected function _domainSetFee(array $row, string $op): array
+    {
+        $data = $this->domainCheck($row['domain'], $op);
+        if ($data['reason'] !== self::DOMAIN_PREMIUM_REASON) {
+            return $row;
+        }
+
+        if ($data['fee']['fee'] != $row['standart_price'] && in_array($op, ['renew', 'transfer'], true)) {
+            return $row;
+        }
+
+        return array_merge($row, [
+            'fee' => $data['fee']['fee'],
+            'reason' => self::DOMAIN_PREMIUM_REASON,
+        ]);
     }
 }

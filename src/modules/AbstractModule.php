@@ -77,23 +77,78 @@ class AbstractModule
      * @param int $length
      * @return string
      */
-    public function generatePassword(int $length = 16): string
+    public function generatePassword(int $length = 16, ?bool $notalphanumeric = false): string
     {
         $charsets = [
             'abcdefghijklmnopqrstuvwxyz',
             'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
             '0123456789',
+            '.,?!<>&^()[]%$#+_=-/\|',
         ];
 
         $result = '';
         for ($i = 0; $i < $length; $i++) {
-            $n = $i % 3;
+            $n = $i % ($notalphanumeric === true ? 4 : 3);
             $max = strlen($charsets[$n]) - 1;
             $index = rand(0, $max);
             $result .= substr($charsets[$n], $index, 1);
         }
 
         return $result;
+    }
+
+    /**
+     * This method is for testing purpose only
+     *
+     * @param HeppyTool $tool
+     */
+    public function setTool(HeppyTool $tool): void
+    {
+        $this->tool = $tool;
+    }
+
+    /**
+     * Fix contact ID
+     *
+     * @param string
+     * @return string
+     */
+    public function fixContactID(string $epp_id, ?bool $sensative = true, ?bool $dashonly = false) : string
+    {
+        return strtolower(str_replace("_", "-", $epp_id));
+    }
+
+    /**
+     * Check is NameStore Extension enabled
+     *
+     * @return bool
+     */
+    public function isNamestoreExtensionEnabled() : bool
+    {
+        return $this->isExtensionEnabled('namestoreExt');
+    }
+
+    /**
+     * Check is KeySYS Extension enabled
+     *
+     * @return bool
+     */
+    public function isKeySysExtensionEnabled() : bool
+    {
+        return $this->isExtensionEnabled('keysys');
+    }
+
+    /**
+     * Check is Extension enabled
+     *
+     * @param string $extension
+     * @return bool
+     */
+    public function isExtensionEnabled(string $extension) : bool
+    {
+        $extensions = $this->tool->getExtensions();
+
+        return !empty($extensions[$extension]);
     }
 
     /**
@@ -138,59 +193,4 @@ class AbstractModule
 
         return array_merge($local, array_filter($res));
     }
-
-    /**
-     * This method is for testing purpose only
-     *
-     * @param HeppyTool $tool
-     */
-    public function setTool(HeppyTool $tool): void
-    {
-        $this->tool = $tool;
-    }
-
-    /**
-     * Fix contact ID
-     *
-     * @param string
-     * @return string
-     */
-    public function fixContactID($epp_id) : string
-    {
-        return strtolower(str_replace("_", "-", $epp_id));
-    }
-
-    /**
-     * Check is NameStore Extension enabled
-     *
-     * @return bool
-     */
-    public function isNamestoreExtensionEnabled() : bool
-    {
-        return $this->isExtensionEnabled('namestoreExt');
-    }
-
-    /**
-     * Check is KeySYS Extension enabled
-     *
-     * @return bool
-     */
-    public function isKeySysExtensionEnabled() : bool
-    {
-        return $this->isExtensionEnabled('keysys');
-    }
-
-    /**
-     * Check is Extension enabled
-     *
-     * @param string $extension
-     * @return bool
-     */
-    public function isExtensionEnabled(string $extension) : bool
-    {
-        $extensions = $this->tool->getExtensions();
-
-        return !empty($extensions[$extension]);
-    }
-
 }

@@ -279,7 +279,6 @@ class HeppyTool
         array $payload = []
     ): array {
         $input = $this->applyExtensions($command, $input);
-
         $response = $this->request($command, $input);
         if (isset($response['result_code'])) {
             $rc = substr($response['result_code'], 0, 1);

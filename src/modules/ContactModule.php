@@ -2,7 +2,8 @@
 
 namespace hiapi\heppy\modules;
 
-use err;
+use Throwable;
+use Exception;
 
 class ContactModule extends AbstractModule
 {
@@ -93,31 +94,42 @@ class ContactModule extends AbstractModule
      * @param array $row
      * @return array
      */
-    public function contactCreate(array $row): array
+    public function contactCreate(array $row, ?bool $addsympols = false): array
     {
         if (!$this->isAvailable()) {
             return $row;
         }
 
-        return $this->tool->commonRequest("{$this->object}:create", array_filter([
-            'id'        => $this->fixContactID($row['epp_id']),
-            'name'      => $row['name'],
-            'email'     => $row['email'],
-            'voice'     => $row['voice_phone'],
-            'fax'       => $row['fax_phone']    ?? null,
-            'org'       => $row['organization'] ?? null,
-            'cc'        => $row['country']      ?? null,
-            'city'      => $row['city']         ?? null,
-            'street1'   => $row['street1']      ?? null,
-            'street2'   => $row['street2']      ?? null,
-            'street3'   => $row['street3']      ?? null,
-            'pc'        => $row['postal_code']  ?? null,
-            'pw'        => $row['password'] ?: $this->generatePassword(16),
-            'disclose'  => $row['whois_protected'] ? 1 : 0,
-        ], $this->getFilterCallback()), [
-            'epp_id'        => 'id',
-            'created_date'  => 'crDate',
-        ]);
+        if ($addsympols === true) {
+            $this->generatePassword(16, true);
+        }
+
+        try {
+            return $this->tool->commonRequest("{$this->object}:create", array_filter([
+                'id'        => $this->fixContactID($row['epp_id']),
+                'name'      => $row['name'],
+                'email'     => $row['email'],
+                'voice'     => $row['voice_phone'],
+                'fax'       => $row['fax_phone']    ?? null,
+                'org'       => $row['organization'] ?? null,
+                'cc'        => $row['country']      ?? null,
+                'city'      => $row['city']         ?? null,
+                'street1'   => $row['street1']      ?? null,
+                'street2'   => $row['street2']      ?? null,
+                'street3'   => $row['street3']      ?? null,
+                'pc'        => $row['postal_code']  ?? null,
+                'pw'        => $row['password'] ?: $this->generatePassword(16),
+                'disclose'  => $row['whois_protected'] ? 1 : 0,
+            ], $this->getFilterCallback()), [
+                'epp_id'        => 'id',
+                'created_date'  => 'crDate',
+            ]);
+        } catch (Throwable $e) {
+            if (strpos($e->getMessage(), self::NON_ALPHANUMERIC_EXCEPTION) !== false) {
+                return $this->contactCreate($row, true);
+            }
+            throw new Exception($e->getMessage());
+        }
     }
 
     /**

@@ -43,7 +43,7 @@ class FeeExtension extends AbstractExtension implements ExtensionInterface
             return $data;
         }
 
-        foreach ($data['extensions'] as $ext) {
+        foreach ($data['extensions'] ?? [] as $ext) {
             if (strpos($ext['command'], 'price') !== false) {
                 return $data;
             }
@@ -57,7 +57,7 @@ class FeeExtension extends AbstractExtension implements ExtensionInterface
             'command' => "fee{$this->version}:" . substr($command, 7),
             'name' => $data['name'] ?? reset($data['names']),
             'currency' => strtoupper($this->tool->getCurrency() ?? 'USD'),
-            'fee' => $data['fee'],
+            'fee' => $data['fee'] ?? null,
             'period' => $data['period'] ?? ($data['amount'] ?? 1),
             'action' => $data['fee-action'] ?? ($command === 'domain:check' ? 'create' : substr($command, 7)),
         ]);
