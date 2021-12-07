@@ -143,13 +143,10 @@ class ContactModule extends AbstractModule
         }
 
         $row = $this->prepareDataForContactUpdate($row, $info);
-        $row['chg']['disclose'] = strval((int) (!$row['whois_protected']));
 
         return $this->tool->commonRequest("{$this->object}:update", array_filter([
             'id'        => $row['epp_id'],
-            'add'       => $row['add'] ?? null,
-            'rem'       => $row['rem'] ?? null,
-            'chg'       => $row['chg'] ?? null,
+            'chg'       => $row['chg'],
         ]), [], [
             'epp_id'    => $this->fixContactID($row['epp_id']),
         ]);
@@ -177,23 +174,25 @@ class ContactModule extends AbstractModule
      */
     private function prepareDataForContactUpdate(array $local, array $remote): array
     {
-        $local['password'] = $local['password'] ?? $this->generatePassword();
-        return $this->prepareDataForUpdate($local, $remote, array_filter([
-            'name'          => 'name',
-            'organization'  => 'org',
-            'email'         => 'email',
-            'fax_phone'     => 'fax',
-            'voice_phone'   => 'voice',
-            'country'       => 'cc',
-            'city'          => 'city',
-            'postal_code'   => 'pc',
-            'street1'       => 'street1',
-            'street2'       => 'street2',
-            'street3'       => 'street3',
-            'province'      => 'sp',
-            'password'      => 'pw',
-            'disclose'      => 'disclose',
-        ]));
+        return [
+            'epp_id' => $local['epp_id'],
+            'chg' => array_filter([
+                'name'      => $local['name'],
+                'org'       => $local['organization'] ?? null,
+                'email'     => $local['email'],
+                'fax'       => $local['fax_phone'] ?? null,
+                'voice'     => $local['voice_phone'],
+                'cc'        => $local['country'],
+                'city'      => $local['city'],
+                'pc'        => $local['postal_code'],
+                'street1'   => $local['street1'],
+                'street2'   => $local['street2'] ?? null,
+                'street3'   => $local['street3'] ?? null,
+                'sp'        => $local['province'] ?? null,
+                'pw'        => $local['password'] ?? null,
+                'disclose'  => strval((int) (!$local['whois_protected'])),
+            ]),
+        ];
     }
 
     private function parseEPPInfo(array $info, array $map): array
