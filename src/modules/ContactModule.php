@@ -7,6 +7,8 @@ use Exception;
 
 class ContactModule extends AbstractModule
 {
+    const NON_ALPHANUMERIC_EXCEPTION = 'authInfo code is invalid: password must contain at least one non-alphanumeric character';
+
     /** {@inheritdoc} */
     public $uris = [
         'contact' => 'urn:ietf:params:xml:ns:contact-1.0',
@@ -74,7 +76,7 @@ class ContactModule extends AbstractModule
         ];
 
         $res = $this->tool->commonRequest("{$this->object}:info", array_filter([
-            'id'        => $this->fixContactID($row['epp_id']),
+            'id'        => $row['epp_id'],
             'pw'        => $row['password'] ?? null,
         ]), array_merge([
             'epp_id'        => 'id',
@@ -84,10 +86,11 @@ class ContactModule extends AbstractModule
             'statuses'      => 'statuses',
             'loc'           => 'loc',
             'int'           => 'int',
+            'email'         => 'email',
             'disclose'      => 'disclose',
         ], $map));
 
-        return $res;
+        return $this->parseEPPInfo($res, $map);
     }
 
     /**
@@ -98,10 +101,6 @@ class ContactModule extends AbstractModule
     {
         if (!$this->isAvailable()) {
             return $row;
-        }
-
-        if ($addsympols === true) {
-            $this->generatePassword(16, true);
         }
 
         try {
@@ -118,7 +117,7 @@ class ContactModule extends AbstractModule
                 'street2'   => $row['street2']      ?? null,
                 'street3'   => $row['street3']      ?? null,
                 'pc'        => $row['postal_code']  ?? null,
-                'pw'        => $row['password'] ?: $this->generatePassword(16),
+                'pw'        => $row['password'] ?: $this->generatePassword(16, $addsympols),
                 'disclose'  => $row['whois_protected'] ? 1 : 0,
             ], $this->getFilterCallback()), [
                 'epp_id'        => 'id',
@@ -144,13 +143,10 @@ class ContactModule extends AbstractModule
         }
 
         $row = $this->prepareDataForContactUpdate($row, $info);
-        $row['chg']['disclose'] = strval((int) (!$row['whois_protected']));
 
         return $this->tool->commonRequest("{$this->object}:update", array_filter([
             'id'        => $row['epp_id'],
-            'add'       => $row['add'] ?? null,
-            'rem'       => $row['rem'] ?? null,
-            'chg'       => $row['chg'] ?? null,
+            'chg'       => $row['chg'],
         ]), [], [
             'epp_id'    => $this->fixContactID($row['epp_id']),
         ]);
@@ -178,22 +174,52 @@ class ContactModule extends AbstractModule
      */
     private function prepareDataForContactUpdate(array $local, array $remote): array
     {
-        $local['password'] = $local['password'] ?? $this->generatePassword();
-        return $this->prepareDataForUpdate($local, $remote, array_filter([
-            'name'          => 'name',
-            'organization'  => 'org',
-            'email'         => 'email',
-            'fax_phone'     => 'fax',
-            'voice_phone'   => 'voice',
-            'country'       => 'cc',
-            'city'          => 'city',
-            'postal_code'   => 'pc',
-            'street1'       => 'street1',
-            'street2'       => 'street2',
-            'street3'       => 'street3',
-            'province'      => 'sp',
-            'password'      => 'pw',
-            'disclose'      => 'disclose',
-        ]));
+        return [
+            'epp_id' => $local['epp_id'],
+            'chg' => array_filter([
+                'name'      => $local['name'],
+                'org'       => $local['organization'] ?? null,
+                'email'     => $local['email'],
+                'fax'       => $local['fax_phone'] ?? null,
+                'voice'     => $local['voice_phone'],
+                'cc'        => $local['country'],
+                'city'      => $local['city'],
+                'pc'        => $local['postal_code'],
+                'street1'   => $local['street1'],
+                'street2'   => $local['street2'] ?? null,
+                'street3'   => $local['street3'] ?? null,
+                'sp'        => $local['province'] ?? null,
+                'pw'        => $local['password'] ?? null,
+                'disclose'  => strval((int) (!$local['whois_protected'])),
+            ]),
+        ];
+    }
+
+    private function parseEPPInfo(array $info, array $map): array
+    {
+        foreach (['int', 'loc'] as $type) {
+            if (empty($info[$type])) {
+                continue;
+            }
+
+            if (isset($info[$type]['name']) && empty($first_name)) {
+                [$first_name, $last_name] = explode(" ", $info[$type]['name'], 2);
+            }
+
+            $org = $org ?? ($info[$type]['org'] ?? null);
+            $addr = $addr ?? ($info[$type]['addr'] ?? null);
+        }
+
+        $data['organization'] = $org ?? null;
+        foreach ($map as $api => $epp) {
+            if (isset($addr[$epp])) {
+                $data[$api] = $addr[$epp];
+            }
+        }
+
+        return array_merge([
+            'first_name' => $first_name,
+            'last_name' => $last_name,
+        ], $data, $info);
     }
 }
