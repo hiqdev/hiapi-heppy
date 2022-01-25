@@ -14,6 +14,9 @@ class DomainModule extends AbstractModule
     const RENEW_DOMAIN_NOT_AVAILABLE_EXCEPTION = "Invalid command name; Renew Domain not available";
     const RENEW_DOMAIN_AUTORENEW_RENEWONCE_EXCEPTION = "Invalid attribute value; explicit renewals not allowed for this TLD; please set domain to AUTORENEW or RENEWONCE";
 
+    const NON_ALPHANUMERIC_EXCEPTION = 'authInfo code is invalid: password must contain at least one non-alphanumeric character';
+
+
     const DOMAIN_PREMIUM_REASON = 'PREMIUM DOMAIN';
 
     /** {@inheritdoc} */

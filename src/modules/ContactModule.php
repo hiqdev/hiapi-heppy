@@ -103,6 +103,10 @@ class ContactModule extends AbstractModule
             return $row;
         }
 
+        if ($addsympols === true) {
+            $row['password'] = $this->generatePassword(16, true);
+        }
+
         try {
             return $this->tool->commonRequest("{$this->object}:create", array_filter([
                 'id'        => $this->fixContactID($row['epp_id']),
