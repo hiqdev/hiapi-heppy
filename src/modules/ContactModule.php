@@ -7,6 +7,8 @@ use Exception;
 
 class ContactModule extends AbstractModule
 {
+    const NON_ALPHANUMERIC_EXCEPTION = 'authInfo code is invalid: password must contain at least one non-alphanumeric character';
+
     /** {@inheritdoc} */
     public $uris = [
         'contact' => 'urn:ietf:params:xml:ns:contact-1.0',
@@ -101,7 +103,7 @@ class ContactModule extends AbstractModule
         }
 
         if ($addsympols === true) {
-            $this->generatePassword(16, true);
+            $row['password'] = $this->generatePassword(16, true);
         }
 
         try {
