@@ -87,16 +87,7 @@ class DomainModule extends AbstractModule
             }
         }
 
-        try {
-            if (!empty($info['registrant'])) {
-                $info['contact']['registrant'] = $this->tool->contactInfo([
-                    'epp_id' => $info['registrant'],
-                ]);
-            }
-        } catch (Throwable $e) {
-        }
-
-        return $info;
+        return $this->getContactsInfo($info);
     }
 
     public function domainGetInfo(array $row): array
@@ -374,54 +365,7 @@ class DomainModule extends AbstractModule
             return $row;
         }
 
-        foreach ($contactTypes as $type) {
-            $row[$type] = $this->fixContactID($row[$type]);
-            $info[$type] = !empty($info[$type]) ? $info[$type] : null;
-            if ($type === 'registrant') {
-                continue;
-            }
-
-            $row[$type] = [$row[$type]];
-            $info[$type] = [$info[$type]];
-        }
-
-        $row = $this->prepareDataForUpdate($row, $info, $contactTypes);
-
-        if (!empty($row['chg']) && !empty($row['registrant']) && in_array('registrant', $contactTypes, true)) {
-            $res = $this->domainUpdate([
-                'domain' => $row['domain'],
-                'chg' => [
-                    'registrant' => $row['registrant'],
-                ],
-            ]);
-
-            unset($row['chg']);
-        }
-
-        foreach (['add', 'rem'] as $op) {
-            foreach ($row[$op] as $id => $value) {
-                foreach ($contactTypes as $type) {
-                    if (empty($row[$op][$id][$type])) {
-                        continue;
-                    }
-
-                    $row[$op][$id][$type] = array_filter($row[$op][$id][$type]);
-                }
-
-                $row[$op][$id] = array_filter($row[$op][$id]);
-            }
-
-            $row[$op] = array_filter($row[$op]);
-            if (empty($row[$op])) {
-                unset($row[$op]);
-            }
-        }
-
-        if (empty($row['add']) && empty($row['rem'])) {
-            return $row;
-        }
-
-        return $this->domainUpdate($row);
+        return $this->_domainSetContacts($row, $info, $contactTypes);
     }
 
     /**
@@ -834,5 +778,97 @@ class DomainModule extends AbstractModule
             'fee' => $data['fee']['fee'],
             'reason' => self::DOMAIN_PREMIUM_REASON,
         ]);
+    }
+
+    private function _domainSetContacts(array $row, array $info, array $contactTypes, ?bool $fixEPPID = true): array
+    {
+        $orow = $row;
+        foreach ($contactTypes as $type) {
+            $row[$type] = $fixEPPID ? $this->fixContactID($row[$type]) : $row[$type];
+            $info[$type] = !empty($info[$type]) ? $info[$type] : null;
+            if ($type === 'registrant') {
+                continue;
+            }
+
+            $row[$type] = [$row[$type]];
+            $info[$type] = [$info[$type]];
+        }
+
+        $row = $this->prepareDataForUpdate($row, $info, $contactTypes);
+
+        if (!empty($row['chg']) && !empty($row['registrant']) && in_array('registrant', $contactTypes, true)) {
+            $res = $this->domainUpdate([
+                'domain' => $row['domain'],
+                'chg' => [
+                    'registrant' => $row['registrant'],
+                ],
+            ]);
+
+            unset($row['chg']);
+        }
+
+        foreach (['add', 'rem'] as $op) {
+            foreach ($row[$op] as $id => $value) {
+                foreach ($contactTypes as $type) {
+                    if (empty($row[$op][$id][$type])) {
+                        continue;
+                    }
+
+                    $row[$op][$id][$type] = array_filter($row[$op][$id][$type]);
+                }
+
+                $row[$op][$id] = array_filter($row[$op][$id]);
+            }
+
+            $row[$op] = array_filter($row[$op]);
+            if (empty($row[$op])) {
+                unset($row[$op]);
+            }
+        }
+
+        if (empty($row['add']) && empty($row['rem'])) {
+            return $row;
+        }
+
+        try {
+            return $this->domainUpdate($row);
+        } catch (Throwable $e) {
+            if ($fixEPPID === false) {
+                throw new Exception($e->getMessage());
+            }
+
+            return $this->_domainSetContacts($orow, $info, $contactTypes, false);
+        }
+    }
+
+    protected function getContactsInfo(array $info): array
+    {
+        $contacts = [];
+        $mainContact = null;
+        foreach ($this->tool->getContactTypes() as $type) {
+            if (empty($info[$type])) {
+                continue;
+            }
+
+            if (isset($contacts[$info[$type]])) {
+                $info["{$type}c"] = $contacts[$info[$type]];
+                continue;
+            }
+
+            try {
+                $contact = $this->tool->contactInfo([
+                    'epp_id' => $info[$type],
+                ]);
+            } catch (\Throwable $e) {
+                continue;
+            }
+
+            $contacts[$info[$type]] = $contact;
+            $info['contact'] = $info['contact'] ?? $contact;
+        }
+
+        unset($info['contact']['epp_id']);
+
+        return $info;
     }
 }

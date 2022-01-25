@@ -12,6 +12,10 @@ class PollModule extends AbstractModule
     const M024_MAINTENANCE = "M024: The maintenance window Registry Scheduled Maintenance";
     const M027_MAINTENANCE = "M027: The domain";
     const DOMAIN_RENEWAL_SUCCESSFUL = 'DOMAIN_RENEWAL_SUCCESSFUL';
+    const DOMAIN_RENEWAL_SUCCESSFUL = 'DOMAIN_RENEWAL_SUCCESSFUL';
+    const DOMAIN_AUTO_RENEW_NOTICE ='Auto Renew Notice';
+    const DOMAIN_DELETE_COMPLETED = 'Delete Completed';
+    const REGISTRY_INITIATED_UPDATE_DOMAIN = 'Registry initiated update of domain';
 
     /** @var array */
     protected array $unusedPolls = [
