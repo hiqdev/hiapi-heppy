@@ -19,6 +19,7 @@ use hiapi\heppy\extensions\FeeExtension;
 use hiapi\heppy\extensions\SecDNSExtension;
 use hiapi\heppy\extensions\IDNLangExtension;
 use hiapi\heppy\extensions\PriceExtension;
+use hiapi\heppy\extensions\ChargeExtension;
 use hiapi\heppy\extensions\KeySysExtension;
 use hiapi\heppy\modules\AbstractModule;
 use hiapi\heppy\modules\ContactModule;
@@ -54,6 +55,7 @@ class HeppyTool
         'idn' => 'urn:ietf:params:xml:ns:idn-1.0',
         'verificationCode' => 'urn:ietf:params:xml:ns:verificationCode-1.0',
         'price' => ['urn:ar:params:xml:ns:price-1.1'],
+        'charge' => ['http://www.unitedtld.com/epp/charge-1.0'],
         'fee05' => ['urn:ietf:params:xml:ns:fee-0.5', 'version' => '05'],
         'fee06' => ['urn:ietf:params:xml:ns:fee-0.6', 'version' => '06'],
         'fee07' => ['urn:ietf:params:xml:ns:fee-0.7', 'version' => '07'],
@@ -86,6 +88,7 @@ class HeppyTool
         'fee09' => FeeExtension::class,
         'fee11' => FeeExtension::class,
         'fee21' => FeeExtension::class,
+        'charge' => ChargeExtension::class,
         'idnLang' => IDNLangExtension::class,
         'price' => PriceExtension::class,
         'keysys' => KeySysExtension::class,
@@ -287,7 +290,7 @@ class HeppyTool
         }
 
         if ($rc !== '1') {
-            throw new EppErrorException('failed heppy request: ' . var_export($response, true), (int) $response['result_code'], $response);
+            throw new EppErrorException($response['msg'] ?? ('failed heppy request: ' . var_export($response, true)), (int) $response['result_code'], $response);
         }
 
         $returns = $this->addCommonResponseFields($returns);
