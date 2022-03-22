@@ -143,7 +143,7 @@ class DomainModule extends AbstractModule
             'tech'          => [$row['tech_remote_id']],
             'billing'       => [$row['billing_remote_id']],
             'nss'           => $row['nss'],
-            'pw'            => $row['password'],
+            'pw'            => $row['password'] ?: $this->generatePassword(16),
             'secDNS'        => $row['secDNS'],
         ]), [
             'domain'            => 'name',
@@ -280,7 +280,7 @@ class DomainModule extends AbstractModule
      */
     public function domainTransfer(array $row): array
     {
-        $row = $this->_domainSetFee($res, 'transfer');
+        $row = $this->_domainSetFee($row, 'transfer');
         return $this->performTransfer($row, 'request');
     }
 
@@ -656,17 +656,17 @@ class DomainModule extends AbstractModule
     protected function domainCheck(string $domain, ?string $command = null): array
     {
         try {
-        $res = $this->_domainCheck($domain, true);
-        if ((int) $res['avails'][$domain] === 0 && $command === null) {
-            return [
-                'avail' => (int) $res['avails'][$domain],
-                'reason' => $res['reasons'][$domain] ?? null,
-            ];
-        }
+            $res = $this->_domainCheck($domain, true);
+            $this->_parseCheckCharge($domain, $res);
+            if ((int) $res['avails'][$domain] === 0 && $command === null) {
+                return [
+                    'avail' => (int) $res['avails'][$domain],
+                    'reason' => $res['reasons'][$domain] ?? null,
+                ];
+            }
 
-        $checkPremium = $this->_domainCheck($domain, false, $command ?? 'create');
+            $checkPremium = $this->_domainCheck($domain, false, $command ?? 'create');
         } catch (Throwable $e) {
-            var_dump($e->getMessage());
             throw new Exception($e->getMessage());
         }
         if (!empty($checkPremium['price'])) {
@@ -674,6 +674,22 @@ class DomainModule extends AbstractModule
         }
 
         return $this->_parseCheckFee($domain, $res, $checkPremium);
+    }
+
+    protected function _parseCheckCharge(string $domain, array $data): array
+    {
+        return array_merge($data, array_filter([
+            'premium' => $data['category'] === self::DOMAIN_PREMIUM,
+            'reason' => $data['category'] === self::DOMAIN_PREMIUM ? self::DOMAIN_PREMIUM_REASON : $data[$domain]['reason'],
+            'category_name' => $data['category_name'] ?? null,
+            'fee' => $data['category'] === self::DOMAIN_PREMIUM ? [
+                'create' => $data['create'],
+                'renew' => $data['renew'],
+                'restore' => $data['restore'],
+                'transfer' => $data['transfer'],
+                'category_name' => $data['category_name'] ?? null,
+            ] : null,
+        ]));
     }
 
     protected function _parseCheckFee(string $domain, array $data, array $res): array
@@ -729,6 +745,7 @@ class DomainModule extends AbstractModule
             'reasons'   => 'reasons',
             'fee'       => 'fee',
             'price'     => 'price',
+            'charge'    => 'charge',
         ]);
     }
 

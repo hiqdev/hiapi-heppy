@@ -1,0 +1,48 @@
+<?php
+/**
+ * hiAPI hEPPy plugin
+ *
+ * @link      https://github.com/hiqdev/hiapi-heppy
+ * @package   hiapi-heppy
+ * @license   BSD-3-Clause
+ * @copyright Copyright (c) 2017, HiQDev (http://hiqdev.com/)
+ */
+
+namespace hiapi\heppy\extensions;
+
+use hiapi\heppy\interfaces\ExtensionInterface;
+
+/**
+ * Fee class of EPP extension
+ * Select right version of extension from urlns
+ */
+class ChargeExtension extends AbstractExtension implements ExtensionInterface
+{
+    /** {@inheritdoc} */
+    public $availableCommands = [
+        'domain' => [
+            'create' => ['*' => true],
+            'renew' => ['*' => true],
+            'transer' => ['request' => true, 'query' => 'true'],
+            'update' => ['restore' => true],
+            'restore' => ['*' => true],
+        ],
+    ];
+
+    /** {@inheritdoc} */
+    public function addExtension(string $command, array $data): array
+    {
+        if ($data['withoutExt'] === true) {
+            return $data;
+        }
+
+        $data['extensions'][] = array_filter([
+            'command' => "charge:" .  substr($command, 7),
+            'amount' => $data['fee'],
+            'period' => $data['period'] ?? ($data['amount'] ?? 1),
+            'category_name' => $data['category_name'],
+        ]);
+
+        return $data;
+    }
+}
