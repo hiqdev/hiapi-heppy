@@ -679,10 +679,10 @@ class DomainModule extends AbstractModule
     protected function _parseCheckCharge(string $domain, array $data): array
     {
         return array_merge($data, array_filter([
-            'premium' => $data['category'] === self::DOMAIN_PREMIUM,
-            'reason' => $data['category'] === self::DOMAIN_PREMIUM ? self::DOMAIN_PREMIUM_REASON : $data[$domain]['reason'],
+            'premium' => isset($data['category']) && $data['category'] === self::DOMAIN_PREMIUM,
+            'reason' => isset($data['category']) && $data['category'] === self::DOMAIN_PREMIUM ? self::DOMAIN_PREMIUM_REASON : $data[$domain]['reason'],
             'category_name' => $data['category_name'] ?? null,
-            'fee' => $data['category'] === self::DOMAIN_PREMIUM ? [
+            'fee' => isset($data['category']) && $data['category'] === self::DOMAIN_PREMIUM ? [
                 'create' => $data['create'],
                 'renew' => $data['renew'],
                 'restore' => $data['restore'],
