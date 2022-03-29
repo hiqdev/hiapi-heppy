@@ -32,7 +32,11 @@ class ChargeExtension extends AbstractExtension implements ExtensionInterface
     /** {@inheritdoc} */
     public function addExtension(string $command, array $data): array
     {
-        if ($data['withoutExt'] === true) {
+        if (isset($data['withoutExt']) && $data['withoutExt'] === true) {
+            return $data;
+        }
+
+        if (empty($data['fee'])) {
             return $data;
         }
 

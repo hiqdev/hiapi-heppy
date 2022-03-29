@@ -290,6 +290,10 @@ class HeppyTool
         }
 
         if ($rc !== '1') {
+            if (!empty($response['msg'])) {
+                throw new EppErrorException(trim($response['msg'] . " " . ($response['result_reason'] ?? '')), (int) $response['result_code'], $response);
+            }
+
             throw new EppErrorException($response['msg'] ?? ('failed heppy request: ' . var_export($response, true)), (int) $response['result_code'], $response);
         }
 

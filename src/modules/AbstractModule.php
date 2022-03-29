@@ -88,7 +88,7 @@ class AbstractModule
 
         $result = '';
         for ($i = 0; $i < $length; $i++) {
-            $n = $i % ($notalphanumeric === true ? 4 : 3);
+            $n = $i % ($notalphanumeric === true ? 5 : 4);
             $max = strlen($charsets[$n]) - 1;
             $index = rand(0, $max);
             $result .= substr($charsets[$n], $index, 1);

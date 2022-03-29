@@ -97,13 +97,13 @@ class ContactModule extends AbstractModule
      * @param array $row
      * @return array
      */
-    public function contactCreate(array $row, ?bool $addsympols = false): array
+    public function contactCreate(array $row, ?bool $addsymbols = false): array
     {
         if (!$this->isAvailable()) {
             return $row;
         }
 
-        if ($addsympols === true) {
+        if ($addsymbols === true) {
             $row['password'] = $this->generatePassword(16, true);
         }
 
@@ -122,7 +122,7 @@ class ContactModule extends AbstractModule
                 'street3'   => $row['street3']      ?? null,
                 'pc'        => $row['postal_code']  ?? null,
                 'sp'        => $row['province']     ?? null,
-                'pw'        => $row['password'] ?: $this->generatePassword(16, $addsympols),
+                'pw'        => $row['password'] ?: $this->generatePassword(16, $addsymbols),
                 'disclose'  => $row['whois_protected'] ? 1 : 0,
             ], $this->getFilterCallback()), [
                 'epp_id'        => 'id',

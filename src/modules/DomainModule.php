@@ -144,7 +144,7 @@ class DomainModule extends AbstractModule
             'billing'       => [$row['billing_remote_id']],
             'nss'           => $row['nss'],
             'pw'            => $row['password'] ?: $this->generatePassword(16),
-            'secDNS'        => $row['secDNS'],
+            'secDNS'        => $row['secDNS'] ?? null,
         ]), [
             'domain'            => 'name',
             'created_date'      => 'crDate',
@@ -161,12 +161,12 @@ class DomainModule extends AbstractModule
         $remoteIds = [];
         foreach ($this->tool->getContactTypes() as $type) {
             $contactId = $row["{$type}_info"]['id'];
-            $remoteId = $remoteIds[$contactId];
+            $remoteId = $remoteIds[$contactId] ?? null;
             if (!$remoteId) {
                 try {
                     $email = $row['whois_protected'] && !$this->isKeySysExtensionEnabled()
-                        ? ($row['contacts']['wp'][$type]['email'] ?? $row['contacts'][$type]['email'])
-                        : $row['contacts'][$type]['email'];
+                        ? ($row['contacts']['wp'][$type]['email'] ?? $row['contacts'][$type]['email'] ?? null)
+                        : ($row['contacts'][$type]['email'] ?? null);
                     $response = $this->tool->contactSet(array_merge($row["{$type}_info"], array_filter([
                         'whois_protected' => $row['whois_protected'] ? 1 : 0,
                         'email' => $email,
@@ -680,7 +680,7 @@ class DomainModule extends AbstractModule
     {
         return array_merge($data, array_filter([
             'premium' => isset($data['category']) && $data['category'] === self::DOMAIN_PREMIUM,
-            'reason' => isset($data['category']) && $data['category'] === self::DOMAIN_PREMIUM ? self::DOMAIN_PREMIUM_REASON : $data[$domain]['reason'],
+            'reason' => isset($data['category']) && $data['category'] === self::DOMAIN_PREMIUM ? self::DOMAIN_PREMIUM_REASON : ($data[$domain]['reason'] ?? null),
             'category_name' => $data['category_name'] ?? null,
             'fee' => isset($data['category']) && $data['category'] === self::DOMAIN_PREMIUM ? [
                 'create' => $data['create'],
@@ -763,15 +763,18 @@ class DomainModule extends AbstractModule
     protected function _domainPrepareNSs($row): array
     {
         foreach ($row['nss'] as $host) {
+            $parts = explode(".", $row['domain']);
+            $zone =  array_pop($parts);
+
             $avail = $this->tool->hostCheck([
                 'host' => $host,
-                'zone' => array_pop(explode(".", $row['domain'])),
+                'zone' => $zone,
             ]);
 
             if ((int) $avail['avail'] === 1) {
                 $this->tool->hostCreate([
                     'host' => $host,
-                    'zone' => array_pop(explode(".", $row['domain'])),
+                    'zone' => $zone,
                 ]);
             }
 
