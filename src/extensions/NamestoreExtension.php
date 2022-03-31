@@ -50,7 +50,7 @@ class NamestoreExtension extends AbstractExtension implements ExtensionInterface
         }
 
         $zone = mb_strtoupper($zone);
-        if ($data['clearContact'] === true) {
+        if (isset($data['clearContact']) && $data['clearContact'] === true) {
             $data = $this->clearContacts($data);
         }
 
