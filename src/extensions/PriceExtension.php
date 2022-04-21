@@ -38,7 +38,7 @@ class PriceExtension extends AbstractExtension implements ExtensionInterface
         }
 
         $d = [];
-        foreach ($data['extensions'] as $id => $extension) {
+        foreach ($data['extensions'] ?? [] as $id => $extension) {
             if (strpos($extension['command'], 'fee') !== false) {
                 unset($data[$id]);
                 continue;
@@ -52,7 +52,7 @@ class PriceExtension extends AbstractExtension implements ExtensionInterface
             'command' => "price:" .  substr($command, 7),
             'name' => $data['name'] ?? reset($data['names']),
             'currency' => $this->tool->getCurrency() ?? 'USD',
-            'fee' => $data['fee'],
+            'fee' => $data['fee'] ?? null,
             'period' => $data['period'] ?? ($data['amount'] ?? 1),
         ]);
 
