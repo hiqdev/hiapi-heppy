@@ -828,7 +828,7 @@ class DomainModule extends AbstractModule
         }
 
         foreach (['add', 'rem'] as $op) {
-            foreach ($row[$op] as $id => $value) {
+            foreach ($row[$op] ?? [] as $id => $value) {
                 foreach ($contactTypes as $type) {
                     if (empty($row[$op][$id][$type])) {
                         continue;
