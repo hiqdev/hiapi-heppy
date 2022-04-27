@@ -133,6 +133,10 @@ class HeppyTool
         $entity = reset($parts);
         $module = $this->getModule($entity);
 
+        if (!method_exists($module, $command)) {
+            throw new InvalidCallException("command `$command` not found");
+        }
+
         return call_user_func_array([$module, $command], $args);
     }
 
