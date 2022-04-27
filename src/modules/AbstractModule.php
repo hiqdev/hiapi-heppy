@@ -88,7 +88,7 @@ class AbstractModule
 
         $result = '';
         for ($i = 0; $i < $length; $i++) {
-            $n = $i % ($notalphanumeric === true ? 5 : 4);
+            $n = $i % ($notalphanumeric === false ? 4 : 3);
             $max = strlen($charsets[$n]) - 1;
             $index = rand(0, $max);
             $result .= substr($charsets[$n], $index, 1);
@@ -179,6 +179,7 @@ class AbstractModule
             if (is_array($local[$apiName])) {
                 $remote[$apiName] = $remote[$apiName] ?? $remote[$eppName] ?? [];
                 $remote[$apiName] = is_array($remote[$apiName]) ? $remote[$apiName] : explode(",", $remote[$apiName]);
+
                 if ($add = array_diff($local[$apiName], $remote[$apiName])) {
                     $res['add'][][$eppName] = $add;
                 }

@@ -69,6 +69,7 @@ class DomainModule extends AbstractModule
             'nameservers'       => 'nss',
             'hosts'             => 'hosts',
             'secDNS'            => 'secDNS',
+            'ua_tm'             => 'license',
         ]);
 
         foreach (['domain', 'name'] as $key) {
@@ -162,6 +163,7 @@ class DomainModule extends AbstractModule
         foreach ($this->tool->getContactTypes() as $type) {
             $contactId = $row["{$type}_info"]['id'];
             $remoteId = $remoteIds[$contactId] ?? null;
+            $row['license'] = $row['license'] ?? $row["{$type}_info"]['ua_tm'] ?? null;
             if (!$remoteId) {
                 try {
                     $email = $row['whois_protected'] && !$this->isKeySysExtensionEnabled()
@@ -196,10 +198,20 @@ class DomainModule extends AbstractModule
                 ? null
                 : 'keysys' => [
                     'command' => 'keysys:delete',
-                    'target' => $this->KeySYSDelete[$this->getDomainTopZone($row['domain'])],
+                    'target' => $this->KeySYSDelete[$this->getDomainTopZone($row['domain'])] ?? null,
                 ],
 
-        ]));
+            ])
+        );
+    }
+
+    public function domainsDelete(array $rows): array
+    {
+        foreach ($rows as $id => $row) {
+            $res[$id] = $this->tool->domainDelete($row);
+        }
+
+        return $res;
     }
 
     /**
@@ -261,7 +273,7 @@ class DomainModule extends AbstractModule
     public function domainCheckTransfer(array $row) : array
     {
         $check = $this->domainCheck($row['domain']);
-        if ($premium['avail'] === 1) {
+        if ($check['avail'] === 1) {
             throw new Excepion('Object does not exist');
         }
 
@@ -454,7 +466,7 @@ class DomainModule extends AbstractModule
 
         $new_states = array_filter($statuses, function($k, $v) use ($old_statuses, $action) {
             if ($action === 'rem') {
-                return array_key_exists($k, $old_statuses) || in_array($v, $old_statuses, true);
+                return array_key_exists($k, $old_statuses ?? []) || in_array($v, $old_statuses ?? [], true);
             }
 
             if (empty($old_statuses)) {
@@ -462,9 +474,11 @@ class DomainModule extends AbstractModule
             }
 
             return !(array_key_exists($k, $old_statuses) || in_array($v, $old_statuses, true));
-
-            return array_key_exists($k, $old_statuses) || in_array($v, $old_statuses, true);
         }, ARRAY_FILTER_USE_BOTH);
+
+        if (empty($new_states)) {
+            return $row;
+        }
 
         $row = [
             'domain' => $row['domain'],
@@ -538,9 +552,9 @@ class DomainModule extends AbstractModule
      */
     public function domainEnableHold(array $row): array
     {
-        return $this->domainUpdateStatuses($row, 'add', [[
+        return $this->domainUpdateStatuses($row, 'add', [
             'clientHold' => null,
-        ]]);
+        ]);
     }
 
     /**
@@ -549,9 +563,9 @@ class DomainModule extends AbstractModule
      */
     public function domainDisableHold(array $row): array
     {
-        return $this->domainUpdateStatuses($row, 'rem', [[
+        return $this->domainUpdateStatuses($row, 'rem', [
             'clientHold' => null,
-        ]]);
+        ]);
     }
 
     public function domainRestore(array $row): array
@@ -786,7 +800,7 @@ class DomainModule extends AbstractModule
     protected function _domainSetFee(array $row, string $op): array
     {
         $data = $this->domainCheck($row['domain'], $op);
-        if ($data['reason'] !== self::DOMAIN_PREMIUM_REASON) {
+        if (empty($data['reason']) || $data['reason'] !== self::DOMAIN_PREMIUM_REASON) {
             return $row;
         }
 
@@ -811,7 +825,7 @@ class DomainModule extends AbstractModule
             }
 
             $row[$type] = [$row[$type]];
-            $info[$type] = [$info[$type]];
+            $info[$type] = is_array($info[$type]) ? $info[$type] : [$info[$type]];
         }
 
         $row = $this->prepareDataForUpdate($row, $info, $contactTypes);
@@ -840,7 +854,7 @@ class DomainModule extends AbstractModule
                 $row[$op][$id] = array_filter($row[$op][$id]);
             }
 
-            $row[$op] = array_filter($row[$op]);
+            $row[$op] = array_filter($row[$op] ?? []);
             if (empty($row[$op])) {
                 unset($row[$op]);
             }
