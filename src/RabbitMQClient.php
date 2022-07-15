@@ -12,6 +12,7 @@ namespace hiapi\heppy;
 
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
+use RuntimeException;
 
 /**
  * RabbitMQ Client
@@ -32,7 +33,9 @@ class RabbitMQClient implements ClientInterface
 
     public function __construct(array $connections, string $queue)
     {
-        $this->connection = AMQPStreamConnection::create_connection($connections);
+        $this->connection = AMQPStreamConnection::create_connection($connections, [
+            'heartbeat' => 10,
+        ]);
         $this->queue = $queue;
         $this->channel = $this->connection->channel();
         $this->callback_queue = $this->startCallbackQueue($this->channel);
@@ -79,8 +82,9 @@ class RabbitMQClient implements ClientInterface
         $this->channel->basic_publish($msg, '', $this->queue);
 
         $this->reply = null;
+        $start = time();
         while (!$this->reply) {
-            $this->channel->wait();
+            $this->channel->wait(null, null, 10);
         }
 
         return json_decode($this->reply, true);
