@@ -30,6 +30,9 @@ use hiapi\heppy\modules\PollModule;
 use hiapi\heppy\modules\EPPModule;
 use hiapi\heppy\modules\BalanceModule;
 
+use PhpAmqpLib\Exception\AMQPNoDataException;
+use PhpAmqpLib\Exception\AMQPConnectionClosedException;
+use PhpAmqpLib\Exception\AMQPTimeoutException;
 /**
  * hEPPy tool.
  */
@@ -286,7 +289,11 @@ class HeppyTool
         array $payload = []
     ): array {
         $input = $this->applyExtensions($command, $input);
-        $response = $this->request($command, $input);
+        try {
+            $response = $this->request($command, $input);
+        } catch (AMQPTimeoutException $e) {
+            throw new \Exception($e->getMessage());
+        }
         if (isset($response['result_code'])) {
             $rc = substr($response['result_code'], 0, 1);
         } else {
