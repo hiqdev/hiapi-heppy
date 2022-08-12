@@ -27,6 +27,8 @@ class PollModule extends AbstractModule
         'M024' => self::M024_MAINTENANCE,
         'M027' => self::M027_MAINTENANCE,
         'DRS' => self::DOMAIN_RENEWAL_SUCCESSFUL,
+        'DARN' => self::DOMAIN_AUTO_RENEW_NOTICE,
+        'RIUD' => self::REGISTRY_INITIATED_UPDATE_DOMAIN,
     ];
 
     /**
@@ -112,9 +114,6 @@ class PollModule extends AbstractModule
             $rc = $this->pollReq();
             $i++;
             $polls[] = $poll;
-            if ($i > 10) {
-                break;
-            }
         }
 
         return $polls;
