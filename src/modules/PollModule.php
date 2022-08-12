@@ -134,7 +134,10 @@ class PollModule extends AbstractModule
         }
 
         $row['class'] = 'domain';
-        $row['outgoing'] = $row['request_client'] !== $this->tool->getRegistrar();
+        if (isset($row['request_client'])) {
+            $row['outgoing'] = (string) $row['request_client'] !== (string) $this->tool->getRegistrar();
+        }
+
         return $row;
     }
 
