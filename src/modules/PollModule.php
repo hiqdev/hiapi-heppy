@@ -135,6 +135,7 @@ class PollModule extends AbstractModule
         }
 
         $row['class'] = 'domain';
+        $row['outgoing'] = $row['request_client'] !== $this->tool->getRegistrar();
         return $row;
     }
 

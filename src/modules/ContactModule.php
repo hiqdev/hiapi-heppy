@@ -8,6 +8,7 @@ use Exception;
 class ContactModule extends AbstractModule
 {
     const NON_ALPHANUMERIC_EXCEPTION = 'authInfo code is invalid: password must contain at least one non-alphanumeric character';
+    const INCORECT_AUTHINFO_EXCEPTION = 'Parameter value syntax error Incorrect authInfo';
 
     /** {@inheritdoc} */
     public $uris = [
@@ -132,6 +133,11 @@ class ContactModule extends AbstractModule
             if (strpos($e->getMessage(), self::NON_ALPHANUMERIC_EXCEPTION) !== false) {
                 return $this->contactCreate($row, true);
             }
+
+            if (strpos($e->getMessage(), self::INCORECT_AUTHINFO_EXCEPTION) !== false) {
+                return $this->contactCreate($row, true);
+            }
+
             throw new Exception($e->getMessage());
         }
     }
