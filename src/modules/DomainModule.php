@@ -16,6 +16,8 @@ class DomainModule extends AbstractModule
 
     const NON_ALPHANUMERIC_EXCEPTION = 'authInfo code is invalid: password must contain at least one non-alphanumeric character';
 
+    const STATUS_NOT_SETTED_FOR_DOMAIN = 'is not set on this domain';
+
 
     const DOMAIN_PREMIUM_REASON = 'PREMIUM DOMAIN';
 
