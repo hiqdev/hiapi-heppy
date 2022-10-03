@@ -272,15 +272,20 @@ class HeppyTool
         return $this->objects;
     }
 
-    public function getHelloData()
+    public function getHelloData(): ?array
     {
         if ($this->helloData === null) {
-            $this->helloData = $this->cache->getOrSet(['epp:hello', $this->getRegistrar(), $this->data['queue']], function() {
-                return $this->request('epp:hello', []);
-            }, 3600);
+            $this->helloData = $this->requestHello();
         }
 
         return $this->helloData;
+    }
+
+    public function requestHello(): ?array
+    {
+        return $this->cache->getOrSet(['epp:hello', $this->getRegistrar(), $this->data['queue']], function() {
+            return $this->request('epp:hello', []);
+        }, 3600);
     }
 
     /**
