@@ -19,7 +19,7 @@ use hiapi\heppy\interfaces\ExtensionInterface;
 class PriceExtension extends AbstractExtension implements ExtensionInterface
 {
     /** {@inheritdoc} */
-    public $availableCommands = [
+    public array $availableCommands = [
         'domain' => [
             'check' => ['*' => true],
             'create' => ['*' => true],

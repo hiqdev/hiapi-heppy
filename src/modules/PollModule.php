@@ -2,8 +2,7 @@
 
 namespace hiapi\heppy\modules;
 
-use hiapi\legacy\lib\deps\err;
-use hiapi\legacy\lib\deps\check;
+use Exception;
 
 class PollModule extends AbstractModule
 {
@@ -38,12 +37,12 @@ class PollModule extends AbstractModule
     public function pollAck(array $row = []): array
     {
         if (empty($row)) {
-            return err::set($row, 'array is empty');
+            throw new Exception('Array is empty');
         }
 
-        $id = $row['id'];
-        if (err::is($id)) {
-            return err::set($row, err::get($id));
+        $id = $row['id'] ?? null;
+        if (empty($id)) {
+            throw new Exception("msgID could not be empty");
         }
 
         $res = $this->tool->commonRequest('epp:poll', [

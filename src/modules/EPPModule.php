@@ -2,9 +2,6 @@
 
 namespace hiapi\heppy\modules;
 
-use hiapi\legacy\lib\deps\err;
-use hiapi\legacy\lib\deps\check;
-
 class EPPModule extends AbstractModule
 {
     /**

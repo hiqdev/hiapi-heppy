@@ -16,13 +16,13 @@ class AbstractModule
     public $base;
 
     /** @var array of [object => uri] */
-    public $uris = [];
+    public array $uris = [];
 
     /** @var string $object */
-    protected $object = null;
+    protected ?string $object = null;
 
     /** @var string $extension */
-    protected $extension = null;
+    protected ?string $extension = null;
 
     public function __construct(HeppyTool $tool)
     {

@@ -19,7 +19,7 @@ use hiapi\heppy\interfaces\ExtensionInterface;
 class ChargeExtension extends AbstractExtension implements ExtensionInterface
 {
     /** {@inheritdoc} */
-    public $availableCommands = [
+    public array $availableCommands = [
         'domain' => [
             'create' => ['*' => true],
             'renew' => ['*' => true],

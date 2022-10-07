@@ -22,21 +22,21 @@ class DomainModule extends AbstractModule
     const DOMAIN_PREMIUM_REASON = 'PREMIUM DOMAIN';
 
     /** {@inheritdoc} */
-    public $uris = [
+    public array $uris = [
         'domain' => 'urn:ietf:params:xml:ns:domain-1.0',
         'domain_hm' => 'http://hostmaster.ua/epp/domain-1.1',
     ];
 
-    public $extURIs = [
+    public array $extURIs = [
         'rgp' => 'urn:ietf:params:xml:ns:rgp-1.0',
         'rgp_hm' => 'http://hostmaster.ua/epp/rgp-1.1',
     ];
 
-    public $object = 'domain';
+    public ?string $object = 'domain';
 
-    protected $contactTypes = ['registrant', 'admin', 'tech', 'billing'];
+    protected array $contactTypes = ['registrant', 'admin', 'tech', 'billing'];
 
-    protected $KeySYSDelete = [
+    protected array $KeySYSDelete = [
         'de' => 'TRANSIT',
         'at' => 'REGISTRY',
         'uk' => 'DETAGGED',
@@ -248,30 +248,6 @@ class DomainModule extends AbstractModule
         }
     }
 
-    /**
-     * @param array $row
-     * @param string $op
-     * @return array
-     */
-    private function performTransfer(array $row, string $op): array
-    {
-        return $this->tool->commonRequest("{$this->object}:transfer", array_filter([
-            'op'        => $op,
-            'name'      => $row['domain'],
-            'pw'        => $row['password'],
-            'period'    => $row['period'],
-            'fee'       => $row['fee'] ?? null,
-        ]), [
-            'domain'            => 'name',
-            'expiration_date'   => 'exDate',
-            'action_date'       => 'acDate',
-            'action_client_id'  => 'acID',
-            'request_date'      => 'reDate',
-            'request_client_id' => 'reID',
-            'transfer_status'   => 'trStatus'
-        ]);
-    }
-
     public function domainCheckTransfer(array $row) : array
     {
         $check = $this->domainCheck($row['domain']);
@@ -383,34 +359,6 @@ class DomainModule extends AbstractModule
     }
 
     /**
-     * @param array $row
-     * @return array
-     */
-    private function domainUpdate(array $row, array $keysys = null): array
-    {
-        $data = array_filter([
-            'add'       => $row['add'] ?? null,
-            'rem'       => $row['rem'] ?? null,
-            'chg'       => $row['chg'] ?? null,
-            'keysys'    => $keysys,
-        ]);
-        if (empty($data)) {
-            return $row;
-        }
-
-        return $this->tool->commonRequest("{$this->object}:update", array_filter([
-            'name'      => $row['domain'],
-            'add'       => $row['add'] ?? null,
-            'rem'       => $row['rem'] ?? null,
-            'chg'       => $row['chg'] ?? null,
-            'keysys'    => $keysys ?? null,
-        ]), [], array_filter([
-            'id'        => $row['id'] ?? null,
-            'domain'    => $row['domain'],
-        ]));
-    }
-
-    /**
      * @param $row
      * @return array
      */
@@ -440,87 +388,6 @@ class DomainModule extends AbstractModule
         ]);
 
         return $this->domainUpdate($row);
-    }
-
-    /**
-     * @param array $row
-     * @param string $action
-     * @param array $statuses
-     * @return array
-     */
-    private function domainUpdateStatuses(
-        array $row,
-        string $action,
-        array $statuses
-    ): array {
-        $info = $this->domainInfo($row);
-        $this->domainDisableUpdateProhibited($info);
-
-        $old_statuses = array_filter($info['statuses'], function($k, $v) {
-            $states = [
-                self::CLIENT_TRANSFER_PROHIBITED => self::CLIENT_TRANSFER_PROHIBITED,
-                self::CLIENT_DELETE_PROHIBITED => self::CLIENT_DELETE_PROHIBITED,
-                self::CLIENT_HOLD => self::CLIENT_HOLD,
-            ];
-
-            return array_key_exists($k, $states) || in_array($v, $states, true) ? $v : null;
-        }, ARRAY_FILTER_USE_BOTH);
-
-        $new_states = array_filter($statuses, function($k, $v) use ($old_statuses, $action) {
-            if ($action === 'rem') {
-                return array_key_exists($k, $old_statuses ?? []) || in_array($v, $old_statuses ?? [], true);
-            }
-
-            if (empty($old_statuses)) {
-                return true;
-            }
-
-            return !(array_key_exists($k, $old_statuses) || in_array($v, $old_statuses, true));
-        }, ARRAY_FILTER_USE_BOTH);
-
-        if (empty($new_states)) {
-            return $row;
-        }
-
-        $row = [
-            'domain' => $row['domain'],
-            $action => [['statuses' => $new_states]],
-        ];
-
-        return $this->domainUpdate($row);
-    }
-
-    private function domainDisableUpdateProhibited(array $row)
-    {
-        if (!array_key_exists(self::CLIENT_UPDATE_PROHIBITED, $row['statuses']) && !in_array(self::CLIENT_UPDATE_PROHIBITED, $row['statuses'], true)) {
-            return $row;
-        }
-
-        $data = $row;
-        $data['rem'] = [['statuses' => [
-            self::CLIENT_UPDATE_PROHIBITED => self::CLIENT_UPDATE_PROHIBITED,
-        ]]];
-
-        return $this->domainUpdate($data);
-    }
-
-    /**
-     * @param array $rows
-     * @param string $action
-     * @param array $statuses
-     * @return array
-     */
-    private function domainsUpdateStatuses(
-        array $rows,
-        string $action,
-        array $statuses
-    ): array {
-        $res = [];
-        foreach ($rows as $domainId => $domainData) {
-            $res[$domainId] = $this->domainUpdateStatuses($domainData, $action, $statuses);
-        }
-
-        return $res;
     }
 
     /**
@@ -816,6 +683,89 @@ class DomainModule extends AbstractModule
         ]);
     }
 
+    protected function getContactsInfo(array $info): array
+    {
+        $contacts = [];
+        $mainContact = null;
+        foreach ($this->tool->getContactTypes() as $type) {
+            if (empty($info[$type])) {
+                continue;
+            }
+
+            if (isset($contacts[$info[$type]])) {
+                $info["{$type}c"] = $contacts[$info[$type]];
+                continue;
+            }
+
+            try {
+                $contact = $this->tool->contactInfo([
+                    'epp_id' => $info[$type],
+                ]);
+            } catch (\Throwable $e) {
+                continue;
+            }
+
+            $contacts[$info[$type]] = $contact;
+            $info['contact'] = $info['contact'] ?? $contact;
+        }
+
+        unset($info['contact']['epp_id']);
+
+        return $info;
+    }
+
+    /**
+     * @param array $row
+     * @param string $op
+     * @return array
+     */
+    private function performTransfer(array $row, string $op): array
+    {
+        return $this->tool->commonRequest("{$this->object}:transfer", array_filter([
+            'op'        => $op,
+            'name'      => $row['domain'],
+            'pw'        => $row['password'],
+            'period'    => $row['period'],
+            'fee'       => $row['fee'] ?? null,
+        ]), [
+            'domain'            => 'name',
+            'expiration_date'   => 'exDate',
+            'action_date'       => 'acDate',
+            'action_client_id'  => 'acID',
+            'request_date'      => 'reDate',
+            'request_client_id' => 'reID',
+            'transfer_status'   => 'trStatus'
+        ]);
+    }
+
+    /**
+     * @param array $row
+     * @return array
+     */
+    private function domainUpdate(array $row, array $keysys = null): array
+    {
+        $data = array_filter([
+            'add'       => $row['add'] ?? null,
+            'rem'       => $row['rem'] ?? null,
+            'chg'       => $row['chg'] ?? null,
+            'keysys'    => $keysys,
+        ]);
+        if (empty($data)) {
+            return $row;
+        }
+
+        return $this->tool->commonRequest("{$this->object}:update", array_filter([
+            'name'      => $row['domain'],
+            'add'       => $row['add'] ?? null,
+            'rem'       => $row['rem'] ?? null,
+            'chg'       => $row['chg'] ?? null,
+            'keysys'    => $keysys ?? null,
+        ]), [], array_filter([
+            'id'        => $row['id'] ?? null,
+            'domain'    => $row['domain'],
+        ]));
+    }
+
     private function _domainSetContacts(array $row, array $info, array $contactTypes, ?bool $fixEPPID = true): array
     {
         $orow = $row;
@@ -877,34 +827,86 @@ class DomainModule extends AbstractModule
         }
     }
 
-    protected function getContactsInfo(array $info): array
-    {
-        $contacts = [];
-        $mainContact = null;
-        foreach ($this->tool->getContactTypes() as $type) {
-            if (empty($info[$type])) {
-                continue;
+    /**
+     * @param array $row
+     * @param string $action
+     * @param array $statuses
+     * @return array
+     */
+    private function domainUpdateStatuses(
+        array $row,
+        string $action,
+        array $statuses
+    ): array {
+        $info = $this->domainInfo($row);
+        $this->domainDisableUpdateProhibited($info);
+
+        $old_statuses = array_filter($info['statuses'], function($k, $v) {
+            $states = [
+                self::CLIENT_TRANSFER_PROHIBITED => self::CLIENT_TRANSFER_PROHIBITED,
+                self::CLIENT_DELETE_PROHIBITED => self::CLIENT_DELETE_PROHIBITED,
+                self::CLIENT_HOLD => self::CLIENT_HOLD,
+            ];
+
+            return array_key_exists($k, $states) || in_array($v, $states, true) ? $v : null;
+        }, ARRAY_FILTER_USE_BOTH);
+
+        $new_states = array_filter($statuses, function($k, $v) use ($old_statuses, $action) {
+            if ($action === 'rem') {
+                return array_key_exists($k, $old_statuses ?? []) || in_array($v, $old_statuses ?? [], true);
             }
 
-            if (isset($contacts[$info[$type]])) {
-                $info["{$type}c"] = $contacts[$info[$type]];
-                continue;
+            if (empty($old_statuses)) {
+                return true;
             }
 
-            try {
-                $contact = $this->tool->contactInfo([
-                    'epp_id' => $info[$type],
-                ]);
-            } catch (\Throwable $e) {
-                continue;
-            }
+            return !(array_key_exists($k, $old_statuses) || in_array($v, $old_statuses, true));
+        }, ARRAY_FILTER_USE_BOTH);
 
-            $contacts[$info[$type]] = $contact;
-            $info['contact'] = $info['contact'] ?? $contact;
+        if (empty($new_states)) {
+            return $row;
         }
 
-        unset($info['contact']['epp_id']);
+        $row = [
+            'domain' => $row['domain'],
+            $action => [['statuses' => $new_states]],
+        ];
 
-        return $info;
+        return $this->domainUpdate($row);
     }
+
+    private function domainDisableUpdateProhibited(array $row)
+    {
+        if (!array_key_exists(self::CLIENT_UPDATE_PROHIBITED, $row['statuses']) && !in_array(self::CLIENT_UPDATE_PROHIBITED, $row['statuses'], true)) {
+            return $row;
+        }
+
+        $data = $row;
+        $data['rem'] = [['statuses' => [
+            self::CLIENT_UPDATE_PROHIBITED => self::CLIENT_UPDATE_PROHIBITED,
+        ]]];
+
+        return $this->domainUpdate($data);
+    }
+
+    /**
+     * @param array $rows
+     * @param string $action
+     * @param array $statuses
+     * @return array
+     */
+    private function domainsUpdateStatuses(
+        array $rows,
+        string $action,
+        array $statuses
+    ): array {
+        $res = [];
+        foreach ($rows as $domainId => $domainData) {
+            $res[$domainId] = $this->domainUpdateStatuses($domainData, $action, $statuses);
+        }
+
+        return $res;
+    }
+
+
 }

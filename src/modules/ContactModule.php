@@ -11,16 +11,16 @@ class ContactModule extends AbstractModule
     const INCORECT_AUTHINFO_EXCEPTION = 'Parameter value syntax error Incorrect authInfo';
 
     /** {@inheritdoc} */
-    public $uris = [
+    public array $uris = [
         'contact' => 'urn:ietf:params:xml:ns:contact-1.0',
         'contact_hm' => 'http://hostmaster.ua/epp/contact-1.1',
     ];
 
-    public $extURIs = [
+    public array $extURIs = [
         'namestoreExt' => 'http://www.verisign-grs.com/epp/namestoreExt-1.1',
     ];
 
-    public $object = 'contact';
+    public ?string $object = 'contact';
 
     /** {@inheritdoc} */
     public function isAvailable() : bool

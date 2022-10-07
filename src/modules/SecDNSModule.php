@@ -11,30 +11,29 @@
 namespace hiapi\heppy\modules;
 
 use hiapi\heppy\exceptions\EppErrorException;
-use arr;
-use err;
 
 class SecDNSModule extends AbstractModule
 {
-    public $extURIs = [
+    public array $extURIs = [
         'secDNS' => 'urn:ietf:params:xml:ns:secDNS-1.1',
         'secDNS_hm' => 'http://hostmaster.ua/epp/secDNS-1.1',
     ];
-    /**
-    * List of available extensions
-    */
-    protected $availableExtension = [
-        'secDNS' => '1.1',
-        'secDNS_hm' => 'HostMaster',
-    ];
 
     /** {@inheritdoc} */
-    public $uris = [
+    public array $uris = [
         'domain' => 'urn:ietf:params:xml:ns:domain-1.0',
         'domain_hm' => 'http://hostmaster.ua/epp/domain-1.1',
     ];
 
-    protected $extension;
+    /**
+    * List of available extensions
+    */
+    protected array $availableExtension = [
+        'secDNS' => '1.1',
+        'secDNS_hm' => 'HostMaster',
+    ];
+
+    protected ?string $object = 'domain';
 
     /**
      * Set SecDNS refresh
