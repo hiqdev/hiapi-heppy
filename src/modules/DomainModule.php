@@ -1,4 +1,12 @@
 <?php
+/**
+ * hiAPI hEPPy plugin
+ *
+ * @link      https://github.com/hiqdev/hiapi-heppy
+ * @package   hiapi-heppy
+ * @license   BSD-3-Clause
+ * @copyright Copyright (c) 2017, HiQDev (http://hiqdev.com/)
+ */
 
 namespace hiapi\heppy\modules;
 
@@ -13,11 +21,11 @@ class DomainModule extends AbstractModule
 
     const RENEW_DOMAIN_NOT_AVAILABLE_EXCEPTION = "Invalid command name; Renew Domain not available";
     const RENEW_DOMAIN_AUTORENEW_RENEWONCE_EXCEPTION = "Invalid attribute value; explicit renewals not allowed for this TLD; please set domain to AUTORENEW or RENEWONCE";
+    const RENEW_DOMAIN_DOES_NOT_MATCH_EXPIRATION = 'Parameter value range error Does not match expiration';
 
     const NON_ALPHANUMERIC_EXCEPTION = 'authInfo code is invalid: password must contain at least one non-alphanumeric character';
 
     const STATUS_NOT_SETTED_FOR_DOMAIN = 'is not set on this domain';
-
 
     const DOMAIN_PREMIUM_REASON = 'PREMIUM DOMAIN';
 
@@ -907,6 +915,4 @@ class DomainModule extends AbstractModule
 
         return $res;
     }
-
-
 }
