@@ -113,12 +113,12 @@ class PollModule extends AbstractModule
         $rc = $this->pollReq();
         $i = 1;
         while ((int) $rc['result_code'] === self::POLL_QUEUE_FULL) {
-            $poll = $this->_pollPostEvent($rc, false);
+            $poll = $this->_pollPostEvent($rc);
             if ($this->_pollCheckUnsupported($poll['message']) === false) {
                 break;
             }
 
-            $this->pollAck($poll);
+            $this->pollAck($rc);
             $rc = $this->pollReq();
             $i++;
             $polls[] = $poll;
