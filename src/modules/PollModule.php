@@ -113,7 +113,7 @@ class PollModule extends AbstractModule
         $rc = $this->pollReq();
         $i = 1;
         while ((int) $rc['result_code'] === self::POLL_QUEUE_FULL) {
-            $poll = $this->_pollPostEvent($rc);
+            $poll = $this->_pollPostEvent($rc, false);
             if ($this->_pollCheckUnsupported($poll['message']) === false) {
                 break;
             }
@@ -131,7 +131,7 @@ class PollModule extends AbstractModule
      * @param array row
      * @return array
      */
-    protected function _pollPostEvent(array $row) : array
+    protected function _pollPostEvent(array $row, bool $skipID = true) : array
     {
         foreach (['action_date', 'request_date', 'time'] as $key) {
             if (empty($row[$key])) {
@@ -141,10 +141,11 @@ class PollModule extends AbstractModule
             $row[$key] = date("Y-m-d H:i:s", strtotime($row[$key]));
         }
 
-        $row['class'] = 'domain';
-        if (isset($row['request_client'])) {
-            $row['outgoing'] = (string) $row['request_client'] !== (string) $this->tool->getRegistrar();
-        }
+        $row = array_merge($row, [
+            'class' => 'domain',
+            'id' => $skipID === true ? null : $row['id'],
+            'outgoing' => isset($row['request_client']) && ((string) $row['request_client'] !== (string) $this->tool->getRegistrar()),
+        ]);
 
         return $row;
     }
