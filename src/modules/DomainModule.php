@@ -228,21 +228,35 @@ class DomainModule extends AbstractModule
      * @param array $row
      * @return array
      */
-    public function domainRenew(array $row): array
+    public function domainRenew(array $row, ?bool $expired = false): array
     {
         $row = $this->_domainSetFee($row, 'renew');
+        if ($expired === true) {
+            $info = $this->tool->domainInfo($row);
+            $realExpDate = $this->tool->getDateTime($info['expiration_date']);
+            $curExpDate = $this->tool->getDateTime($row['expires']);
+            $interval = $realExpDate->diff($curExpDate);
+            $period = $row['period'] - ((int) $interval->format("%y"));
+            if ($period === 0) {
+                return $row;
+            }
+
+            return $this->_domainRenew(array_merge($row, [
+                'expires' => $realExpDate->format("Y-m-d"),
+                'period' => $period,
+            ]));
+        }
 
         try {
-            return $this->tool->commonRequest("{$this->object}:renew", array_filter([
-                'name'          => $row['domain'],
-                'curExpDate'    => $row['expires'],
-                'period'        => $row['period'],
-                'fee'           => $row['fee'] ?? null,
-            ]), array_filter([
-                'domain'            => 'name',
-                'expiration_date'   => 'exDate',
-            ]));
+            return $this->_domainRenew($row);
         } catch (EppErrorException $e) {
+            if ($e->getMessage() === self::RENEW_DOMAIN_DOES_NOT_MATCH_EXPIRATION) {
+                if ($expired === true) {
+                    return $this->domainRenew($row, true);
+                } else {
+                    throw $e;
+                }
+            }
             if (!in_array($e->getMessage(), [self::RENEW_DOMAIN_NOT_AVAILABLE_EXCEPTION, self::RENEW_DOMAIN_AUTORENEW_RENEWONCE_EXCEPTION], true) || !$this->isKeySysExtensionEnabled()) {
                 throw $e;
             }
@@ -676,7 +690,10 @@ class DomainModule extends AbstractModule
 
     protected function _domainSetFee(array $row, string $op): array
     {
-        $data = $this->domainCheck($row['domain'], $op);
+        $data = $this->tool->getCache()->getOrSet(['Fee', $row['domain'], $op, $this->tool->getRegistrar()], function() use ($row, $op) {
+            return $this->domainCheck($row['domain'], $op);
+        }, 3600);
+
         if (empty($data['reason']) || $data['reason'] !== self::DOMAIN_PREMIUM_REASON) {
             return $row;
         }
@@ -914,5 +931,18 @@ class DomainModule extends AbstractModule
         }
 
         return $res;
+    }
+
+    protected function _domainRenew(array $row): array
+    {
+        return $this->tool->commonRequest("{$this->object}:renew", array_filter([
+            'name'          => $row['domain'],
+            'curExpDate'    => $row['expires'],
+            'period'        => $row['period'],
+            'fee'           => $row['fee'] ?? null,
+        ]), array_filter([
+            'domain'            => 'name',
+            'expiration_date'   => 'exDate',
+        ]));
     }
 }

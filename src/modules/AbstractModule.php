@@ -187,7 +187,7 @@ class AbstractModule
                     $res['rem'][][$eppName] = $rem;
                 }
             } else if (key_exists($apiName, $local) &&
-                strcasecmp((string)$local[$apiName], (string)$remote[$apiName])) {
+                strcasecmp((string)($local[$apiName] ?? ''), (string)($remote[$apiName] ?? ''))) {
                 $res['chg'][$eppName] = $local[$apiName];
             }
         }

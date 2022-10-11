@@ -83,7 +83,6 @@ class RabbitMQClient implements ClientInterface
         $this->channel->basic_publish($msg, '', $this->queue);
 
         $this->reply = null;
-        $start = time();
         while (!$this->reply) {
             $this->channel->wait(null, null, 15);
         }
