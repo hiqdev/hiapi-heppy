@@ -19,7 +19,7 @@ use hiapi\heppy\helpers\LanguageHelper;
 class IDNLangExtension extends AbstractExtension implements ExtensionInterface
 {
     /** {@inheritdoc} */
-    public $availableCommands = [
+    public array $availableCommands = [
         'domain' => [
             'create' => ['*' => true],
         ],

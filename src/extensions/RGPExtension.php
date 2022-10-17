@@ -18,7 +18,7 @@ use hiapi\heppy\interfaces\ExtensionInterface;
 class RGPExtension extends AbstractExtension implements ExtensionInterface
 {
     /** {@inheritdoc} */
-    public $availableCommands = [
+    public array $availableCommands = [
         'domain' => [
             'restore' => ['*' => true],
             'update' => ['restore' => true],

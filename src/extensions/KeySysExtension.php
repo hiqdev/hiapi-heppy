@@ -19,7 +19,7 @@ use hiapi\heppy\interfaces\ExtensionInterface;
 class KeySysExtension extends AbstractExtension implements ExtensionInterface
 {
     /** {@inheritdoc} */
-    public $availableCommands = [
+    public array $availableCommands = [
         'contact' => [
             'create' => ['*' => true],
             'update' => ['*' => true],

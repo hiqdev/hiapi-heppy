@@ -17,7 +17,7 @@ use hiapi\heppy\interfaces\ExtensionInterface;
  */
 class NamestoreExtension extends AbstractExtension implements ExtensionInterface
 {
-    public $availableCommands = [
+    public array $availableCommands = [
         'domain' => [
             'create' => ['*' => true],
             'update' => ['*' => true],

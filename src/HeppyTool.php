@@ -33,6 +33,9 @@ use hiapi\heppy\modules\BalanceModule;
 use PhpAmqpLib\Exception\AMQPNoDataException;
 use PhpAmqpLib\Exception\AMQPConnectionClosedException;
 use PhpAmqpLib\Exception\AMQPTimeoutException;
+
+use DateTimeImmutable;
+
 /**
  * hEPPy tool.
  */
@@ -446,5 +449,10 @@ class HeppyTool
         }
 
         return $this->contacts['disabled_wp'];
+    }
+
+    public function getDateTime(string $datetime): DateTimeImmutable
+    {
+        return new DateTimeImmutable($datetime);
     }
 }
