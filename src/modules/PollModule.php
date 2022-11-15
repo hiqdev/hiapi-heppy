@@ -1,9 +1,17 @@
 <?php
+/**
+ * hiAPI hEPPy plugin
+ *
+ * @link      https://github.com/hiqdev/hiapi-heppy
+ * @package   hiapi-heppy
+ * @license   BSD-3-Clause
+ * @copyright Copyright (c) 2017, HiQDev (http://hiqdev.com/)
+ */
+
 
 namespace hiapi\heppy\modules;
 
-use hiapi\legacy\lib\deps\err;
-use hiapi\legacy\lib\deps\check;
+use Exception;
 
 class PollModule extends AbstractModule
 {
@@ -38,12 +46,12 @@ class PollModule extends AbstractModule
     public function pollAck(array $row = []): array
     {
         if (empty($row)) {
-            return err::set($row, 'array is empty');
+            throw new Exception('Array is empty');
         }
 
-        $id = $row['id'];
-        if (err::is($id)) {
-            return err::set($row, err::get($id));
+        $id = $row['id'] ?? null;
+        if (empty($id)) {
+            throw new Exception("msgID could not be empty");
         }
 
         $res = $this->tool->commonRequest('epp:poll', [
@@ -110,7 +118,7 @@ class PollModule extends AbstractModule
                 break;
             }
 
-            $this->pollAck($poll);
+            $this->pollAck($rc);
             $rc = $this->pollReq();
             $i++;
             $polls[] = $poll;
@@ -123,7 +131,7 @@ class PollModule extends AbstractModule
      * @param array row
      * @return array
      */
-    protected function _pollPostEvent(array $row) : array
+    protected function _pollPostEvent(array $row, bool $skipID = true) : array
     {
         foreach (['action_date', 'request_date', 'time'] as $key) {
             if (empty($row[$key])) {
@@ -133,10 +141,11 @@ class PollModule extends AbstractModule
             $row[$key] = date("Y-m-d H:i:s", strtotime($row[$key]));
         }
 
-        $row['class'] = 'domain';
-        if (isset($row['request_client'])) {
-            $row['outgoing'] = (string) $row['request_client'] !== (string) $this->tool->getRegistrar();
-        }
+        $row = array_merge($row, [
+            'class' => 'domain',
+            'id' => $skipID === true ? null : $row['id'],
+            'outgoing' => isset($row['request_client']) && ((string) $row['request_client'] !== (string) $this->tool->getRegistrar()),
+        ]);
 
         return $row;
     }

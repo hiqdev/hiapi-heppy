@@ -17,7 +17,7 @@ use hiapi\heppy\interfaces\ExtensionInterface;
  */
 class UAEppExtension extends AbstractExtension implements ExtensionInterface
 {
-    public $availableCommands = [
+    public array $availableCommands = [
         'domain_hm' => [
             'create' => ['*' => true],
             'update' => ['*' => true],

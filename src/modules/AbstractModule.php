@@ -16,13 +16,13 @@ class AbstractModule
     public $base;
 
     /** @var array of [object => uri] */
-    public $uris = [];
+    public array $uris = [];
 
     /** @var string $object */
-    protected $object = null;
+    protected ?string $object = null;
 
     /** @var string $extension */
-    protected $extension = null;
+    protected ?string $extension = null;
 
     public function __construct(HeppyTool $tool)
     {
@@ -187,7 +187,7 @@ class AbstractModule
                     $res['rem'][][$eppName] = $rem;
                 }
             } else if (key_exists($apiName, $local) &&
-                strcasecmp((string)$local[$apiName], (string)$remote[$apiName])) {
+                strcasecmp((string)($local[$apiName] ?? ''), (string)($remote[$apiName] ?? ''))) {
                 $res['chg'][$eppName] = $local[$apiName];
             }
         }
