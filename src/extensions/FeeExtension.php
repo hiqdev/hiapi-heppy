@@ -39,7 +39,7 @@ class FeeExtension extends AbstractExtension implements ExtensionInterface
             return $data;
         }
 
-        if ($data['withoutExt'] === true) {
+        if (isset($data['withoutExt']) && $data['withoutExt'] === true) {
             return $data;
         }
 
