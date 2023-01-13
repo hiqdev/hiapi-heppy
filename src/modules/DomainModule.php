@@ -231,6 +231,10 @@ class DomainModule extends AbstractModule
     public function domainRenew(array $row, ?bool $expired = false): array
     {
         $row = $this->_domainSetFee($row, 'renew');
+
+        if (!empty($row['fee']) && floatval((string) $row['fee']) !== floatval((string) $row['standart_price'])) {
+            throw new Excepion($row['reason']);
+        }
         if ($expired === true) {
             $info = $this->tool->domainInfo($row);
             $realExpDate = $this->tool->getDateTime($info['expiration_date']);
@@ -238,7 +242,7 @@ class DomainModule extends AbstractModule
             $interval = $realExpDate->diff($curExpDate);
             $period = $row['period'] - ((int) $interval->format("%y"));
             if ($period === 0) {
-                return $row;
+                return array_merge($row, $info);
             }
 
             return $this->_domainRenew(array_merge($row, [
@@ -251,7 +255,7 @@ class DomainModule extends AbstractModule
             return $this->_domainRenew($row);
         } catch (EppErrorException $e) {
             if ($e->getMessage() === self::RENEW_DOMAIN_DOES_NOT_MATCH_EXPIRATION) {
-                if ($expired === true) {
+                if ($expired === false) {
                     return $this->domainRenew($row, true);
                 } else {
                     throw $e;
@@ -293,6 +297,10 @@ class DomainModule extends AbstractModule
     public function domainTransfer(array $row): array
     {
         $row = $this->_domainSetFee($row, 'transfer');
+        if (!empty($row['fee']) && floatval((string) $row['fee']) !== floatval((string) $row['standart_price'])) {
+            throw new Excepion($row['reason']);
+        }
+
         return $this->performTransfer($row, 'request');
     }
 
@@ -739,6 +747,19 @@ class DomainModule extends AbstractModule
         return $info;
     }
 
+    protected function _domainRenew(array $row): array
+    {
+        return $this->tool->commonRequest("{$this->object}:renew", array_filter([
+            'name'          => $row['domain'],
+            'curExpDate'    => $row['expires'],
+            'period'        => $row['period'],
+            'fee'           => $row['fee'] ?? null,
+        ]), array_filter([
+            'domain'            => 'name',
+            'expiration_date'   => 'exDate',
+        ]));
+    }
+
     /**
      * @param array $row
      * @param string $op
@@ -931,18 +952,5 @@ class DomainModule extends AbstractModule
         }
 
         return $res;
-    }
-
-    protected function _domainRenew(array $row): array
-    {
-        return $this->tool->commonRequest("{$this->object}:renew", array_filter([
-            'name'          => $row['domain'],
-            'curExpDate'    => $row['expires'],
-            'period'        => $row['period'],
-            'fee'           => $row['fee'] ?? null,
-        ]), array_filter([
-            'domain'            => 'name',
-            'expiration_date'   => 'exDate',
-        ]));
     }
 }
