@@ -27,7 +27,7 @@ class ContactModule extends AbstractModule
     /** {@inheritdoc} */
     public function isAvailable() : bool
     {
-        return true || !$this->isNamestoreExtensionEnabled();
+        return true;
     }
 
     /**
