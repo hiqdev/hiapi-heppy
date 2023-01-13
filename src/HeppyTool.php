@@ -31,6 +31,12 @@ use hiapi\heppy\modules\EPPModule;
 use hiapi\heppy\modules\BalanceModule;
 use DateTimeImmutable;
 
+use PhpAmqpLib\Exception\AMQPNoDataException;
+use PhpAmqpLib\Exception\AMQPConnectionClosedException;
+use PhpAmqpLib\Exception\AMQPTimeoutException;
+
+use DateTimeImmutable;
+
 /**
  * hEPPy tool.
  */
@@ -121,11 +127,14 @@ class HeppyTool
      */
     private $helloData;
 
+    private $cache;
+
     public function __construct($base, $data)
     {
         $this->base = $base;
         $this->data = $data;
         $this->contacts = $this->data['contacts'] ?? [];
+        $this->cache = $base->getCache();
     }
 
     public function __call($command, $args): array
@@ -221,19 +230,16 @@ class HeppyTool
         }
 
         $this->extensions = [];
-
-        if ($this->helloData === null) {
-            $this->helloData = $this->request('epp:hello', []);
-        }
+        $helloData = $this->getHelloData();
 
         foreach ($this->extURNNames as $name => $data) {
             $urlns = is_string($data) ? $data : array_shift($data);
             $data = is_string($data) ? [$data] : $data;
-            if (!isset($this->helloData['extURIs'])) {
+            if (!isset($helloData['extURIs'])) {
                 continue;
             }
 
-            if (!in_array($urlns, $this->helloData['extURIs'], true)) {
+            if (!in_array($urlns, $helloData['extURIs'], true)) {
                 continue;
             }
 
@@ -264,13 +270,26 @@ class HeppyTool
             return $this->objects;
         }
 
-        if ($this->helloData === null) {
-            $this->helloData = $this->request('epp:hello', []);
-        }
-
-        $this->objects = $this->helloData['objURIs'] ?? [];
+        $helloData = $this->getHelloData();
+        $this->objects = $helloData['objURIs'] ?? [];
 
         return $this->objects;
+    }
+
+    public function getHelloData(): ?array
+    {
+        if ($this->helloData === null) {
+            $this->helloData = $this->requestHello();
+        }
+
+        return $this->helloData;
+    }
+
+    public function requestHello(): ?array
+    {
+        return $this->cache->getOrSet(['epp:hello', $this->getRegistrar(), $this->data['queue']], function() {
+            return $this->request('epp:hello', []);
+        }, 3600);
     }
 
     /**
@@ -284,10 +303,16 @@ class HeppyTool
         string $command,
         array $input,
         array $returns = [],
-        array $payload = []
+        array $payload = [],
+        bool $second = false
     ): array {
+        $origin = $input;
         $input = $this->applyExtensions($command, $input);
-        $response = $this->request($command, $input);
+        try {
+            $response = $this->request($command, $input);
+        } catch (AMQPTimeoutException $e) {
+            throw new \Exception($this->getRegistrar() . ": " . $e->getMessage());
+        }
         if (isset($response['result_code'])) {
             $rc = substr($response['result_code'], 0, 1);
         } else {
@@ -296,6 +321,10 @@ class HeppyTool
 
         if ($rc !== '1') {
             if (!empty($response['msg'])) {
+                if (in_array($response['result_code'], ['2200', '2501', '2502', '2500', '2002', '2500']) && $second === false) {
+                    sleep(5);
+                    return $this->commonRequest($command, $input, $returns, $payload, true);
+                }
                 throw new EppErrorException(trim($response['msg'] . " " . ($response['result_reason'] ?? '')), (int) $response['result_code'], $response);
             }
 

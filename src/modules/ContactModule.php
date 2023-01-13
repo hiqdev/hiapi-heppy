@@ -13,16 +13,16 @@ class ContactModule extends AbstractModule
     const UNIMPLEMENTED_OPTION_DISCLOSE = 'Unimplemented option Disclose element not supported';
 
     /** {@inheritdoc} */
-    public $uris = [
+    public array $uris = [
         'contact' => 'urn:ietf:params:xml:ns:contact-1.0',
         'contact_hm' => 'http://hostmaster.ua/epp/contact-1.1',
     ];
 
-    public $extURIs = [
+    public array $extURIs = [
         'namestoreExt' => 'http://www.verisign-grs.com/epp/namestoreExt-1.1',
     ];
 
-    public $object = 'contact';
+    public ?string $object = 'contact';
 
     /** {@inheritdoc} */
     public function isAvailable() : bool
@@ -135,7 +135,15 @@ class ContactModule extends AbstractModule
             ]);
         } catch (Throwable $e) {
             if (strpos($e->getMessage(), self::NON_ALPHANUMERIC_EXCEPTION) !== false) {
-                return $this->contactCreate($row, true);
+                return $this->contactCreate($row, true, $disclose);
+            }
+
+            if (strpos($e->getMessage(), self::INCORECT_AUTHINFO_EXCEPTION) !== false) {
+                return $this->contactCreate($row, true, $disclose);
+            }
+
+            if (strpos($e->getMessage(), self::UNIMPLEMENTED_OPTION_DISCLOSE) !== false && $disclose !== false) {
+                return $this->contactCreate($row, $addsymbols, false);
             }
 
             if (strpos($e->getMessage(), self::INCORECT_AUTHINFO_EXCEPTION) !== false) {

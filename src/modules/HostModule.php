@@ -2,17 +2,15 @@
 
 namespace hiapi\heppy\modules;
 
-use err;
-
 class HostModule extends AbstractModule
 {
     /** {@inheritdoc} */
-    public $uris = [
+    public array $uris = [
         'host' => 'urn:ietf:params:xml:ns:host-1.0',
         'host_hm' => 'http://hostmaster.ua/epp/host-1.1',
     ];
 
-    public $object = 'host';
+    public ?string $object = 'host';
 
     /**
      * @param array $row
@@ -104,18 +102,6 @@ class HostModule extends AbstractModule
     }
 
     /**
-     * @param array $local
-     * @param array $remote
-     * @return array
-     */
-    private function prepareDataForHostUpdate(array $local, array $remote): array
-    {
-        return $this->prepareDataForUpdate($local, $remote, [
-            'ips' => 'ips'
-        ]);
-    }
-
-    /**
      * @param array $hosts
      * @return array
      */
@@ -140,6 +126,18 @@ class HostModule extends AbstractModule
         ], [], [
             'id'    => $row['id'],
             'host'  => $row['host'],
+        ]);
+    }
+
+    /**
+     * @param array $local
+     * @param array $remote
+     * @return array
+     */
+    private function prepareDataForHostUpdate(array $local, array $remote): array
+    {
+        return $this->prepareDataForUpdate($local, $remote, [
+            'ips' => 'ips'
         ]);
     }
 }

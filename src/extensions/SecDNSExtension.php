@@ -17,7 +17,7 @@ use hiapi\heppy\interfaces\ExtensionInterface;
  */
 class SecDNSExtension extends AbstractExtension implements ExtensionInterface
 {
-    public $availableCommands = [
+    public array $availableCommands = [
         'domain' => [
             'update' => ['*' => true],
         ],

@@ -19,7 +19,7 @@ use hiapi\heppy\interfaces\ExtensionInterface;
 class ChargeExtension extends AbstractExtension implements ExtensionInterface
 {
     /** {@inheritdoc} */
-    public $availableCommands = [
+    public array $availableCommands = [
         'domain' => [
             'create' => ['*' => true],
             'renew' => ['*' => true],
@@ -42,7 +42,7 @@ class ChargeExtension extends AbstractExtension implements ExtensionInterface
 
         $data['extensions'][] = array_filter([
             'command' => "charge:" .  substr($command, 7),
-            'amount' => $data['fee'],
+            'amount' => $data['fee'] ?? null,
             'period' => $data['period'] ?? ($data['amount'] ?? 1),
             'category_name' => $data['category_name'],
         ]);

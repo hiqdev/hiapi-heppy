@@ -2,17 +2,14 @@
 
 namespace hiapi\heppy\modules;
 
-use hiapi\legacy\lib\deps\err;
-use hiapi\legacy\lib\deps\check;
-
 class BalanceModule extends AbstractModule
 {
     /** {@inheritdoc} */
-    public $uris = [
+    public array $uris = [
         'balance' => 'http://hostmaster.ua/epp/balance-1.0',
     ];
 
-    public $object = 'balance';
+    public ?string $object = 'balance';
 
     public function balanceInfo(array $row = []) : array
     {
