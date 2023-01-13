@@ -181,10 +181,10 @@ class AbstractModule
                 $remote[$apiName] = is_array($remote[$apiName]) ? $remote[$apiName] : explode(",", $remote[$apiName]);
 
                 if ($add = array_diff($local[$apiName], $remote[$apiName])) {
-                    $res['add'][][$eppName] = $add;
+                    $res['add'][][$eppName] = array_values($add);
                 }
                 if ($rem = array_diff($remote[$apiName], $local[$apiName])) {
-                    $res['rem'][][$eppName] = $rem;
+                    $res['rem'][][$eppName] = array_values($rem);
                 }
             } else if (key_exists($apiName, $local) &&
                 strcasecmp((string)($local[$apiName] ?? ''), (string)($remote[$apiName] ?? ''))) {

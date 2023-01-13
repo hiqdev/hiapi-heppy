@@ -23,6 +23,9 @@ class DomainModule extends AbstractModule
     const RENEW_DOMAIN_AUTORENEW_RENEWONCE_EXCEPTION = "Invalid attribute value; explicit renewals not allowed for this TLD; please set domain to AUTORENEW or RENEWONCE";
     const RENEW_DOMAIN_DOES_NOT_MATCH_EXPIRATION = 'Parameter value range error Does not match expiration';
 
+    const RENEW_DOMAIN_ALREADY_RENEWED = 'Object is not eligible for renewal Object already renewed';
+    const RENEW_DOMAIN_WRONG_CUREPXDATE = 'Parameter value range error Wrong curExpDate provided';
+
     const NON_ALPHANUMERIC_EXCEPTION = 'authInfo code is invalid: password must contain at least one non-alphanumeric character';
 
     const STATUS_NOT_SETTED_FOR_DOMAIN = 'is not set on this domain';
@@ -127,7 +130,12 @@ class DomainModule extends AbstractModule
     public function domainsCheck(array $row): array
     {
         foreach ($row['domains'] as $domain) {
+            try {
             $res[$domain] = $this->domainCheck($domain);
+            } catch (\Throwable $e) {
+                var_dump($e->getMessage());
+                throw new Exception($e->getMessage());
+            }
         }
 
         return $res;
@@ -149,12 +157,12 @@ class DomainModule extends AbstractModule
         return $this->domainPerformOperation("{$this->object}:create", array_filter([
             'name'          => $row['domain'],
             'period'        => $row['period'],
-            'registrant'    => $row['registrant_remote_id'],
-            'admin'         => [$row['admin_remote_id']],
-            'tech'          => [$row['tech_remote_id']],
-            'billing'       => [$row['billing_remote_id']],
+            'registrant'    => !empty($row['registrant_remote_id']) ? $row['registrant_remote_id'] : null,
+            'admin'         => !empty($row['admin_remote_id']) ? [$row['admin_remote_id']] : null,
+            'tech'          => !empty($row['tech_remote_id']) ? [$row['tech_remote_id']] : null,
+            'billing'       => !empty($row['billing_remote_id']) ? [$row['billing_remote_id']] : null,
             'nss'           => $row['nss'],
-            'pw'            => $row['password'] ?: $this->generatePassword(16),
+            'pw'            => $row['password'] ?? $this->generatePassword(16),
             'secDNS'        => $row['secDNS'] ?? null,
         ]), [
             'domain'            => 'name',
@@ -182,6 +190,7 @@ class DomainModule extends AbstractModule
                     $response = $this->tool->contactSet(array_merge($row["{$type}_info"], array_filter([
                         'whois_protected' => $row['whois_protected'] ? 1 : 0,
                         'email' => $email,
+                        'domain' => $row['domain'] ?? null,
                     ], function($v) {return $v !== null;})));
                 } catch (Throwable $e) {
                     throw new Exception($e->getMessage());
@@ -228,6 +237,7 @@ class DomainModule extends AbstractModule
      * @param array $row
      * @return array
      */
+
     public function domainRenew(array $row, ?bool $expired = false): array
     {
         $row = $this->_domainSetFee($row, 'renew');
@@ -235,6 +245,7 @@ class DomainModule extends AbstractModule
         if (!empty($row['fee']) && floatval((string) $row['fee']) !== floatval((string) $row['standart_price'])) {
             throw new Excepion($row['reason']);
         }
+
         if ($expired === true) {
             $info = $this->tool->domainInfo($row);
             $realExpDate = $this->tool->getDateTime($info['expiration_date']);
@@ -245,22 +256,35 @@ class DomainModule extends AbstractModule
                 return array_merge($row, $info);
             }
 
-            return $this->_domainRenew(array_merge($row, [
+            $row = array_merge($row, [
                 'expires' => $realExpDate->format("Y-m-d"),
                 'period' => $period,
+            ]);
+        }
+
+        try {
+            return $this->tool->commonRequest("{$this->object}:renew", array_filter([
+                'name'          => $row['domain'],
+                'curExpDate'    => $row['expires'],
+                'period'        => $row['period'] ?? 1,
+                'fee'           => $row['fee'] ?? null,
+            ]), array_filter([
+                'domain'            => 'name',
+                'expiration_date'   => 'exDate',
             ]));
         }
 
         try {
             return $this->_domainRenew($row);
         } catch (EppErrorException $e) {
-            if ($e->getMessage() === self::RENEW_DOMAIN_DOES_NOT_MATCH_EXPIRATION) {
-                if ($expired === false) {
+            if (in_array($e->getMessage(), [self::RENEW_DOMAIN_DOES_NOT_MATCH_EXPIRATION, self::RENEW_DOMAIN_ALREADY_RENEWED, self::RENEW_DOMAIN_WRONG_CUREPXDATE], true)) {
+                if ($expires === false) {
                     return $this->domainRenew($row, true);
                 } else {
                     throw $e;
                 }
             }
+            
             if (!in_array($e->getMessage(), [self::RENEW_DOMAIN_NOT_AVAILABLE_EXCEPTION, self::RENEW_DOMAIN_AUTORENEW_RENEWONCE_EXCEPTION], true) || !$this->isKeySysExtensionEnabled()) {
                 throw $e;
             }
@@ -547,7 +571,7 @@ class DomainModule extends AbstractModule
         array $payload = [],
         bool $clearContact = false
     ): array {
-        $input['clearContact'] = $this->isNamestoreExtensionEnabled() || $clearContact;
+        $input['clearContact'] = $clearContact;
 
         try {
             return $this->tool->commonRequest($command, $input, $returns, $payload);
@@ -706,12 +730,13 @@ class DomainModule extends AbstractModule
             return $row;
         }
 
-        if ($data['fee']['fee'] != $row['standart_price'] && in_array($op, ['renew', 'transfer'], true)) {
+        $fee = $data['fee']['fee'] ?? $data['fee'][$op] ?? null;
+        if ($fee  != $row['standart_price'] && in_array($op, ['renew', 'transfer'], true)) {
             return $row;
         }
 
         return array_merge($row, [
-            'fee' => $data['fee']['fee'],
+            'fee' => $fee,
             'reason' => self::DOMAIN_PREMIUM_REASON,
         ]);
     }
