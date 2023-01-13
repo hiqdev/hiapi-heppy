@@ -29,6 +29,7 @@ use hiapi\heppy\modules\HostModule;
 use hiapi\heppy\modules\PollModule;
 use hiapi\heppy\modules\EPPModule;
 use hiapi\heppy\modules\BalanceModule;
+use DateTimeImmutable;
 
 /**
  * hEPPy tool.
@@ -132,6 +133,10 @@ class HeppyTool
         $parts = preg_split('/(?=[A-Z])/', $command);
         $entity = reset($parts);
         $module = $this->getModule($entity);
+
+        if (!method_exists($module, $command)) {
+            throw new InvalidCallException("command `$command` not found");
+        }
 
         return call_user_func_array([$module, $command], $args);
     }
@@ -416,5 +421,10 @@ class HeppyTool
         }
 
         return $this->contacts['disabled_wp'];
+    }
+
+    public function getDateTime(string $datetime): DateTimeImmutable
+    {
+        return new DateTimeImmutable($datetime);
     }
 }

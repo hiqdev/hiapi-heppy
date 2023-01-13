@@ -35,6 +35,13 @@ class NamestoreExtension extends AbstractExtension implements ExtensionInterface
             'info' => ['*' => true],
             'delete' => ['*' => true],
         ],
+        'contact' => [
+            'check' => ['*' => true],
+            'create' => ['*' => true],
+            'update' => ['*' => true],
+            'info' => ['*' => true],
+            'delete' => ['*' => true],
+        ],
     ];
 
     /**
@@ -50,7 +57,7 @@ class NamestoreExtension extends AbstractExtension implements ExtensionInterface
         }
 
         $zone = mb_strtoupper($zone);
-        if ($data['clearContact'] === true) {
+        if (isset($data['clearContact']) && $data['clearContact'] === true) {
             $data = $this->clearContacts($data);
         }
 

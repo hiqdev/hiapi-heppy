@@ -120,6 +120,10 @@ abstract class AbstractExtension
      */
     protected function getNamesParts(array $data, string $name = null): array
     {
+        if (!$name && isset($data['domain'])) {
+            $name = $data['domain'];
+        }
+
         if (!$name && isset($data['name'])) {
             $name = $data['name'];
         }

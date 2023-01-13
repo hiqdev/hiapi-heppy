@@ -8,6 +8,9 @@ use Exception;
 class ContactModule extends AbstractModule
 {
     const NON_ALPHANUMERIC_EXCEPTION = 'authInfo code is invalid: password must contain at least one non-alphanumeric character';
+    const INCORECT_AUTHINFO_EXCEPTION = 'Parameter value syntax error Incorrect authInfo';
+
+    const UNIMPLEMENTED_OPTION_DISCLOSE = 'Unimplemented option Disclose element not supported';
 
     /** {@inheritdoc} */
     public $uris = [
@@ -24,7 +27,7 @@ class ContactModule extends AbstractModule
     /** {@inheritdoc} */
     public function isAvailable() : bool
     {
-        return !$this->isNamestoreExtensionEnabled();
+        return true || !$this->isNamestoreExtensionEnabled();
     }
 
     /**
@@ -78,6 +81,7 @@ class ContactModule extends AbstractModule
         $res = $this->tool->commonRequest("{$this->object}:info", array_filter([
             'id'        => $row['epp_id'],
             'pw'        => $row['password'] ?? null,
+            'domain'    => $row['domain'] ?? null,
         ]), array_merge([
             'epp_id'        => 'id',
             'password'      => 'password',
@@ -97,7 +101,7 @@ class ContactModule extends AbstractModule
      * @param array $row
      * @return array
      */
-    public function contactCreate(array $row, ?bool $addsymbols = false): array
+    public function contactCreate(array $row, ?bool $addsymbols = false, ?bool $disclose = true): array
     {
         if (!$this->isAvailable()) {
             return $row;
@@ -123,7 +127,8 @@ class ContactModule extends AbstractModule
                 'pc'        => $row['postal_code']  ?? null,
                 'sp'        => $row['province']     ?? null,
                 'pw'        => $row['password'] ?: $this->generatePassword(16, $addsymbols),
-                'disclose'  => $row['whois_protected'] ? 1 : 0,
+                'disclose'  => $disclose !== false ? ($row['whois_protected'] ? 1 : 0) : null,
+                'domain'    => $row['domain'] ?? null,
             ], $this->getFilterCallback()), [
                 'epp_id'        => 'id',
                 'created_date'  => 'crDate',
@@ -132,6 +137,15 @@ class ContactModule extends AbstractModule
             if (strpos($e->getMessage(), self::NON_ALPHANUMERIC_EXCEPTION) !== false) {
                 return $this->contactCreate($row, true);
             }
+
+            if (strpos($e->getMessage(), self::INCORECT_AUTHINFO_EXCEPTION) !== false) {
+                return $this->contactCreate($row, true);
+            }
+
+            if (strpos($e->getMessage(), self::UNIMPLEMENTED_OPTION_DISCLOSE) !== false && $disclose !== false) {
+                return $this->contactCreate($row, $addsymbols, false);
+            }
+
             throw new Exception($e->getMessage());
         }
     }
@@ -141,20 +155,29 @@ class ContactModule extends AbstractModule
      * @param array|null $info
      * @return array
      */
-    public function contactUpdate(array $row, array $info): array
+    public function contactUpdate(array $row, array $info, ?bool $disclose = true): array
     {
         if (!$this->isAvailable()) {
             return $row;
         }
 
-        $row = $this->prepareDataForContactUpdate($row, $info);
+        $data = $this->prepareDataForContactUpdate($row, $info, $disclose);
 
-        return $this->tool->commonRequest("{$this->object}:update", array_filter([
-            'id'        => $row['epp_id'],
-            'chg'       => $row['chg'],
-        ]), [], [
-            'epp_id'    => $this->fixContactID($row['epp_id']),
-        ]);
+        try {
+            return $this->tool->commonRequest("{$this->object}:update", array_filter([
+                'id'        => $data['epp_id'],
+                'domain'    => $row['domain'] ?? null,
+                'chg'       => array_filter($data['chg']),
+            ]), [], [
+                'epp_id'    => $this->fixContactID($data['epp_id']),
+            ]);
+        } catch (Throwable $e) {
+            if (strpos($e->getMessage(), self::UNIMPLEMENTED_OPTION_DISCLOSE) !== false && $disclose !== false) {
+                return $this->contactUpdate($row, $info, false);
+            }
+
+            throw new Exception($e->getMessage());
+        }
     }
 
     /**
@@ -177,7 +200,7 @@ class ContactModule extends AbstractModule
      * @param array $remote
      * @return array
      */
-    private function prepareDataForContactUpdate(array $local, array $remote): array
+    private function prepareDataForContactUpdate(array $local, array $remote, ?bool $disclose = true): array
     {
         return [
             'epp_id' => $local['epp_id'],
@@ -195,8 +218,8 @@ class ContactModule extends AbstractModule
                 'street3'   => $local['street3'] ?? null,
                 'sp'        => $local['province'] ?? null,
                 'pw'        => $local['password'] ?? '/1yIv!QaQ(6U',
-                'disclose'  => strval((int) (!$local['whois_protected'])),
-            ]),
+                'disclose'  => $disclose !== false ? (strval((int) (!$local['whois_protected']))) : null,
+            ], function($v) {return !is_null($v);}),
         ];
     }
 
@@ -208,10 +231,16 @@ class ContactModule extends AbstractModule
             }
 
             if (isset($info[$type]['name']) && empty($first_name)) {
-                [$first_name, $last_name] = explode(" ", $info[$type]['name'], 2);
+                if (strpos($info[$type]['name'], " ") !== false) {
+                    [$first_name, $last_name] = explode(" ", $info[$type]['name'] ?? '', 2);
+                } else {
+                    $first_name = $info[$type]['name'];
+                }
             }
 
             $org = $org ?? ($info[$type]['org'] ?? null);
+            $first_name = $first_name ?? $org ?? null;
+            $last_name = $last_name ?? $org ?? null;
             $addr = $addr ?? ($info[$type]['addr'] ?? null);
         }
 

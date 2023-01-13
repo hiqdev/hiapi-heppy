@@ -45,7 +45,7 @@ class HostModule extends AbstractModule
             throw new \Exception($e->getMessage());
         }
 
-        return  (int) $check['avail'] === 0 ? $this->hostCreate($row) : $this->hostUpdate($row);
+        return  (int) $check['avail'] === 1 ? $this->hostCreate($row) : $this->hostUpdate($row);
     }
 
     /**
@@ -56,7 +56,7 @@ class HostModule extends AbstractModule
     {
         return $this->tool->commonRequest("{$this->object}:create", [
             'name'      => $row['host'],
-            'ips'       => $row['ips'],
+            'ips'       => $row['ips'] ?? null,
             'zone'      => $row['zone'] ?? null,
         ], [
             'host'      => 'name',
