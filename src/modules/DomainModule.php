@@ -23,11 +23,16 @@ class DomainModule extends AbstractModule
     const RENEW_DOMAIN_AUTORENEW_RENEWONCE_EXCEPTION = "Invalid attribute value; explicit renewals not allowed for this TLD; please set domain to AUTORENEW or RENEWONCE";
     const RENEW_DOMAIN_DOES_NOT_MATCH_EXPIRATION = 'Parameter value range error Does not match expiration';
 
+    const RENEW_DOMAIN_ALREADY_RENEWED = 'Object is not eligible for renewal Object already renewed';
+    const RENEW_DOMAIN_WRONG_CUREPXDATE = 'Parameter value range error Wrong curExpDate provided';
+
     const NON_ALPHANUMERIC_EXCEPTION = 'authInfo code is invalid: password must contain at least one non-alphanumeric character';
 
     const STATUS_NOT_SETTED_FOR_DOMAIN = 'is not set on this domain';
 
     const DOMAIN_PREMIUM_REASON = 'PREMIUM DOMAIN';
+
+    const ZONE_NOT_ACCREDITED = 'not accredited';
 
     /** {@inheritdoc} */
     public array $uris = [
@@ -56,31 +61,40 @@ class DomainModule extends AbstractModule
      */
     public function domainInfo(array $row): array
     {
-        $info =  $this->tool->commonRequest("{$this->object}:info", array_filter([
-            'name'      => $row['domain'],
-            'pw'        => $row['password'] ?? null,
-        ], $this->getFilterCallback()), [
-            'domain'            => 'name',
-            'name'              => 'name',
-            'roid'              => 'roid',
-            'created_by'        => 'crID',
-            'created_date'      => 'crDate',
-            'updated_by'        => 'upID',
-            'updated_date'      => 'upDate',
-            'expiration_date'   => 'exDate',
-            'transfer_date'     => 'trDate',
-            'registrant'        => 'registrant',
-            'admin'             => 'admin',
-            'billing'           => 'billing',
-            'tech'              => 'tech',
-            'password'          => 'pw',
-            'epp_client_id'     => 'clID',
-            'statuses'          => 'statuses',
-            'nameservers'       => 'nss',
-            'hosts'             => 'hosts',
-            'secDNS'            => 'secDNS',
-            'ua_tm'             => 'license',
-        ]);
+        try {
+            $info =  $this->tool->commonRequest("{$this->object}:info", array_filter([
+                'name'      => $row['domain'],
+                'pw'        => $row['password'] ?? null,
+            ], $this->getFilterCallback()), [
+                'domain'            => 'name',
+                'name'              => 'name',
+                'roid'              => 'roid',
+                'created_by'        => 'crID',
+                'created_date'      => 'crDate',
+                'updated_by'        => 'upID',
+                'updated_date'      => 'upDate',
+                'expiration_date'   => 'exDate',
+                'transfer_date'     => 'trDate',
+                'registrant'        => 'registrant',
+                'admin'             => 'admin',
+                'billing'           => 'billing',
+                'tech'              => 'tech',
+                'password'          => 'pw',
+                'epp_client_id'     => 'clID',
+                'statuses'          => 'statuses',
+                'nameservers'       => 'nss',
+                'hosts'             => 'hosts',
+                'secDNS'            => 'secDNS',
+                'ua_tm'             => 'license',
+            ]);
+        } catch (Throwable $e) {
+            if (strpos($e->getMessage(), "The domain '{$row['domain']}' does not exist") !== false) {
+                throw new Exception(self::OBJECT_DOES_NOT_EXIST);
+            }
+
+            throw new Exception($e->getMessage());
+
+        }
 
         foreach (['domain', 'name'] as $key) {
             if (!empty($info[$key])) {
@@ -127,7 +141,11 @@ class DomainModule extends AbstractModule
     public function domainsCheck(array $row): array
     {
         foreach ($row['domains'] as $domain) {
+            try {
             $res[$domain] = $this->domainCheck($domain);
+            } catch (\Throwable $e) {
+                throw new Exception($e->getMessage());
+            }
         }
 
         return $res;
@@ -149,12 +167,12 @@ class DomainModule extends AbstractModule
         return $this->domainPerformOperation("{$this->object}:create", array_filter([
             'name'          => $row['domain'],
             'period'        => $row['period'],
-            'registrant'    => $row['registrant_remote_id'],
-            'admin'         => [$row['admin_remote_id']],
-            'tech'          => [$row['tech_remote_id']],
-            'billing'       => [$row['billing_remote_id']],
+            'registrant'    => !empty($row['registrant_remote_id']) ? $row['registrant_remote_id'] : null,
+            'admin'         => !empty($row['admin_remote_id']) ? [$row['admin_remote_id']] : null,
+            'tech'          => !empty($row['tech_remote_id']) ? [$row['tech_remote_id']] : null,
+            'billing'       => !empty($row['billing_remote_id']) ? [$row['billing_remote_id']] : null,
             'nss'           => $row['nss'],
-            'pw'            => $row['password'] ?: $this->generatePassword(16),
+            'pw'            => $row['password'] ?? $this->generatePassword(16),
             'secDNS'        => $row['secDNS'] ?? null,
         ]), [
             'domain'            => 'name',
@@ -182,6 +200,7 @@ class DomainModule extends AbstractModule
                     $response = $this->tool->contactSet(array_merge($row["{$type}_info"], array_filter([
                         'whois_protected' => $row['whois_protected'] ? 1 : 0,
                         'email' => $email,
+                        'domain' => $row['domain'] ?? null,
                     ], function($v) {return $v !== null;})));
                 } catch (Throwable $e) {
                     throw new Exception($e->getMessage());
@@ -235,6 +254,7 @@ class DomainModule extends AbstractModule
         if (!empty($row['fee']) && floatval((string) $row['fee']) !== floatval((string) $row['standart_price'])) {
             throw new Excepion($row['reason']);
         }
+
         if ($expired === true) {
             $info = $this->tool->domainInfo($row);
             $realExpDate = $this->tool->getDateTime($info['expiration_date']);
@@ -254,13 +274,14 @@ class DomainModule extends AbstractModule
         try {
             return $this->_domainRenew($row);
         } catch (EppErrorException $e) {
-            if ($e->getMessage() === self::RENEW_DOMAIN_DOES_NOT_MATCH_EXPIRATION) {
+            if (in_array($e->getMessage(), [self::RENEW_DOMAIN_DOES_NOT_MATCH_EXPIRATION, self::RENEW_DOMAIN_ALREADY_RENEWED, self::RENEW_DOMAIN_WRONG_CUREPXDATE], true)) {
                 if ($expired === false) {
                     return $this->domainRenew($row, true);
                 } else {
                     throw $e;
                 }
             }
+            
             if (!in_array($e->getMessage(), [self::RENEW_DOMAIN_NOT_AVAILABLE_EXCEPTION, self::RENEW_DOMAIN_AUTORENEW_RENEWONCE_EXCEPTION], true) || !$this->isKeySysExtensionEnabled()) {
                 throw $e;
             }
@@ -547,7 +568,7 @@ class DomainModule extends AbstractModule
         array $payload = [],
         bool $clearContact = false
     ): array {
-        $input['clearContact'] = $this->isNamestoreExtensionEnabled() || $clearContact;
+        $input['clearContact'] = $clearContact;
 
         try {
             return $this->tool->commonRequest($command, $input, $returns, $payload);
@@ -570,12 +591,14 @@ class DomainModule extends AbstractModule
     {
         try {
             $res = $this->_domainCheck($domain, true);
-            $this->_parseCheckCharge($domain, $res);
+            $res = $this->_parseCheckCharge($domain, $res);
             if ((int) $res['avails'][$domain] === 0 && $command === null) {
-                return [
-                    'avail' => (int) $res['avails'][$domain],
-                    'reason' => $res['reasons'][$domain] ?? null,
-                ];
+                if ($res['reasons'][$domain] !== self::ZONE_NOT_ACCREDITED) {
+                    return [
+                        'avail' => (int) $res['avails'][$domain],
+                        'reason' => $res['reasons'][$domain] ?? null,
+                    ];
+                }
             }
 
             $checkPremium = $this->_domainCheck($domain, false, $command ?? 'create');
@@ -609,20 +632,20 @@ class DomainModule extends AbstractModule
     {
         if (empty($res['fee']) || empty($res['fee'][$domain]) || empty($res['fee'][$domain]['class'])) {
             return [
-                'avail' => (int) $data['avails'][$domain],
+                'avail' => (int) ($res['avails'][$domain] ?? $data['avails'][$domain]),
             ];
         }
 
         if ($res['fee'][$domain]['class'] === self::DOMAIN_STANDART) {
             return [
-                'avail' => (int) $data['avails'][$domain],
+                'avail' => (int) ($res['avails'][$domain] ?? $data['avails'][$domain]),
             ];
         }
 
         $res['fee'][$domain]['premium'] = 1;
         $res['fee'][$domain]['currency'] = $this->tool->getCurrency();
         return [
-            'avail' => (int) $data['avails'][$domain],
+            'avail' => (int) ($res['avails'][$domain] ?? $data['avails'][$domain]),
             'reason' => self::DOMAIN_PREMIUM_REASON,
             'fee' => $res['fee'][$domain],
         ];
@@ -706,12 +729,13 @@ class DomainModule extends AbstractModule
             return $row;
         }
 
-        if ($data['fee']['fee'] != $row['standart_price'] && in_array($op, ['renew', 'transfer'], true)) {
+        $fee = $data['fee']['fee'] ?? $data['fee'][$op] ?? null;
+        if ($fee  != $row['standart_price'] && in_array($op, ['renew', 'transfer'], true)) {
             return $row;
         }
 
         return array_merge($row, [
-            'fee' => $data['fee']['fee'],
+            'fee' => $fee,
             'reason' => self::DOMAIN_PREMIUM_REASON,
         ]);
     }

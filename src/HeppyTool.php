@@ -327,6 +327,11 @@ class HeppyTool
                 throw new EppErrorException(trim($response['msg'] . " " . ($response['result_reason'] ?? '')), (int) $response['result_code'], $response);
             }
 
+            if ($second === false) {
+                sleep(5);
+                return $this->commonRequest($command, $input, $returns, $payload, true);
+            }
+
             throw new EppErrorException($response['msg'] ?? ('failed heppy request: ' . var_export($response, true)), (int) $response['result_code'], $response);
         }
 

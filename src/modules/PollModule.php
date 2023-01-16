@@ -141,11 +141,16 @@ class PollModule extends AbstractModule
             $row[$key] = date("Y-m-d H:i:s", strtotime($row[$key]));
         }
 
-        $row = array_merge($row, [
-            'class' => 'domain',
-            'id' => $skipID === true ? null : $row['id'],
-            'outgoing' => isset($row['request_client']) && ((string) $row['request_client'] !== (string) $this->tool->getRegistrar()),
-        ]);
+        $row['class'] = 'domain';
+        $row['name'] = strtolower($row['name']);
+        $row['outgoing'] = false;
+        if (isset($row['request_client'])) {
+            $row['outgoing'] = $row['request_client'] !== $this->tool->getRegistrar();
+        }
+
+        if (isset($row['reID']) && !empty($row['request_client'])) {
+            $row['outgoing'] = $row['reID'] !== $this->tool->getRegistrar();
+        }
 
         return $row;
     }
