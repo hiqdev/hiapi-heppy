@@ -53,6 +53,8 @@ class HeppyTool
 
     protected $objects;
 
+    protected $contacts = [];
+
     protected $extURNNames = [
         'secDNS' => 'urn:ietf:params:xml:ns:secDNS-1.1',
         'secDNShm' => ['http://hostmaster.ua/epp/secDNS-1.1', 'hm'],
@@ -156,7 +158,6 @@ class HeppyTool
     public function getModule(string $name): AbstractModule
     {
         if (empty($this->modules[$name])) {
-            throw new InvalidCallException("module `$name` not found");
         }
         $module = $this->modules[$name];
         if (!is_object($module)) {
@@ -459,5 +460,10 @@ class HeppyTool
     public function getDateTime(string $datetime): DateTimeImmutable
     {
         return new DateTimeImmutable($datetime);
+    }
+
+    public function getCache()
+    {
+        return $this->base->getCache();
     }
 }

@@ -26,6 +26,8 @@ abstract class AbstractExtension
     /** @var array */
     public array $availableCommands = [];
 
+    public ?HeppyTool $tool = null;
+
     public function __construct(array $data, HeppyTool $tool)
     {
         $this->version = $data['version'] ?? '';
