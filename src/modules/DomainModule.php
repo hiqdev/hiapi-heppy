@@ -142,7 +142,7 @@ class DomainModule extends AbstractModule
     {
         foreach ($row['domains'] as $domain) {
             try {
-            $res[$domain] = $this->domainCheck($domain);
+                $res[$domain] = $this->domainCheck($domain);
             } catch (\Throwable $e) {
                 throw new Exception($e->getMessage());
             }
@@ -221,6 +221,14 @@ class DomainModule extends AbstractModule
      */
     public function domainDelete(array $row): array
     {
+        $info = $this->domainInfo($row);
+        $hosts = $info['hosts'] ?? '';
+        $hosts = is_array($hosts) ? $hosts : explode(",", $hosts);
+        foreach ($hosts as $host) {
+            $del = $this->tool->hostDelete([
+                'host' => $host,
+            ]);
+        }
         return $this->tool->commonRequest("{$this->object}:delete", array_filter([
             'name'     => $row['domain'],
             $this->isKeySysExtensionEnabled() !== true || empty($this->KeySYSDelete[$this->getDomainTopZone($row['domain'])])
@@ -281,7 +289,7 @@ class DomainModule extends AbstractModule
                     throw $e;
                 }
             }
-            
+
             if (!in_array($e->getMessage(), [self::RENEW_DOMAIN_NOT_AVAILABLE_EXCEPTION, self::RENEW_DOMAIN_AUTORENEW_RENEWONCE_EXCEPTION], true) || !$this->isKeySysExtensionEnabled()) {
                 throw $e;
             }

@@ -119,12 +119,12 @@ class ContactModule extends AbstractModule
                 'voice'     => $row['voice_phone'],
                 'fax'       => $row['fax_phone']    ?? null,
                 'org'       => $row['organization'] ?? null,
-                'cc'        => $row['country']      ? strtoupper($row['country']) : null,
+                'cc'        => !empty($row['country']) ? strtoupper($row['country'] === 'gdpr' ? 'cy' : $row['country']) : null,
                 'city'      => $row['city']         ?? null,
                 'street1'   => $row['street1']      ?? null,
                 'street2'   => $row['street2']      ?? null,
                 'street3'   => $row['street3']      ?? null,
-                'pc'        => $row['postal_code']  ?? null,
+                'pc'        => !empty($row['postal_code'])  ? substr($row['postal_code'], 0, 16) : null,
                 'sp'        => $row['province']     ?? null,
                 'pw'        => $row['password'] ?: $this->generatePassword(16, $addsymbols),
                 'disclose'  => $disclose !== false ? ($row['whois_protected'] ? 1 : 0) : null,
@@ -168,6 +168,11 @@ class ContactModule extends AbstractModule
         if (!$this->isAvailable()) {
             return $row;
         }
+
+        $row = array_merge($row, array_filter([
+            'country' => !empty($row['country']) ? strtoupper($row['country'] === 'gdpr' ? 'cy' : $row['country']) : null,
+            'postal_code' => !empty($row['postal_code'])  ? substr($row['postal_code'], 0, 16) : null,
+        ]));
 
         $data = $this->prepareDataForContactUpdate($row, $info, $disclose);
 
