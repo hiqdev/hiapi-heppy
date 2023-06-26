@@ -158,6 +158,7 @@ class HeppyTool
     public function getModule(string $name): AbstractModule
     {
         if (empty($this->modules[$name])) {
+            throw new InvalidCallException("module `$name` not found");
         }
         $module = $this->modules[$name];
         if (!is_object($module)) {
