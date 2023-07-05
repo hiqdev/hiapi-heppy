@@ -225,6 +225,9 @@ class DomainModule extends AbstractModule
         $hosts = $info['hosts'] ?? '';
         $hosts = is_array($hosts) ? $hosts : explode(",", $hosts);
         foreach ($hosts as $host) {
+            if (empty($host)) {
+                continue;
+            }
             $del = $this->tool->hostDelete([
                 'host' => $host,
             ]);
