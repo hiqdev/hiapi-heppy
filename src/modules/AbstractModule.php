@@ -9,7 +9,7 @@ class AbstractModule
     const OBJECT_DOES_NOT_EXIST = 'Object does not exist';
     /** Object statuses */
     const CLIENT_TRANSFER_PROHIBITED = 'clientTransferProhibited';
-    const CLIENT_UPDATE_PROHIBITED = 'clientTransferProhibited';
+    const CLIENT_UPDATE_PROHIBITED = 'clientUpdateProhibited';
     const CLIENT_DELETE_PROHIBITED = 'clientDeleteProhibited';
     const CLIENT_HOLD = 'clientHold';
 

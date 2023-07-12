@@ -112,6 +112,8 @@ class DomainModule extends AbstractModule
             }
         }
 
+        $info['another_registrar'] = $info['epp_client_id'] !== $this->tool->getRegistrar();
+
         return $this->getContactsInfo($info);
     }
 
@@ -232,6 +234,8 @@ class DomainModule extends AbstractModule
                 'host' => $host,
             ]);
         }
+
+        $this->domainDisableLock($info);
         return $this->tool->commonRequest("{$this->object}:delete", array_filter([
             'name'     => $row['domain'],
             $this->isKeySysExtensionEnabled() !== true || empty($this->KeySYSDelete[$this->getDomainTopZone($row['domain'])])
@@ -458,7 +462,16 @@ class DomainModule extends AbstractModule
      */
     public function domainsEnableLock(array $rows): array
     {
-        return $this->domainsUpdateStatuses($rows, 'add', [
+        foreach ($rows as $id => $row) {
+            $res[$id] = $this->tool->domainEnableLock($row);
+        }
+
+        return $res;
+    }
+
+    public function domainEnableLock(array $row): array
+    {
+        return $this->domainUpdateStatuses($row, 'add', [
             self::CLIENT_TRANSFER_PROHIBITED => self::CLIENT_TRANSFER_PROHIBITED,
             self::CLIENT_DELETE_PROHIBITED => self::CLIENT_DELETE_PROHIBITED,
         ]);
@@ -470,10 +483,20 @@ class DomainModule extends AbstractModule
      */
     public function domainsDisableLock(array $rows): array
     {
-        return $this->domainsUpdateStatuses($rows, 'rem', [
+        foreach ($rows as $id => $row) {
+            $res[$id] = $this->tool->domainDisableLock($row);
+        }
+
+        return $res;
+    }
+
+    public function domainDisableLock(array $row): array
+    {
+        $this->domainDisableUpdateProhibited($row);
+
+        return $this->domainUpdateStatuses($row, 'rem', [
             self::CLIENT_TRANSFER_PROHIBITED => self::CLIENT_TRANSFER_PROHIBITED,
             self::CLIENT_DELETE_PROHIBITED => self::CLIENT_DELETE_PROHIBITED,
-            self::CLIENT_UPDATE_PROHIBITED => self::CLIENT_UPDATE_PROHIBITED,
         ]);
     }
 
@@ -483,6 +506,7 @@ class DomainModule extends AbstractModule
      */
     public function domainEnableHold(array $row): array
     {
+        $this->domainDisableUpdateProhibited($row);
         return $this->domainUpdateStatuses($row, 'add', [
             'clientHold' => null,
         ]);
@@ -494,6 +518,7 @@ class DomainModule extends AbstractModule
      */
     public function domainDisableHold(array $row): array
     {
+        $this->domainDisableUpdateProhibited($row);
         return $this->domainUpdateStatuses($row, 'rem', [
             'clientHold' => null,
         ]);
@@ -958,7 +983,9 @@ class DomainModule extends AbstractModule
 
     private function domainDisableUpdateProhibited(array $row)
     {
-        if (!array_key_exists(self::CLIENT_UPDATE_PROHIBITED, $row['statuses']) && !in_array(self::CLIENT_UPDATE_PROHIBITED, $row['statuses'], true)) {
+        $info = empty($row['statuses']) ? $this->domainInfo($row) : $row;
+
+        if (!array_key_exists(self::CLIENT_UPDATE_PROHIBITED, $info['statuses']) && !in_array(self::CLIENT_UPDATE_PROHIBITED, $info['statuses'], true)) {
             return $row;
         }
 
