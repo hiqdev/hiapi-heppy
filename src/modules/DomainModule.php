@@ -302,7 +302,7 @@ class DomainModule extends AbstractModule
             return $this->_domainRenew($row);
         } catch (EppErrorException $e) {
             if (in_array($e->getMessage(), $this->getMainRenewErrors($row['domain']), true)) {
-                if ($expires === false) {
+                if ($expired === false) {
                     return $this->domainRenew($row, true);
                 } else {
                     throw $e;
