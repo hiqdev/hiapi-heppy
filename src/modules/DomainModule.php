@@ -769,17 +769,19 @@ class DomainModule extends AbstractModule
 
     protected function _domainSetFee(array $row, string $op): array
     {
-//        $data = $this->tool->getBase()->di->get('cache')->getOrSet([$row['domain'], $op], function() use ($row, $op) {
+        $data = $this->tool->getCache()->getOrSet([$row['domain'], $op], function() use ($row, $op) {
             $data = $this->domainCheck($row['domain'], $op);
-//        }, 3600);
+        }, 3600);
 
         if (empty($data['reason']) || $data['reason'] !== self::DOMAIN_PREMIUM_REASON) {
             return $row;
         }
 
         $fee = $data['fee']['fee'] ?? $data['fee'][$op] ?? null;
-        if ($fee  != $row['standart_price'] && in_array($op, ['renew', 'transfer'], true)) {
-            return $row;
+        if ($fee  == $row['standart_price'] && in_array($op, ['renew', 'transfer'], true)) {
+            return array_merge($row, array_filter([
+                'fee' => $fee,
+            ]));
         }
 
         return array_merge($row, [
