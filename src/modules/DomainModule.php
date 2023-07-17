@@ -16,12 +16,20 @@ class DomainModule extends AbstractModule
     const RENEW_DOMAIN_DOES_NOT_MATCH_EXPIRATION = 'Parameter value range error Does not match expiration';
     const RENEW_DOMAIN_ALREADY_RENEWED = 'Object is not eligible for renewal Object already renewed';
     const RENEW_DOMAIN_WRONG_CUREPXDATE = 'Parameter value range error Wrong curExpDate provided';
+    const RENEW_DOMAIN_EXPIRY_DATE_IS_NOT_CORRECT = 'Expiry date is not correct.';
+    const RENEW_DOMAIN_CORRECT_EXPIRY_DATE = 'Parameter value policy error Renew failed due to incorrect expiry date. The correct current expiry date must be provided';
+    const RENEW_DOMAIN_PARAMETER_VALUE_RANGE_ERROR = 'Parameter value range error';
+    const RENEW_DOMAIN_COMMAND_USE_ERROR = 'Command use error';
+    const RENEW_DOMAIN_OXRS_COMMAND_USE_ERROR = '2002:Command use error (__DOMAIN__)';
+    const RENEW_DOMAIN_MAIN_COMMAND_USE_ERROR = 'Command use error 2002:Command use error (__DOMAIN__)';
 
     const NON_ALPHANUMERIC_EXCEPTION = 'authInfo code is invalid: password must contain at least one non-alphanumeric character';
 
     const STATUS_NOT_SETTED_FOR_DOMAIN = 'is not set on this domain';
 
     const DOMAIN_PREMIUM_REASON = 'PREMIUM DOMAIN';
+
+    const UNIMPLEMENTED_OBJECT_FOR_THE_SUB_PRODUCT = 'Unimplemented command Unimplemented object for the sub product';
 
     /** {@inheritdoc} */
     public $uris = [
@@ -124,7 +132,6 @@ class DomainModule extends AbstractModule
             try {
             $res[$domain] = $this->domainCheck($domain);
             } catch (\Throwable $e) {
-                var_dump($e->getMessage());
                 throw new Exception($e->getMessage());
             }
         }
@@ -184,6 +191,9 @@ class DomainModule extends AbstractModule
                         'domain' => $row['domain'] ?? null,
                     ], function($v) {return $v !== null;})));
                 } catch (Throwable $e) {
+                    if ($e->getMessage() === self::UNIMPLEMENTED_OBJECT_FOR_THE_SUB_PRODUCT) {
+                        break;
+                    }
                     throw new Exception($e->getMessage());
                 }
 
@@ -263,13 +273,14 @@ class DomainModule extends AbstractModule
                 'expiration_date'   => 'exDate',
             ]));
         } catch (EppErrorException $e) {
-            if (in_array($e->getMessage(), [self::RENEW_DOMAIN_DOES_NOT_MATCH_EXPIRATION, self::RENEW_DOMAIN_ALREADY_RENEWED, self::RENEW_DOMAIN_WRONG_CUREPXDATE], true)) {
+            if (in_array($e->getMessage(), $this->getMainRenewErrors($row['domain']), true)) {
                 if ($expires === false) {
                     return $this->domainRenew($row, true);
                 } else {
                     throw $e;
                 }
             }
+
             if (!in_array($e->getMessage(), [self::RENEW_DOMAIN_NOT_AVAILABLE_EXCEPTION, self::RENEW_DOMAIN_AUTORENEW_RENEWONCE_EXCEPTION], true) || !$this->isKeySysExtensionEnabled()) {
                 throw $e;
             }
@@ -840,8 +851,8 @@ class DomainModule extends AbstractModule
 
     protected function _domainSetFee(array $row, string $op): array
     {
-//        $data - $this->getBase()->di->get('cache')->getOrSet([$row['domain'], $op], function() use ($row, $op) {
-        $data = $this->domainCheck($row['domain'], $op);
+//        $data - $this->tool->getBase()->di->get('cache')->getOrSet([$row['domain'], $op], function() use ($row, $op) {
+            $data = $this->domainCheck($row['domain'], $op);
 //        });
 
         if (empty($data['reason']) || $data['reason'] !== self::DOMAIN_PREMIUM_REASON) {
@@ -949,5 +960,20 @@ class DomainModule extends AbstractModule
         unset($info['contact']['epp_id']);
 
         return $info;
+    }
+
+    private function getMainRenewErrors(string $domain): array
+    {
+        return [
+            self::RENEW_DOMAIN_DOES_NOT_MATCH_EXPIRATION,
+            self::RENEW_DOMAIN_ALREADY_RENEWED,
+            self::RENEW_DOMAIN_WRONG_CUREPXDATE,
+            self::RENEW_DOMAIN_EXPIRY_DATE_IS_NOT_CORRECT,
+            self::RENEW_DOMAIN_PARAMETER_VALUE_RANGE_ERROR,
+            self::RENEW_DOMAIN_COMMAND_USE_ERROR,
+            self::RENEW_DOMAIN_CORRECT_EXPIRY_DATE,
+            str_replace('__DOMAIN__', $domain, self::RENEW_DOMAIN_MAIN_COMMAND_USE_ERROR),
+            str_replace('__DOMAIN__', $domain, self::RENEW_DOMAIN_OXRS_COMMAND_USE_ERROR),
+        ];
     }
 }
