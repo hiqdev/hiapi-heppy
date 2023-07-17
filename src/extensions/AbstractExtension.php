@@ -18,13 +18,13 @@ use hiapi\heppy\HeppyTool;
 abstract class AbstractExtension
 {
     /** @var string */
-    public $urlns;
+    public ?string $urlns = null;
 
     /** @var string */
-    public $version;
+    public ?string $version = null;
 
     /** @var array */
-    public $availableCommands = [];
+    public array $availableCommands = [];
 
     public function __construct(array $data, HeppyTool $tool)
     {

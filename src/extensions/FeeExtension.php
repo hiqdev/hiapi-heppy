@@ -19,7 +19,7 @@ use hiapi\heppy\interfaces\ExtensionInterface;
 class FeeExtension extends AbstractExtension implements ExtensionInterface
 {
     /** {@inheritdoc} */
-    public $availableCommands = [
+    public array $availableCommands = [
         'domain' => [
             'check' => ['*' => true],
             'create' => ['*' => true],
@@ -30,7 +30,7 @@ class FeeExtension extends AbstractExtension implements ExtensionInterface
         ],
     ];
 
-    public $unsupportedExtensions = ['price'];
+    public array $unsupportedExtensions = ['price'];
 
     /** {@inheritdoc} */
     public function addExtension(string $command, array $data): array

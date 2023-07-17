@@ -24,7 +24,7 @@ final class ContactHelper
     /**
      * @var array $_disabled: key - zone, value - bool or array of disabled contacts
      */
-    private $_disabled = [
+    private array $_disabled = [
         'com' => true,
         'net' => true,
         'cc' => true,
@@ -85,7 +85,6 @@ final class ContactHelper
 
         return true;
     }
-
 
     private function __construct(array $config = [])
     {
