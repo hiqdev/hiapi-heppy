@@ -113,6 +113,7 @@ class DomainModule extends AbstractModule
         }
 
         $info['another_registrar'] = $info['epp_client_id'] !== $this->tool->getRegistrar();
+        $info = $this->fixStatuses($info);
 
         return $this->getContactsInfo($info);
     }
