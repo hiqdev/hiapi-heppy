@@ -195,4 +195,23 @@ class AbstractModule
 
         return array_merge($local, array_filter($res));
     }
+
+    protected function fixStatuses(array $info): array
+    {
+        if (empty($info['statuses'])) {
+            return $info;
+        }
+
+        $statuses = is_array($info['statuses']) ? $info['statuses'] : explode(',', $info['statuses']);
+
+        foreach ($statuses as $k => $v) {
+            if ($v === 'Spam') {
+                $statuses[$k] = is_string($k) ? $k : 'serverHold';
+            }
+        }
+
+        $info['statuses'] = $statuses;
+
+        return $info;
+    }
 }

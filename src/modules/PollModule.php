@@ -148,7 +148,7 @@ class PollModule extends AbstractModule
             $row['outgoing'] = $row['request_client'] !== $this->tool->getRegistrar();
         }
 
-        if (isset($row['reID']) && !empty($row['request_client'])) {
+        if (isset($row['reID']) && empty($row['request_client'])) {
             $row['outgoing'] = $row['reID'] !== $this->tool->getRegistrar();
         }
 
