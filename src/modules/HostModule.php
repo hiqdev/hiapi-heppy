@@ -18,10 +18,11 @@ class HostModule extends AbstractModule
      */
     public function hostCheck($row): array
     {
+        $zone = $this->getZOne($row, true);
         $res = $this->tool->commonRequest("{$this->object}:check", [
             'names' => [$row['host']],
             'reasons' => 'reasons',
-            'zone' => $row['zone'] ?? null,
+            'zone' => $zone,
         ], [
             'avails' => 'avails',
         ]);
@@ -52,10 +53,11 @@ class HostModule extends AbstractModule
      */
     public function hostCreate(array $row): array
     {
+        $zone = $this->getZone($row, true);
         return $this->tool->commonRequest("{$this->object}:create", [
             'name'      => $row['host'],
             'ips'       => $row['ips'] ?? null,
-            'zone'      => $row['zone'] ?? null,
+            'zone'      => $zone,
         ], [
             'host'      => 'name',
         ]);
