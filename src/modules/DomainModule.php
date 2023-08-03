@@ -287,7 +287,7 @@ class DomainModule extends AbstractModule
         $row = $this->_domainSetFee($row, 'renew');
 
         if (!empty($row['fee']) && floatval((string) $row['fee']) !== floatval((string) $row['standart_price'])) {
-            throw new Excepion($row['reason']);
+            throw new Exception($row['reason']);
         }
 
         if ($expired === true) {
@@ -800,7 +800,7 @@ class DomainModule extends AbstractModule
     protected function _domainSetFee(array $row, string $op): array
     {
         $data = $this->tool->getCache()->getOrSet([$row['domain'], $op], function() use ($row, $op) {
-            $data = $this->domainCheck($row['domain'], $op);
+            return $this->domainCheck($row['domain'], $op);
         }, 3600);
 
         if (empty($data['reason']) || $data['reason'] !== self::DOMAIN_PREMIUM_REASON) {
