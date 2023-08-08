@@ -744,8 +744,8 @@ class DomainModule extends AbstractModule
         ]);
         return [
             'avail' => (int) $data['avails'][$domain],
-            'reason' => self::DOMAIN_PREMIUM_REASON,
-            'fee' => $res['fee'][$domain],
+            'reason' => (int) $priceD['premium'] === 1 ? self::DOMAIN_PREMIUM_REASON : null,
+            'fee' => (int) $priceD['premium'] === 1 ? $res['fee'][$domain] : null,
         ];
     }
 
