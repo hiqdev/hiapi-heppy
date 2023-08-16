@@ -13,6 +13,9 @@ class AbstractModule
     const CLIENT_DELETE_PROHIBITED = 'clientDeleteProhibited';
     const CLIENT_HOLD = 'clientHold';
 
+    const UNIMPLEMENTED_OBJECT_FOR_THE_SUB_PRODUCT = 'Unimplemented command Unimplemented object for the sub product';
+    const UNIMPLEMENTED_COMMAND = 'Unimplemented command';
+
     public $tool;
     public $base;
 
@@ -139,6 +142,12 @@ class AbstractModule
         return $this->isExtensionEnabled('keysys');
     }
 
+    public function isNeulevelExtensionEnabled() : bool
+    {
+        return $this->isExtensionEnabled('neulevel')
+            || $this->isExtensionEnabled('neulevel10');
+    }
+
     /**
      * Check is Extension enabled
      *
@@ -213,5 +222,26 @@ class AbstractModule
         $info['statuses'] = $statuses;
 
         return $info;
+    }
+
+    protected function getZone(array $row, ?bool $main = false): ?string
+    {
+        if (isset($row['zone']) && !empty($row['zone'])) {
+            return $row['zone'];
+        }
+
+        $domain = $row['domain'] ?? $row['name'] ?? $row['host'] ?? null;
+
+        if (empty($domain)) {
+            return null;
+        }
+
+        if ($main !== true) {
+            return substr($domain,strpos($domain,'.')+1);
+        }
+
+        $parts = explode('.', $domain);
+
+        return array_pop($parts);
     }
 }

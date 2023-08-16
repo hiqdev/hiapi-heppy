@@ -49,6 +49,10 @@ class ContactModule extends AbstractModule
                 return $this->contactSet($row);
             }
 
+            if ($e->getMessage() === self::UNIMPLEMENTED_COMMAND) {
+                throw $e;
+            }
+
             return $this->contactCreate($row);
         }
 

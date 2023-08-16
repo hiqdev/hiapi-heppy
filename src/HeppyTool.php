@@ -21,6 +21,7 @@ use hiapi\heppy\extensions\IDNLangExtension;
 use hiapi\heppy\extensions\PriceExtension;
 use hiapi\heppy\extensions\ChargeExtension;
 use hiapi\heppy\extensions\KeySysExtension;
+use hiapi\heppy\extensions\NeulevelExtension;
 use hiapi\heppy\modules\AbstractModule;
 use hiapi\heppy\modules\ContactModule;
 use hiapi\heppy\modules\DomainModule;
@@ -100,6 +101,8 @@ class HeppyTool
         'idnLang' => IDNLangExtension::class,
         'price' => PriceExtension::class,
         'keysys' => KeySysExtension::class,
+        'neulevel10' => NeulevelExtension::class,
+        'neulevel' => NeulevelExtension::class,
     ];
 
     protected $modules = [

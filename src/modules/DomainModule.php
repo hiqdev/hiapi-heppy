@@ -38,8 +38,6 @@ class DomainModule extends AbstractModule
 
     const DOMAIN_PREMIUM_REASON = 'PREMIUM DOMAIN';
 
-    const UNIMPLEMENTED_OBJECT_FOR_THE_SUB_PRODUCT = 'Unimplemented command Unimplemented object for the sub product';
-
     const ZONE_NOT_ACCREDITED = 'not accredited';
 
     /** {@inheritdoc} */
@@ -174,6 +172,7 @@ class DomainModule extends AbstractModule
 
         $row = $this->_domainPrepareNSs($row);
         $row = $this->domainPrepareContacts($row);
+        $zone = $this->getZone($row);
 
         return $this->domainPerformOperation("{$this->object}:create", array_filter([
             'name'          => $row['domain'],
@@ -185,11 +184,20 @@ class DomainModule extends AbstractModule
             'nss'           => $row['nss'],
             'pw'            => $row['password'] ?? $this->generatePassword(16),
             'secDNS'        => $row['secDNS'] ?? null,
+            'neulevel'      => $zone === 'tel' ? implode(' ', [
+                "WhoisType=NATURAL",
+                "Publish=" . ($row['whois_protected'] ? 'N' : 'Y'),
+            ]) : null,
         ]), [
             'domain'            => 'name',
             'created_date'      => 'crDate',
             'expiration_date'   => 'exDate',
         ]);
+    }
+
+    public function domainCreate(array $row): array
+    {
+        return $this->domainRegister($row);
     }
 
     /**
@@ -279,7 +287,7 @@ class DomainModule extends AbstractModule
         $row = $this->_domainSetFee($row, 'renew');
 
         if (!empty($row['fee']) && floatval((string) $row['fee']) !== floatval((string) $row['standart_price'])) {
-            throw new Excepion($row['reason']);
+            throw new Exception($row['reason']);
         }
 
         if ($expired === true) {
@@ -401,20 +409,29 @@ class DomainModule extends AbstractModule
                 $email = ($row['whois_protected'] && !$this->isKeySysExtensionEnabled())
                     ? ($row['contacts']['wp'][$type]['email'] ?? $row['contacts'][$type]['email'])
                     : $row['contacts'][$type]['email'];
-                $data = $this->tool->contactSet(array_merge($row['contacts'][$type], [
-                    'epp_id' => $row['contacts']["{$type}_eppid"],
-                    'whois_protected' => $row['whois_protected'],
-                    'email' => $email,
-                ]));
+                try {
+                    $data = $this->tool->contactSet(array_merge($row['contacts'][$type], [
+                        'epp_id' => $epp_id,
+                        'whois_protected' => $row['whois_protected'],
+                        'email' => $email,
+                        'domain' => $row['domain'] ?? null,
+                    ]));
+                } catch (Throwable $e) {
+                    if (in_array($e->getMessage(), [self::UNIMPLEMENTED_OBJECT_FOR_THE_SUB_PRODUCT, self::UNIMPLEMENTED_COMMAND], true)) {
+                        $skipSave = true;
+                        break;
+                    }
+
+                    throw $e;
+                }
 
                 $contacts[$type] = $data['epp_id'];
                 $saved[$epp_id] = $data['epp_id'];
             }
-
             $row[$type] = $saved[$epp_id];
         }
 
-        return $this->domainSetContacts($row);
+        return empty($skipSave) ? $this->domainSetContacts($row) : $row;
     }
 
     public function domainSetContacts($row) : array
@@ -457,7 +474,7 @@ class DomainModule extends AbstractModule
      */
     public function domainSetNSs(array $row): array
     {
-        $extensions = $this->tool->getExtensions();
+        $this->domainDisableUpdateProhibited($row);
         $row = $this->_domainPrepareNSs($row);
         $info = $this->domainInfo($row);
 
@@ -595,6 +612,21 @@ class DomainModule extends AbstractModule
 
     public function domainSetWhoisProtect($row, $enable = null)
     {
+        $zone = $this->getZone($row);
+        if (!$this->isKeySysExtensionEnabled() && (!$this->isNeulevelExtensionEnabled() || $zone !== 'tel')) {
+            return $row;
+        }
+
+        if ($this->isNeulevelExtensionEnabled() && $zone === 'tel') {
+            return $this->domainUpdate($row, [
+            ], [
+                'neulevel' => implode(' ',[
+                    'WhoisType=NATURAL',
+                    'Publish=' . ($enable ? 'N' : 'Y'),
+                ]),
+            ]);
+        }
+
         if (!$this->isKeySysExtensionEnabled()) {
             return $row;
         }
@@ -712,8 +744,8 @@ class DomainModule extends AbstractModule
         ]);
         return [
             'avail' => (int) $data['avails'][$domain],
-            'reason' => self::DOMAIN_PREMIUM_REASON,
-            'fee' => $res['fee'][$domain],
+            'reason' => (int) $priceD['premium'] === 1 ? self::DOMAIN_PREMIUM_REASON : null,
+            'fee' => (int) $priceD['premium'] === 1 ? $res['fee'][$domain] : null,
         ];
     }
 
@@ -747,9 +779,7 @@ class DomainModule extends AbstractModule
     protected function _domainPrepareNSs($row): array
     {
         foreach ($row['nss'] as $host) {
-            $parts = explode(".", $row['domain']);
-            $zone =  array_pop($parts);
-
+            $zone = $this->getZone($row, true);
             $avail = $this->tool->hostCheck([
                 'host' => $host,
                 'zone' => $zone,
@@ -770,7 +800,7 @@ class DomainModule extends AbstractModule
     protected function _domainSetFee(array $row, string $op): array
     {
         $data = $this->tool->getCache()->getOrSet([$row['domain'], $op], function() use ($row, $op) {
-            $data = $this->domainCheck($row['domain'], $op);
+            return $this->domainCheck($row['domain'], $op);
         }, 3600);
 
         if (empty($data['reason']) || $data['reason'] !== self::DOMAIN_PREMIUM_REASON) {
@@ -799,20 +829,21 @@ class DomainModule extends AbstractModule
                 continue;
             }
 
-            if (isset($contacts[$info[$type]])) {
-                $info["{$type}c"] = $contacts[$info[$type]];
+            $_contact = is_array($info[$type]) ? reset($info[$type]) : $info[$type];
+            if (isset($contacts[$_contact])) {
+                $info["{$type}c"] = $contacts[$_contact];
                 continue;
             }
 
             try {
                 $contact = $this->tool->contactInfo([
-                    'epp_id' => $info[$type],
+                    'epp_id' => $_contact,
                 ]);
             } catch (\Throwable $e) {
                 continue;
             }
 
-            $contacts[$info[$type]] = $contact;
+            $contacts[$_contact] = $contact;
             $info['contact'] = $info['contact'] ?? $contact;
         }
 
@@ -862,13 +893,14 @@ class DomainModule extends AbstractModule
      * @param array $row
      * @return array
      */
-    private function domainUpdate(array $row, array $keysys = null): array
+    private function domainUpdate(array $row, array $keysys = null, array $neulevel = null): array
     {
         $data = array_filter([
             'add'       => $row['add'] ?? null,
             'rem'       => $row['rem'] ?? null,
             'chg'       => $row['chg'] ?? null,
             'keysys'    => $keysys,
+            'neulevel'  => $neulevel,
         ]);
         if (empty($data)) {
             return $row;
@@ -880,35 +912,51 @@ class DomainModule extends AbstractModule
             'rem'       => $row['rem'] ?? null,
             'chg'       => $row['chg'] ?? null,
             'keysys'    => $keysys ?? null,
+            'neulevel'  => $neulevel ?? null,
         ]), [], array_filter([
             'id'        => $row['id'] ?? null,
             'domain'    => $row['domain'],
         ]));
     }
 
-    private function _domainSetContacts(array $row, array $info, array $contactTypes, ?bool $fixEPPID = true): array
+    private function _domainSetContacts(array $row, array $info, array $contactTypes, ?bool $fixEPPID = true, ?bool $insensative = false): array
     {
         $orow = $row;
         foreach ($contactTypes as $type) {
-            $row[$type] = $fixEPPID ? $this->fixContactID($row[$type]) : $row[$type];
+            $epp_id = $row["{$type}_eppid"] ?? $row[$type]['epp_id'] ??  $row[$type] ?? null;
+            if (empty($epp_id)) {
+                $contacts = $row['contacts'];
+                $epp_id = $contacts["{$type}_eppid"] ?? $contacts[$type]['epp_id'] ??  $contacts[$type] ?? null;
+            }
+
+            if (empty($epp_id)) {
+                throw new Exception('Contact EPP ID is not filled');
+            }
+
+            $row[$type] = $fixEPPID ? $this->fixContactID($epp_id) : $epp_id;
             $info[$type] = !empty($info[$type]) ? $info[$type] : null;
             if ($type === 'registrant') {
                 continue;
             }
 
-            $row[$type] = [$row[$type]];
-            $info[$type] = is_array($info[$type]) ? $info[$type] : [$info[$type]];
+            $row[$type] = [$insensative ? strtolower($row[$type]) : $row[$type]];
+            $info[$type] = is_array($info[$type])
+                ? array_map(function($v) use ($insensative) { return  $insensative ? strtolower($v) : $v; }, $info[$type])
+                : [$insensative ? strtolower($info[$type]) : $info[$type]];
         }
 
         $row = $this->prepareDataForUpdate($row, $info, $contactTypes);
-
         if (!empty($row['chg']) && !empty($row['registrant']) && in_array('registrant', $contactTypes, true)) {
-            $res = $this->domainUpdate([
-                'domain' => $row['domain'],
-                'chg' => [
-                    'registrant' => $row['registrant'],
-                ],
-            ]);
+            try {
+                $res = $this->domainUpdate([
+                    'domain' => $row['domain'],
+                    'chg' => [
+                        'registrant' => $row['registrant'],
+                    ],
+                ]);
+            } catch (Throwable $e) {
+                throw $e;
+            }
 
             unset($row['chg']);
         }
@@ -939,11 +987,14 @@ class DomainModule extends AbstractModule
         try {
             return $this->domainUpdate($row);
         } catch (Throwable $e) {
-            if ($fixEPPID === false) {
+            if ($insensative === false) {
+                return $this->_domainSetContacts($orow, $info, $contactTypes, $fixEPPID, true);
+            }
+            if ($fixEPPID === false && $insensative === true) {
                 throw new Exception($e->getMessage());
             }
 
-            return $this->_domainSetContacts($orow, $info, $contactTypes, false);
+            return $this->_domainSetContacts($orow, $info, $contactTypes, false, false);
         }
     }
 
