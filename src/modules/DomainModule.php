@@ -799,10 +799,16 @@ class DomainModule extends AbstractModule
                 continue;
             }
 
-            if (isset($contacts[$info[$type]])) {
-                $info["{$type}c"] = $contacts[$info[$type]];
+            $infoType = $info[$type];
+            if (is_array($infoType)) {
+                $infoType = $infoType[0];
+            }
+            
+            if (isset($contacts[$infoType])) {
+                $info["{$type}c"] = $contacts[$infoType];
                 continue;
             }
+
 
             try {
                 $contact = $this->tool->contactInfo([
