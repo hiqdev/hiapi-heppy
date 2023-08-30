@@ -82,7 +82,7 @@ abstract class AbstractExtension
 
         $parts = $this->getNamesParts($data, $name);
 
-        return array_pop($parts);
+        return !empty($parts) ? array_pop($parts) : null;
     }
 
     /**
@@ -120,7 +120,7 @@ abstract class AbstractExtension
      * @param string $name
      * @return array
      */
-    protected function getNamesParts(array $data, string $name = null): array
+    protected function getNamesParts(array $data, string $name = null): ?array
     {
         if (!$name && isset($data['domain'])) {
             $name = $data['domain'];
@@ -134,6 +134,6 @@ abstract class AbstractExtension
             $name = reset($data['names']);
         }
 
-        return explode('.', $name);
+        return !empty($name) ? explode('.', $name) : null;
     }
 }
