@@ -94,7 +94,15 @@ class DomainModule extends AbstractModule
                 'ua_tm'             => 'license',
             ]);
         } catch (Throwable $e) {
+            if (strpos($e->getMessage(), "Object does not exist") !== false) {
+                throw new Exception(self::OBJECT_DOES_NOT_EXIST);
+            }
+
             if (strpos($e->getMessage(), "The domain '{$row['domain']}' does not exist") !== false) {
+                throw new Exception(self::OBJECT_DOES_NOT_EXIST);
+            }
+
+            if (strpos($e->getMessage(), "Domain {$row['domain']} does not exist") !== false) {
                 throw new Exception(self::OBJECT_DOES_NOT_EXIST);
             }
 
@@ -449,6 +457,8 @@ class DomainModule extends AbstractModule
         if (empty($contactTypes)) {
             return $row;
         }
+
+        $this->domainDisableUpdateProhibited($info);
 
         return $this->_domainSetContacts($row, $info, $contactTypes);
     }
@@ -838,6 +848,7 @@ class DomainModule extends AbstractModule
             try {
                 $contact = $this->tool->contactInfo([
                     'epp_id' => $_contact,
+                    'domain' => $info['domain'],
                 ]);
             } catch (\Throwable $e) {
                 continue;
