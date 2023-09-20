@@ -936,6 +936,8 @@ class DomainModule extends AbstractModule
             if ($e->getMessage() === self::UPDATE_DOMAIN_AUTHORIZED_ERROR) {
                 throw new EppErrorException(self::AUTHORIZATION_ERROR);
             }
+
+            throw $e;
         }
     }
 
