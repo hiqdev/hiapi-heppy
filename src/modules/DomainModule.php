@@ -22,7 +22,6 @@ class DomainModule extends AbstractModule
     const RENEW_DOMAIN_NOT_AVAILABLE_EXCEPTION = "Invalid command name; Renew Domain not available";
     const RENEW_DOMAIN_AUTORENEW_RENEWONCE_EXCEPTION = "Invalid attribute value; explicit renewals not allowed for this TLD; please set domain to AUTORENEW or RENEWONCE";
     const RENEW_DOMAIN_DOES_NOT_MATCH_EXPIRATION = 'Parameter value range error Does not match expiration';
-
     const RENEW_DOMAIN_ALREADY_RENEWED = 'Object is not eligible for renewal Object already renewed';
     const RENEW_DOMAIN_WRONG_CUREPXDATE = 'Parameter value range error Wrong curExpDate provided';
     const RENEW_DOMAIN_EXPIRY_DATE_IS_NOT_CORRECT = 'Expiry date is not correct.';
@@ -32,6 +31,8 @@ class DomainModule extends AbstractModule
     const RENEW_DOMAIN_OXRS_COMMAND_USE_ERROR = '2002:Command use error (__DOMAIN__)';
     const RENEW_DOMAIN_MAIN_COMMAND_USE_ERROR = 'Command use error 2002:Command use error (__DOMAIN__)';
 
+    const UPDATE_DOMAIN_AUTHORIZED_ERROR = 'You are not authorised to update this domain name.';
+
     const NON_ALPHANUMERIC_EXCEPTION = 'authInfo code is invalid: password must contain at least one non-alphanumeric character';
 
     const STATUS_NOT_SETTED_FOR_DOMAIN = 'is not set on this domain';
@@ -39,6 +40,8 @@ class DomainModule extends AbstractModule
     const DOMAIN_PREMIUM_REASON = 'PREMIUM DOMAIN';
 
     const ZONE_NOT_ACCREDITED = 'not accredited';
+
+    const AUTHORIZATION_ERROR = 'Authorization error';
 
     /** {@inheritdoc} */
     public array $uris = [
@@ -917,17 +920,25 @@ class DomainModule extends AbstractModule
             return $row;
         }
 
-        return $this->tool->commonRequest("{$this->object}:update", array_filter([
-            'name'      => $row['domain'],
-            'add'       => $row['add'] ?? null,
-            'rem'       => $row['rem'] ?? null,
-            'chg'       => $row['chg'] ?? null,
-            'keysys'    => $keysys ?? null,
-            'neulevel'  => $neulevel ?? null,
-        ]), [], array_filter([
-            'id'        => $row['id'] ?? null,
-            'domain'    => $row['domain'],
-        ]));
+        try {
+            return $this->tool->commonRequest("{$this->object}:update", array_filter([
+                'name'      => $row['domain'],
+                'add'       => $row['add'] ?? null,
+                'rem'       => $row['rem'] ?? null,
+                'chg'       => $row['chg'] ?? null,
+                'keysys'    => $keysys ?? null,
+                'neulevel'  => $neulevel ?? null,
+            ]), [], array_filter([
+                'id'        => $row['id'] ?? null,
+                'domain'    => $row['domain'],
+            ]));
+        } catch (Throwable $e) {
+            if ($e->getMessage() === self::UPDATE_DOMAIN_AUTHORIZED_ERROR) {
+                throw new EppErrorException(self::AUTHORIZATION_ERROR);
+            }
+
+            throw $e;
+        }
     }
 
     private function _domainSetContacts(array $row, array $info, array $contactTypes, ?bool $fixEPPID = true, ?bool $insensative = false): array
