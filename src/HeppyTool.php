@@ -34,6 +34,7 @@ use hiapi\heppy\modules\BalanceModule;
 use PhpAmqpLib\Exception\AMQPNoDataException;
 use PhpAmqpLib\Exception\AMQPConnectionClosedException;
 use PhpAmqpLib\Exception\AMQPTimeoutException;
+use PhpAmqpLib\Exception\AMQPChannelClosedException;
 
 use DateTimeImmutable;
 
@@ -315,8 +316,17 @@ class HeppyTool
         try {
             $response = $this->request($command, $input);
         } catch (AMQPTimeoutException $e) {
-            throw new \Exception($this->getRegistrar() . ": " . $e->getMessage());
+            throw new \Exception("The connection timed out");
+        } catch (AMQPChannelClosedException $e) {
+            if ($second === true) {
+                throw new \Exception($e->getMessage());
+            }
+
+            unset($this->_client);
+            $this->_client = null;
+            return $this->commonRequest($command, $origin, $returns, $payload, true);
         }
+
         if (isset($response['result_code'])) {
             $rc = substr($response['result_code'], 0, 1);
         } else {
@@ -326,6 +336,8 @@ class HeppyTool
         if ($rc !== '1') {
             if (!empty($response['msg'])) {
                 if (in_array($response['result_code'], ['2200', '2501', '2502', '2500', '2002', '2500']) && $second === false) {
+                    unset($this->_client);
+                    $this->_client = null;
                     sleep(5);
                     return $this->commonRequest($command, $input, $returns, $payload, true);
                 }

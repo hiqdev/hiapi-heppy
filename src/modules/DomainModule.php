@@ -121,7 +121,7 @@ class DomainModule extends AbstractModule
 
         foreach (['nameservers', 'hosts'] as $key) {
             if (!empty($info[$key])) {
-                if ($key === 'nameservers') {
+                if ($key === 'nameservers' && !empty($info['nameservers'])) {
                     $info['nss'] = $info['nameservers'];
                 }
 
@@ -143,7 +143,7 @@ class DomainModule extends AbstractModule
     public function domainsGetInfo(array $rows): array
     {
         foreach ($rows as $id => $row) {
-            $res[$id] = $this->domainInfo($row);
+            $res[$id] = $this->tool->getBase()->domainInfo($row);
         }
 
         return $res;
