@@ -109,6 +109,10 @@ class DomainModule extends AbstractModule
                 throw new Exception(self::OBJECT_DOES_NOT_EXIST);
             }
 
+            if (strpos($e->getMessage(), self::AUTHORIZATION_ERROR) !== false) {
+                throw new Exception(self::AUTHORIZATION_ERROR);
+            }
+
             throw new Exception($e->getMessage());
 
         }
@@ -199,6 +203,12 @@ class DomainModule extends AbstractModule
                 "WhoisType=NATURAL",
                 "Publish=" . ($row['whois_protected'] ? 'N' : 'Y'),
             ]) : null,
+            'keysys'        => (!$this->isKeySysExtensionEnabled() || $zone !== 'eu')
+                ? null
+                : [
+                    'command' => 'keysys:create',
+                    'eu-accept-trustee-tac' => 1,
+                ],
         ]), [
             'domain'            => 'name',
             'created_date'      => 'crDate',

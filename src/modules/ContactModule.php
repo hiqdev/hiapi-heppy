@@ -133,6 +133,7 @@ class ContactModule extends AbstractModule
                 'pw'        => $row['password'] ?: $this->generatePassword(16, $addsymbols),
                 'disclose'  => $disclose !== false ? ($row['whois_protected'] ? 1 : 0) : null,
                 'domain'    => $row['domain'] ?? null,
+                'neulevel'  => $this->setNexusData($row),
             ], $this->getFilterCallback()), [
                 'epp_id'        => 'id',
                 'created_date'  => 'crDate',
@@ -185,6 +186,7 @@ class ContactModule extends AbstractModule
                 'id'        => $data['epp_id'],
                 'domain'    => $row['domain'] ?? null,
                 'chg'       => array_filter($data['chg']),
+                'neulevel'  => $this->setNexusData($row),
             ]), [], [
                 'epp_id'    => $this->fixContactID($data['epp_id']),
             ]);
@@ -272,5 +274,27 @@ class ContactModule extends AbstractModule
             'first_name' => $first_name,
             'last_name' => $last_name,
         ], $data, $info);
+    }
+
+    private function setNexusData($row): ?string
+    {
+        $zone = $this->getZone($row);
+        if ($zone !== 'us') {
+            return null;
+        }
+        if (empty($row['organization'])) {
+            $nexusCategory = $row['country'] === 'us' ? 'C11' : 'C12';
+            $appPurpose = 'P3';
+        } else {
+            $nexusCategory =  $row['country'] === 'us' ? 'C21' : ('C31/' . strtoupper($row['country']));
+            $appPurpose = 'P2';
+        }
+
+        return implode(" ", [
+            "NexusCategory={$nexusCategory}",
+            "AppPurpose={$appPurpose}",
+        ]);
+
+
     }
 }

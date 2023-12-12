@@ -24,6 +24,10 @@ class NeulevelExtension extends AbstractExtension implements ExtensionInterface
             'create' => ['*' => true],
             'update' => ['*' => true],
         ],
+        'contact' => [
+            'create' => ['*' => true],
+            'update' => ['*' => true],
+        ],
     ];
 
     /** {@inheritdoc} */
