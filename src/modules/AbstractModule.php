@@ -216,6 +216,9 @@ class AbstractModule
         foreach ($statuses as $k => $v) {
             if ($v === 'Spam') {
                 $statuses[$k] = is_string($k) ? $k : 'serverHold';
+            } else {
+                $statuses[$k] = $k;
+                $statuses[$v] = $v;
             }
         }
 
