@@ -26,6 +26,7 @@ class KeySysExtension extends AbstractExtension implements ExtensionInterface
         ],
         'domain' => [
             'create' => ['*' => true],
+            'transfer' => [ 'request' => true],
             'update' => ['*' => true],
             'delete' => ['*' => true],
         ],

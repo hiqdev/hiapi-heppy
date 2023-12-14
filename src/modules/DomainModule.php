@@ -361,6 +361,10 @@ class DomainModule extends AbstractModule
         try {
             $res = $this->domainInfo($row);
         } catch (Throwable $e) {
+            $zone = $this->getZone($row);
+            if ($zone === 'eu' && $this->isKeySysExtensionEnabled()) {
+                return $row;
+            }
             throw new Exception($e->getMessage());
         }
 
@@ -377,6 +381,21 @@ class DomainModule extends AbstractModule
         if (!empty($row['fee']) && floatval((string) $row['fee']) !== floatval((string) $row['standart_price'])) {
             throw new Excepion($row['reason']);
         }
+
+        $zone = $this->getZone($row);
+        if ($zone !== 'eu' || !$this->isKeySysExtensionEnabled()) {
+            return $this->performTransfer($row, 'request');
+        }
+
+
+        $data = $this->domainPrepareContacts($row);
+        $row = array_merge($row, [
+            'keysys' => [
+                'command' => 'keysys:transfer',
+                'registrant' => !empty($data['registrant_remote_id']) ? $data['registrant_remote_id'] : null,
+                'eu-accept-trustee-tac' => 1,
+            ]
+        ]);
 
         return $this->performTransfer($row, 'request');
     }
@@ -902,6 +921,7 @@ class DomainModule extends AbstractModule
             'pw'        => $row['password'],
             'period'    => $row['period'],
             'fee'       => $row['fee'] ?? null,
+            'keysys'    => $row['keysys'] ?? null,
         ]), [
             'domain'            => 'name',
             'expiration_date'   => 'exDate',
