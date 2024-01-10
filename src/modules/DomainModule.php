@@ -188,6 +188,11 @@ class DomainModule extends AbstractModule
         $row = $this->_domainPrepareNSs($row);
         $row = $this->domainPrepareContacts($row);
         $zone = $this->getZone($row);
+        $row = $this->_domainSetFee($row, 'create');
+
+        if (!empty($row['fee']) && floatval((string) $row['fee']) !== floatval((string) $row['standart_price'])) {
+            throw new Exception($row['reason']);
+        }
 
         return $this->domainPerformOperation("{$this->object}:create", array_filter([
             'name'          => $row['domain'],
@@ -199,6 +204,7 @@ class DomainModule extends AbstractModule
             'nss'           => $row['nss'],
             'pw'            => $row['password'] ?? $this->generatePassword(16),
             'secDNS'        => $row['secDNS'] ?? null,
+            'fee'           => $row['fee'] ?? null,
             'neulevel'      => $zone === 'tel' ? implode(' ', [
                 "WhoisType=NATURAL",
                 "Publish=" . ($row['whois_protected'] ? 'N' : 'Y'),
