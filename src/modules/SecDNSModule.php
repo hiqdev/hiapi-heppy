@@ -16,7 +16,7 @@ class SecDNSModule extends AbstractModule
 {
     public array $extURIs = [
         'secDNS' => 'urn:ietf:params:xml:ns:secDNS-1.1',
-        'secDNS_hm' => 'http://hostmaster.ua/epp/secDNS-1.1',
+        'secDNShm' => 'http://hostmaster.ua/epp/secDNS-1.1',
     ];
 
     /** {@inheritdoc} */
