@@ -317,10 +317,10 @@ class DomainModule extends AbstractModule
             throw new Exception($row['reason']);
         }
 
+        $curExpDate = $this->tool->getDateTime($row['expires_time']);
         if ($expired === true) {
             $info = $this->tool->domainInfo($row);
             $realExpDate = $this->tool->getDateTime($info['expiration_date']);
-            $curExpDate = $this->tool->getDateTime($row['expires']);
             $interval = $realExpDate->diff($curExpDate);
             $period = $row['period'] - ((int) $interval->format("%y"));
             if ($period === 0) {
@@ -334,7 +334,9 @@ class DomainModule extends AbstractModule
         }
 
         try {
-            return $this->_domainRenew($row);
+            return $this->_domainRenew(array_merge($row, [
+                'expires' => $curExpDate->format("Y-m-d"),
+            ]));
         } catch (EppErrorException $e) {
             if (in_array($e->getMessage(), $this->getMainRenewErrors($row['domain']), true)) {
                 if ($expired === false) {

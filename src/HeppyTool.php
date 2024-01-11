@@ -37,6 +37,8 @@ use PhpAmqpLib\Exception\AMQPTimeoutException;
 use PhpAmqpLib\Exception\AMQPChannelClosedException;
 
 use DateTimeImmutable;
+use DateTimeZone;
+use DateTime;
 
 /**
  * hEPPy tool.
@@ -56,6 +58,8 @@ class HeppyTool
     protected $objects;
 
     protected $contacts = [];
+
+    protected $timezone;
 
     protected $extURNNames = [
         'secDNS' => 'urn:ietf:params:xml:ns:secDNS-1.1',
@@ -140,6 +144,7 @@ class HeppyTool
         $this->data = $data;
         $this->contacts = $this->data['contacts'] ?? [];
         $this->cache = $base->getCache();
+        $this->timezone = $this->data['timezone'] ?? null;
     }
 
     public function __call($command, $args): array
@@ -475,11 +480,21 @@ class HeppyTool
 
     public function getDateTime(string $datetime): DateTimeImmutable
     {
-        return new DateTimeImmutable($datetime);
+        if ($this->getTimeZone() === null) {
+            return DateTimeImmutable($datetime);
+        }
+
+        return DateTimeImmutable::createFromMutable(new DateTime($datetime))
+            ->setTimeZone($this->getTimeZone());
     }
 
     public function getCache()
     {
         return $this->base->getCache();
+    }
+
+    public function getTimeZone(): ?DateTimeZone
+    {
+        return $this->timezone !== null ? new DateTimeZone($this->timezone) : null;
     }
 }
