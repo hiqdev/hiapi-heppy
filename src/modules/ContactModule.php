@@ -180,12 +180,11 @@ class ContactModule extends AbstractModule
         ]));
 
         $data = $this->prepareDataForContactUpdate($row, $info, $disclose);
-
         try {
             return $this->tool->commonRequest("{$this->object}:update", array_filter([
                 'id'        => $data['epp_id'],
                 'domain'    => $row['domain'] ?? null,
-                'chg'       => array_filter($data['chg']),
+                'chg'       => array_filter($data['chg'], function($v){return $v !== '' && !is_null($v);}),
                 'neulevel'  => $this->setNexusData($row),
             ]), [], [
                 'epp_id'    => $this->fixContactID($data['epp_id']),
