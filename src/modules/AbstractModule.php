@@ -156,8 +156,8 @@ class AbstractModule
      */
     public function isExtensionEnabled(string $extension) : bool
     {
-
         $extensions = $this->tool->getExtensions();
+
         return !empty($extensions[$extension]);
     }
 
