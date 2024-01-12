@@ -175,6 +175,26 @@ class DomainModule extends AbstractModule
         return $res;
     }
 
+    public function domainLoadPremiumInfo(array $row): array
+    {
+        return $this->_domainSetFee($row, 'renew');
+    }
+
+    public function domainsLoadPremiumInfo(array $rows): array
+    {
+        $isPremiumExtensionsAvailable = $this->isPremiumExtensionAlailable();
+        foreach ($rows as $id => $row) {
+            if (!$isPremiumExtensionsAvailable) {
+                $res[$id] = $row;
+                continue;
+            }
+
+            $res[$id] = $this->tool->domainLoadPremiumInfo($row);
+        }
+
+        return $res;
+    }
+
     /**
      * @param array $row
      * @return array

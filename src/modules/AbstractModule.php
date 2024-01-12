@@ -156,9 +156,24 @@ class AbstractModule
      */
     public function isExtensionEnabled(string $extension) : bool
     {
-        $extensions = $this->tool->getExtensions();
 
+        $extensions = $this->tool->getExtensions();
         return !empty($extensions[$extension]);
+    }
+
+    public function isPremiumExtensionAlailable(): bool
+    {
+        $extensions = $this->tool->getExtensions();
+        foreach ($extensions as $name => $ext) {
+            if (strpos($name, 'fee') !== false) {
+                return true;
+            }
+
+            if (strpos($name, 'price') !== false) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
