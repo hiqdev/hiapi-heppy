@@ -161,7 +161,7 @@ class AbstractModule
         return !empty($extensions[$extension]);
     }
 
-    public function isPremiumExtensionAlailable(): bool
+    public function isPremiumExtensionAvailable(): bool
     {
         $extensions = $this->tool->getExtensions();
         foreach ($extensions as $name => $ext) {

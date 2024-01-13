@@ -182,7 +182,7 @@ class DomainModule extends AbstractModule
 
     public function domainsLoadPremiumInfo(array $rows): array
     {
-        $isPremiumExtensionsAvailable = $this->isPremiumExtensionAlailable();
+        $isPremiumExtensionsAvailable = $this->isPremiumExtensionAvailable();
         foreach ($rows as $id => $row) {
             if (!$isPremiumExtensionsAvailable) {
                 $res[$id] = $row;
