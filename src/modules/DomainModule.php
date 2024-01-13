@@ -177,7 +177,7 @@ class DomainModule extends AbstractModule
 
     public function domainLoadPremiumInfo(array $row): array
     {
-        return $this->_domainSetFee($row, 'renew');
+        return $this->_domainSetFee($row, 'create', true);
     }
 
     public function domainsLoadPremiumInfo(array $rows): array
@@ -867,7 +867,7 @@ class DomainModule extends AbstractModule
         return $row;
     }
 
-    protected function _domainSetFee(array $row, string $op): array
+    protected function _domainSetFee(array $row, string $op, bool $allFee = false): array
     {
         $data = $this->tool->getCache()->getOrSet([$row['domain'], $op], function() use ($row, $op) {
             return $this->domainCheck($row['domain'], $op);
@@ -884,10 +884,11 @@ class DomainModule extends AbstractModule
             ]));
         }
 
-        return array_merge($row, [
+        return array_merge($row, array_filter([
             'fee' => $fee,
             'reason' => self::DOMAIN_PREMIUM_REASON,
-        ]);
+            'allFee' => $allFee === true ? $data['fee'] : null,
+        ]));
     }
 
     protected function getContactsInfo(array $info): array
