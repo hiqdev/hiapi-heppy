@@ -175,6 +175,26 @@ class DomainModule extends AbstractModule
         return $res;
     }
 
+    public function domainLoadPremiumInfo(array $row): array
+    {
+        return $this->_domainSetFee($row, 'create', true);
+    }
+
+    public function domainsLoadPremiumInfo(array $rows): array
+    {
+        $isPremiumExtensionsAvailable = $this->isPremiumExtensionAvailable();
+        foreach ($rows as $id => $row) {
+            if (!$isPremiumExtensionsAvailable) {
+                $res[$id] = $row;
+                continue;
+            }
+
+            $res[$id] = $this->tool->domainLoadPremiumInfo($row);
+        }
+
+        return $res;
+    }
+
     /**
      * @param array $row
      * @return array
@@ -847,7 +867,7 @@ class DomainModule extends AbstractModule
         return $row;
     }
 
-    protected function _domainSetFee(array $row, string $op): array
+    protected function _domainSetFee(array $row, string $op, bool $allFee = false): array
     {
         $data = $this->tool->getCache()->getOrSet([$row['domain'], $op], function() use ($row, $op) {
             return $this->domainCheck($row['domain'], $op);
@@ -864,10 +884,11 @@ class DomainModule extends AbstractModule
             ]));
         }
 
-        return array_merge($row, [
+        return array_merge($row, array_filter([
             'fee' => $fee,
             'reason' => self::DOMAIN_PREMIUM_REASON,
-        ]);
+            'allFee' => $allFee === true ? $data['fee'] : null,
+        ]));
     }
 
     protected function getContactsInfo(array $info): array
