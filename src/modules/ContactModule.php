@@ -11,6 +11,7 @@ class ContactModule extends AbstractModule
     const INCORECT_AUTHINFO_EXCEPTION = 'Parameter value syntax error Incorrect authInfo';
 
     const UNIMPLEMENTED_OPTION_DISCLOSE = 'Unimplemented option Disclose element not supported';
+    const UNSUPPORTED_DISCLOSE_FLAG = 'Data management policy violation Unsupported disclose flag';
 
     /** {@inheritdoc} */
     public array $uris = [
@@ -131,7 +132,7 @@ class ContactModule extends AbstractModule
                 'pc'        => !empty($row['postal_code'])  ? substr($row['postal_code'], 0, 16) : null,
                 'sp'        => $row['province']     ?? null,
                 'pw'        => $row['password'] ?: $this->generatePassword(16, $addsymbols),
-                'disclose'  => $disclose !== false ? ($row['whois_protected'] ? 1 : 0) : null,
+                'disclose'  => $disclose !== false ? ($row['whois_protected'] ? '0' : '1') : null,
                 'domain'    => $row['domain'] ?? null,
                 'neulevel'  => $this->setNexusData($row),
             ], $this->getFilterCallback()), [
@@ -151,12 +152,12 @@ class ContactModule extends AbstractModule
                 return $this->contactCreate($row, $addsymbols, false);
             }
 
-            if (strpos($e->getMessage(), self::INCORECT_AUTHINFO_EXCEPTION) !== false) {
-                return $this->contactCreate($row, true);
+            if (strpos($e->getMessage(), self::UNSUPPORTED_DISCLOSE_FLAG) !== false && $disclose !== false) {
+                return $this->contactCreate($row, $addsymbols, false);
             }
 
-            if (strpos($e->getMessage(), self::UNIMPLEMENTED_OPTION_DISCLOSE) !== false && $disclose !== false) {
-                return $this->contactCreate($row, $addsymbols, false);
+            if (strpos($e->getMessage(), self::INCORECT_AUTHINFO_EXCEPTION) !== false) {
+                return $this->contactCreate($row, true);
             }
 
             throw new Exception($e->getMessage());
@@ -180,18 +181,21 @@ class ContactModule extends AbstractModule
         ]));
 
         $data = $this->prepareDataForContactUpdate($row, $info, $disclose);
-
         try {
             return $this->tool->commonRequest("{$this->object}:update", array_filter([
                 'id'        => $data['epp_id'],
                 'domain'    => $row['domain'] ?? null,
-                'chg'       => array_filter($data['chg']),
+                'chg'       => array_filter($data['chg'], function($v){return $v !== '' && !is_null($v);}),
                 'neulevel'  => $this->setNexusData($row),
             ]), [], [
                 'epp_id'    => $this->fixContactID($data['epp_id']),
             ]);
         } catch (Throwable $e) {
             if (strpos($e->getMessage(), self::UNIMPLEMENTED_OPTION_DISCLOSE) !== false && $disclose !== false) {
+                return $this->contactUpdate($row, $info, false);
+            }
+
+            if (strpos($e->getMessage(), self::UNSUPPORTED_DISCLOSE_FLAG) !== false && $disclose !== false) {
                 return $this->contactUpdate($row, $info, false);
             }
 
