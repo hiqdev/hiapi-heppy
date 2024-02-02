@@ -128,10 +128,10 @@ class ContactModule extends AbstractModule
                 'street1'   => $row['street1']      ?? null,
                 'street2'   => $row['street2']      ?? null,
                 'street3'   => $row['street3']      ?? null,
-                'pc'        => !empty($row['postal_code'])  ? substr($row['postal_code'], 0, 16) : null,
+                'pc'        => !empty($row['postal_code'])  ? substr($row['postal_code'], 0, 15) : null,
                 'sp'        => $row['province']     ?? null,
                 'pw'        => $row['password'] ?: $this->generatePassword(16, $addsymbols),
-                'disclose'  => $disclose !== false ? ($row['whois_protected'] ? 1 : 0) : null,
+                'disclose'  => $disclose !== false ? ($row['whois_protected'] ? '0' : '1') : null,
                 'domain'    => $row['domain'] ?? null,
                 'neulevel'  => $this->setNexusData($row),
             ], $this->getFilterCallback()), [
