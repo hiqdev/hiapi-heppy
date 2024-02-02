@@ -128,10 +128,10 @@ class ContactModule extends AbstractModule
                 'street1'   => $row['street1']      ?? null,
                 'street2'   => $row['street2']      ?? null,
                 'street3'   => $row['street3']      ?? null,
-                'pc'        => !empty($row['postal_code'])  ? substr($row['postal_code'], 0, 16) : null,
+                'pc'        => !empty($row['postal_code'])  ? substr($row['postal_code'], 0, 15) : null,
                 'sp'        => $row['province']     ?? null,
                 'pw'        => $row['password'] ?: $this->generatePassword(16, $addsymbols),
-                'disclose'  => $disclose !== false ? ($row['whois_protected'] ? 1 : 0) : null,
+                'disclose'  => $disclose !== false ? ($row['whois_protected'] ? '0' : '1') : null,
                 'domain'    => $row['domain'] ?? null,
                 'neulevel'  => $this->setNexusData($row),
             ], $this->getFilterCallback()), [
@@ -176,16 +176,15 @@ class ContactModule extends AbstractModule
 
         $row = array_merge($row, array_filter([
             'country' => !empty($row['country']) ? strtoupper($row['country'] === 'gdpr' ? 'cy' : $row['country']) : null,
-            'postal_code' => !empty($row['postal_code'])  ? substr($row['postal_code'], 0, 16) : null,
+            'postal_code' => !empty($row['postal_code'])  ? substr($row['postal_code'], 0, 15) : null,
         ]));
 
         $data = $this->prepareDataForContactUpdate($row, $info, $disclose);
-
         try {
             return $this->tool->commonRequest("{$this->object}:update", array_filter([
                 'id'        => $data['epp_id'],
                 'domain'    => $row['domain'] ?? null,
-                'chg'       => array_filter($data['chg']),
+                'chg'       => array_filter($data['chg'], function($v){return $v !== '' && !is_null($v);}),
                 'neulevel'  => $this->setNexusData($row),
             ]), [], [
                 'epp_id'    => $this->fixContactID($data['epp_id']),

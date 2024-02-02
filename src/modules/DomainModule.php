@@ -741,7 +741,6 @@ class DomainModule extends AbstractModule
     {
         try {
             $res = $this->_domainCheck($domain, true);
-            $res = $this->_parseCheckCharge($domain, $res);
             if ((int) $res['avails'][$domain] === 0 && $command === null) {
                 if ($res['reasons'][$domain] !== self::ZONE_NOT_ACCREDITED) {
                     return [
@@ -751,10 +750,15 @@ class DomainModule extends AbstractModule
                 }
             }
 
-            $checkPremium = $this->_domainCheck($domain, false, $command ?? 'create');
+            if ($res['premium'] === self::DOMAIN_PREMIUM && !empty($res['fee']['category_name'])) {
+                return $res;
+            } else {
+                $checkPremium = $this->_domainCheck($domain, false, $command ?? 'create');
+            }
         } catch (Throwable $e) {
             throw new Exception($e->getMessage());
         }
+
         if (!empty($checkPremium['price'])) {
             return $this->_parseCheckPrice($domain, $res, $checkPremium);
         }
@@ -765,7 +769,8 @@ class DomainModule extends AbstractModule
     protected function _parseCheckCharge(string $domain, array $data): array
     {
         return array_merge($data, array_filter([
-            'premium' => isset($data['category']) && $data['category'] === self::DOMAIN_PREMIUM,
+            'avail' => (int) $data['avails'][$domain],
+            'premium' => isset($data['category']) && $data['category'] === self::DOMAIN_PREMIUM ? self::DOMAIN_PREMIUM : null,
             'reason' => isset($data['category']) && $data['category'] === self::DOMAIN_PREMIUM ? self::DOMAIN_PREMIUM_REASON : ($data[$domain]['reason'] ?? null),
             'category_name' => $data['category_name'] ?? null,
             'fee' => isset($data['category']) && $data['category'] === self::DOMAIN_PREMIUM ? [
@@ -821,7 +826,7 @@ class DomainModule extends AbstractModule
 
     protected function _domainCheck(string $domain, $withoutExt = false, string $action = 'create'): array
     {
-        return $this->tool->commonRequest("{$this->object}:check", [
+        $res = $this->tool->commonRequest("{$this->object}:check", [
             'names'     => [$domain],
             'reasons'   => 'reasons',
             'withoutExt' => $withoutExt,
@@ -832,7 +837,14 @@ class DomainModule extends AbstractModule
             'fee'       => 'fee',
             'price'     => 'price',
             'charge'    => 'charge',
+            'create'    => 'create',
+            'renew'     => 'renew',
+            'transfer'  => 'transfer',
+            'category'  => 'category',
+            'category_name' => 'category_name',
+            'restore'   => 'restore',
         ]);
+        return $this->_parseCheckCharge($domain, $res);
     }
 
     protected function getDomainTopZone(string $domain): string

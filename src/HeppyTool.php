@@ -481,7 +481,7 @@ class HeppyTool
     public function getDateTime(string $datetime): DateTimeImmutable
     {
         if ($this->getTimeZone() === null) {
-            return DateTimeImmutable($datetime);
+            return new DateTimeImmutable($datetime);
         }
 
         return DateTimeImmutable::createFromMutable(new DateTime($datetime))
