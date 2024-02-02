@@ -176,7 +176,7 @@ class ContactModule extends AbstractModule
 
         $row = array_merge($row, array_filter([
             'country' => !empty($row['country']) ? strtoupper($row['country'] === 'gdpr' ? 'cy' : $row['country']) : null,
-            'postal_code' => !empty($row['postal_code'])  ? substr($row['postal_code'], 0, 16) : null,
+            'postal_code' => !empty($row['postal_code'])  ? substr($row['postal_code'], 0, 15) : null,
         ]));
 
         $data = $this->prepareDataForContactUpdate($row, $info, $disclose);
