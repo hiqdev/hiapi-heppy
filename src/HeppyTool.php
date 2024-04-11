@@ -478,7 +478,7 @@ class HeppyTool
         return $this->contacts['disabled_wp'];
     }
 
-  public function getDateTime(string $datetime): DateTimeImmutable
+    public function getDateTime(string $datetime): DateTimeImmutable
     {
         if ($this->getTimeZone() === null) {
             return new DateTimeImmutable($datetime);
