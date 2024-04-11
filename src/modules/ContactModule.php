@@ -156,10 +156,6 @@ class ContactModule extends AbstractModule
                 return $this->contactCreate($row, $addsymbols, false);
             }
 
-            if (strpos($e->getMessage(), self::INCORECT_AUTHINFO_EXCEPTION) !== false) {
-                return $this->contactCreate($row, true);
-            }
-
             throw new Exception($e->getMessage());
         }
     }
