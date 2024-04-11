@@ -478,7 +478,7 @@ class HeppyTool
         return $this->contacts['disabled_wp'];
     }
 
-    public function getDateTime(string $datetime): DateTimeImmutable
+  public function getDateTime(string $datetime): DateTimeImmutable
     {
         if ($this->getTimeZone() === null) {
             return new DateTimeImmutable($datetime);
@@ -486,6 +486,15 @@ class HeppyTool
 
         return DateTimeImmutable::createFromMutable(new DateTime($datetime))
             ->setTimeZone($this->getTimeZone());
+    }
+
+    public function getUTCDateTime(string $datetime): DateTimeImmutable
+    {
+        if ($this->getTimeZone() === null) {
+            return new DateTimeImmutable($datetime);
+        }
+
+        return DateTimeImmutable::createFromMutable((new DateTime($datetime, $this->getTimeZone()))->setTimezone(new DateTimeZone('UTC')));
     }
 
     public function getCache()

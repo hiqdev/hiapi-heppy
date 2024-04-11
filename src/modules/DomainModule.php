@@ -123,6 +123,14 @@ class DomainModule extends AbstractModule
             }
         }
 
+        foreach (['created_date', 'updated_date', 'expiration_date', 'transfer_date'] as $key) {
+            if (empty($info[$key])) {
+                continue ;
+            }
+
+            $info[$key] = $this->tool->getUTCDateTime($info[$key])->format("Y-m-d H:i:s");
+        }
+
         foreach (['nameservers', 'hosts'] as $key) {
             if (!empty($info[$key])) {
                 if ($key === 'nameservers' && !empty($info['nameservers'])) {
