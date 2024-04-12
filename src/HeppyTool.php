@@ -488,6 +488,15 @@ class HeppyTool
             ->setTimeZone($this->getTimeZone());
     }
 
+    public function getUTCDateTime(string $datetime): DateTimeImmutable
+    {
+        if ($this->getTimeZone() === null) {
+            return new DateTimeImmutable($datetime);
+        }
+
+        return DateTimeImmutable::createFromMutable((new DateTime($datetime, $this->getTimeZone()))->setTimezone(new DateTimeZone('UTC')));
+    }
+
     public function getCache()
     {
         return $this->base->getCache();

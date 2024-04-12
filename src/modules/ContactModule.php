@@ -11,6 +11,7 @@ class ContactModule extends AbstractModule
     const INCORECT_AUTHINFO_EXCEPTION = 'Parameter value syntax error Incorrect authInfo';
 
     const UNIMPLEMENTED_OPTION_DISCLOSE = 'Unimplemented option Disclose element not supported';
+    const UNSUPPORTED_DISCLOSE_FLAG = 'Data management policy violation Unsupported disclose flag';
 
     /** {@inheritdoc} */
     public array $uris = [
@@ -151,11 +152,7 @@ class ContactModule extends AbstractModule
                 return $this->contactCreate($row, $addsymbols, false);
             }
 
-            if (strpos($e->getMessage(), self::INCORECT_AUTHINFO_EXCEPTION) !== false) {
-                return $this->contactCreate($row, true);
-            }
-
-            if (strpos($e->getMessage(), self::UNIMPLEMENTED_OPTION_DISCLOSE) !== false && $disclose !== false) {
+            if (strpos($e->getMessage(), self::UNSUPPORTED_DISCLOSE_FLAG) !== false && $disclose !== false) {
                 return $this->contactCreate($row, $addsymbols, false);
             }
 
@@ -191,6 +188,10 @@ class ContactModule extends AbstractModule
             ]);
         } catch (Throwable $e) {
             if (strpos($e->getMessage(), self::UNIMPLEMENTED_OPTION_DISCLOSE) !== false && $disclose !== false) {
+                return $this->contactUpdate($row, $info, false);
+            }
+
+            if (strpos($e->getMessage(), self::UNSUPPORTED_DISCLOSE_FLAG) !== false && $disclose !== false) {
                 return $this->contactUpdate($row, $info, false);
             }
 
