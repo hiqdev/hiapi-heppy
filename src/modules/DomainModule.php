@@ -422,7 +422,7 @@ class DomainModule extends AbstractModule
     {
         $row = $this->_domainSetFee($row, 'transfer');
         if (!empty($row['fee']) && floatval((string) $row['fee']) > floatval((string) $row['standart_price'])) {
-            throw new Excepion($row['reason']);
+            throw new Exception($row['reason']);
         }
 
         $zone = $this->getZone($row);
