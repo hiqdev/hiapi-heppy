@@ -218,7 +218,7 @@ class DomainModule extends AbstractModule
         $zone = $this->getZone($row);
         $row = $this->_domainSetFee($row, 'create');
 
-        if (!empty($row['fee']) && floatval((string) $row['fee']) !== floatval((string) $row['standart_price'])) {
+        if (!empty($row['fee']) && floatval((string) $row['fee']) > floatval((string) $row['standart_price'])) {
             throw new Exception($row['reason']);
         }
 
@@ -233,6 +233,7 @@ class DomainModule extends AbstractModule
             'pw'            => $row['password'] ?? $this->generatePassword(16),
             'secDNS'        => $row['secDNS'] ?? null,
             'fee'           => $row['fee'] ?? null,
+            'category_name' => $row['category_name'] ?? null,
             'neulevel'      => $zone === 'tel' ? implode(' ', [
                 "WhoisType=NATURAL",
                 "Publish=" . ($row['whois_protected'] ? 'N' : 'Y'),
@@ -327,7 +328,13 @@ class DomainModule extends AbstractModule
     public function domainsDelete(array $rows): array
     {
         foreach ($rows as $id => $row) {
-            $res[$id] = $this->tool->domainDelete($row);
+            try {
+                $res[$id] = $this->tool->domainDelete($row);
+            } catch (Throwable $e) {
+                $res[$id] = array_merge($row, [
+                    '_error' => $e->getMessage(),
+                ]);
+            }
         }
 
         return $res;
@@ -341,7 +348,7 @@ class DomainModule extends AbstractModule
     {
         $row = $this->_domainSetFee($row, 'renew');
 
-        if (!empty($row['fee']) && floatval((string) $row['fee']) !== floatval((string) $row['standart_price'])) {
+        if (!empty($row['fee']) && floatval((string) $row['fee']) > floatval((string) $row['standart_price'])) {
             throw new Exception($row['reason']);
         }
 
@@ -391,7 +398,7 @@ class DomainModule extends AbstractModule
     {
         $check = $this->domainCheck($row['domain']);
         if ($check['avail'] === 1) {
-            throw new Excepion('Object does not exist');
+            throw new Exception('Object does not exist');
         }
 
         try {
@@ -414,8 +421,8 @@ class DomainModule extends AbstractModule
     public function domainTransfer(array $row): array
     {
         $row = $this->_domainSetFee($row, 'transfer');
-        if (!empty($row['fee']) && floatval((string) $row['fee']) !== floatval((string) $row['standart_price'])) {
-            throw new Excepion($row['reason']);
+        if (!empty($row['fee']) && floatval((string) $row['fee']) > floatval((string) $row['standart_price'])) {
+            throw new Exception($row['reason']);
         }
 
         $zone = $this->getZone($row);
@@ -758,7 +765,7 @@ class DomainModule extends AbstractModule
                 }
             }
 
-            if ($res['premium'] === self::DOMAIN_PREMIUM && !empty($res['fee']['category_name'])) {
+            if (isset($res['premium']) && $res['premium'] === self::DOMAIN_PREMIUM && !empty($res['fee']['category_name'])) {
                 return $res;
             } else {
                 $checkPremium = $this->_domainCheck($domain, false, $command ?? 'create');
@@ -901,12 +908,16 @@ class DomainModule extends AbstractModule
         if ($fee  == $row['standart_price'] && in_array($op, ['renew', 'transfer'], true)) {
             return array_merge($row, array_filter([
                 'fee' => $fee,
+                'category' => $data['category'],
+                'category_name' => $data['category_name'],
             ]));
         }
 
         return array_merge($row, array_filter([
             'fee' => $fee,
             'reason' => self::DOMAIN_PREMIUM_REASON,
+            'category' => $data['category'],
+            'category_name' => $data['category_name'],
             'allFee' => $allFee === true ? $data['fee'] : null,
         ]));
     }
@@ -951,6 +962,8 @@ class DomainModule extends AbstractModule
             'curExpDate'    => $row['expires'],
             'period'        => $row['period'],
             'fee'           => $row['fee'] ?? null,
+            'category'      => $row['category'],
+            'category_name' => $row['category_name'],
         ]), array_filter([
             'domain'            => 'name',
             'expiration_date'   => 'exDate',
@@ -998,7 +1011,6 @@ class DomainModule extends AbstractModule
         if (empty($data)) {
             return $row;
         }
-
         try {
             return $this->tool->commonRequest("{$this->object}:update", array_filter([
                 'name'      => $row['domain'],

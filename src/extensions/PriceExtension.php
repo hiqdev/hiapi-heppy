@@ -24,7 +24,7 @@ class PriceExtension extends AbstractExtension implements ExtensionInterface
             'check' => ['*' => true],
             'create' => ['*' => true],
             'renew' => ['*' => true],
-            'transer' => ['request' => true, 'query' => 'true'],
+            'transfer' => ['request' => true, 'query' => true],
             // 'update' => ['restore' => true],
             // 'restore' => ['*' => true],
         ],

@@ -23,7 +23,7 @@ class ChargeExtension extends AbstractExtension implements ExtensionInterface
         'domain' => [
             'create' => ['*' => true],
             'renew' => ['*' => true],
-            'transer' => ['request' => true, 'query' => 'true'],
+            'transer' => ['request' => true, 'query' => true],
             'update' => ['restore' => true],
             'restore' => ['*' => true],
         ],
