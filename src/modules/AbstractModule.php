@@ -161,15 +161,6 @@ class AbstractModule
         return !empty($extensions[$extension]);
     }
 
-    public function isExtensionsClassEnabled(string $extension): bool
-    {
-        foreach ($this->tool->getExtensions() as $name => $value) {
-
-        }
-
-        return false;
-    }
-
     public function isPremiumExtensionAvailable(): bool
     {
         $extensions = $this->tool->getExtensions();
