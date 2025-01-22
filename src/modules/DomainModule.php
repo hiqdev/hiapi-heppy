@@ -398,7 +398,7 @@ class DomainModule extends AbstractModule
     {
         $check = $this->domainCheck($row['domain']);
         if ($check['avail'] === 1) {
-            throw new Excepion('Object does not exist');
+            throw new Exception('Object does not exist');
         }
 
         try {
