@@ -349,7 +349,7 @@ class DomainModule extends AbstractModule
         $row = $this->_domainSetFee($row, 'renew');
 
         if (!empty($row['fee']) && floatval((string) $row['fee']) > floatval((string) $row['standart_price'])) {
-            // throw new Exception($row['reason']);
+            throw new Exception($row['reason']);
         }
 
         $curExpDate = $this->tool->getDateTime($row['expires_time']);
