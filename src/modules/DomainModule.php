@@ -370,7 +370,7 @@ class DomainModule extends AbstractModule
             if (
                     in_array($e->getMessage(), $this->getMainRenewErrors($row['domain']), true)
                 || strpos($e->getMessage(), str_replace('__DOMAIN__', $row['domain'], self::RENEW_DOMAIN_INCORRECT_EXPIRY_DATE)) !== false
-        ) {
+            ) {
                 if ($expired === false) {
                     return $this->domainRenew($row, true);
                 } else {
