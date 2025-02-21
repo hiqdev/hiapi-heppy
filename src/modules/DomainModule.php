@@ -391,7 +391,7 @@ class DomainModule extends AbstractModule
     {
         $check = $this->domainCheck($row['domain']);
         if ($check['avail'] === 1) {
-            throw new Excepion('Object does not exist');
+            throw new Exception('Object does not exist');
         }
 
         try {
@@ -415,7 +415,7 @@ class DomainModule extends AbstractModule
     {
         $row = $this->_domainSetFee($row, 'transfer');
         if (!empty($row['fee']) && floatval((string) $row['fee']) > floatval((string) $row['standart_price'])) {
-            throw new Excepion($row['reason']);
+            throw new Exception($row['reason']);
         }
 
         $zone = $this->getZone($row);
