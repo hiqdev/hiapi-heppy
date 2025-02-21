@@ -26,6 +26,7 @@ class DomainModule extends AbstractModule
     const RENEW_DOMAIN_WRONG_CUREPXDATE = 'Parameter value range error Wrong curExpDate provided';
     const RENEW_DOMAIN_EXPIRY_DATE_IS_NOT_CORRECT = 'Expiry date is not correct.';
     const RENEW_DOMAIN_CORRECT_EXPIRY_DATE = 'Parameter value policy error Renew failed due to incorrect expiry date. The correct current expiry date must be provided';
+    const RENEW_DOMAIN_INCORRECT_EXPIRY_DATE = 'cannot renew __DOMAIN__ - incorrect expiry date';
     const RENEW_DOMAIN_PARAMETER_VALUE_RANGE_ERROR = 'Parameter value range error';
     const RENEW_DOMAIN_COMMAND_USE_ERROR = 'Command use error';
     const RENEW_DOMAIN_OXRS_COMMAND_USE_ERROR = '2002:Command use error (__DOMAIN__)';
@@ -366,7 +367,10 @@ class DomainModule extends AbstractModule
                 'expires' => $curExpDate->format("Y-m-d"),
             ]));
         } catch (EppErrorException $e) {
-            if (in_array($e->getMessage(), $this->getMainRenewErrors($row['domain']), true)) {
+            if (
+                    in_array($e->getMessage(), $this->getMainRenewErrors($row['domain']), true)
+                || strpos($e->getMessage(), str_replace('__DOMAIN__', $row['domain'], self::RENEW_DOMAIN_INCORRECT_EXPIRY_DATE)) !== false
+        ) {
                 if ($expired === false) {
                     return $this->domainRenew($row, true);
                 } else {
