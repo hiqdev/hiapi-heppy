@@ -218,7 +218,7 @@ class DomainModule extends AbstractModule
         $zone = $this->getZone($row);
         $row = $this->_domainSetFee($row, 'create');
 
-        if (!empty($row['fee']) && floatval((string) $row['fee']) !== floatval((string) $row['standart_price'])) {
+        if (!empty($row['fee']) && floatval((string) $row['fee']) > floatval((string) $row['standart_price'])) {
             throw new Exception($row['reason']);
         }
 
@@ -341,7 +341,7 @@ class DomainModule extends AbstractModule
     {
         $row = $this->_domainSetFee($row, 'renew');
 
-        if (!empty($row['fee']) && floatval((string) $row['fee']) !== floatval((string) $row['standart_price'])) {
+        if (!empty($row['fee']) && floatval((string) $row['fee']) > floatval((string) $row['standart_price'])) {
             throw new Exception($row['reason']);
         }
 
@@ -414,8 +414,8 @@ class DomainModule extends AbstractModule
     public function domainTransfer(array $row): array
     {
         $row = $this->_domainSetFee($row, 'transfer');
-        if (!empty($row['fee']) && floatval((string) $row['fee']) !== floatval((string) $row['standart_price'])) {
-            throw new Excepion($row['reason']);
+        if (!empty($row['fee']) && floatval((string) $row['fee']) > floatval((string) $row['standart_price'])) {
+            throw new Exception($row['reason']);
         }
 
         $zone = $this->getZone($row);
