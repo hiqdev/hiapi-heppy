@@ -26,10 +26,13 @@ class DomainModule extends AbstractModule
     const RENEW_DOMAIN_WRONG_CUREPXDATE = 'Parameter value range error Wrong curExpDate provided';
     const RENEW_DOMAIN_EXPIRY_DATE_IS_NOT_CORRECT = 'Expiry date is not correct.';
     const RENEW_DOMAIN_CORRECT_EXPIRY_DATE = 'Parameter value policy error Renew failed due to incorrect expiry date. The correct current expiry date must be provided';
+    const RENEW_DOMAIN_INCORRECT_EXPIRY_DATE = 'cannot renew __DOMAIN__ - incorrect expiry date';
     const RENEW_DOMAIN_PARAMETER_VALUE_RANGE_ERROR = 'Parameter value range error';
     const RENEW_DOMAIN_COMMAND_USE_ERROR = 'Command use error';
     const RENEW_DOMAIN_OXRS_COMMAND_USE_ERROR = '2002:Command use error (__DOMAIN__)';
     const RENEW_DOMAIN_MAIN_COMMAND_USE_ERROR = 'Command use error 2002:Command use error (__DOMAIN__)';
+    const RENEW_DOMAIN_WRONG_YEAR_PROVIDED_ERROR = 'Parameter value range error; wrong current expdate year provided';
+    const RENEW_DOMAIN_EXPIRE_DATE_NOT_MATCH = 'Parameter value policy error expire date not match';
 
     const UPDATE_DOMAIN_AUTHORIZED_ERROR = 'You are not authorised to update this domain name.';
 
@@ -233,6 +236,7 @@ class DomainModule extends AbstractModule
             'pw'            => $row['password'] ?? $this->generatePassword(16),
             'secDNS'        => $row['secDNS'] ?? null,
             'fee'           => $row['fee'] ?? null,
+            'category_name' => $row['category_name'] ?? null,
             'neulevel'      => $zone === 'tel' ? implode(' ', [
                 "WhoisType=NATURAL",
                 "Publish=" . ($row['whois_protected'] ? 'N' : 'Y'),
@@ -327,7 +331,13 @@ class DomainModule extends AbstractModule
     public function domainsDelete(array $rows): array
     {
         foreach ($rows as $id => $row) {
-            $res[$id] = $this->tool->domainDelete($row);
+            try {
+                $res[$id] = $this->tool->domainDelete($row);
+            } catch (Throwable $e) {
+                $res[$id] = array_merge($row, [
+                    '_error' => $e->getMessage(),
+                ]);
+            }
         }
 
         return $res;
@@ -366,7 +376,10 @@ class DomainModule extends AbstractModule
                 'expires' => $curExpDate->format("Y-m-d"),
             ]));
         } catch (EppErrorException $e) {
-            if (in_array($e->getMessage(), $this->getMainRenewErrors($row['domain']), true)) {
+            if (
+                    in_array($e->getMessage(), $this->getMainRenewErrors($row['domain']), true)
+                || strpos($e->getMessage(), str_replace('__DOMAIN__', $row['domain'], self::RENEW_DOMAIN_INCORRECT_EXPIRY_DATE)) !== false
+            ) {
                 if ($expired === false) {
                     return $this->domainRenew($row, true);
                 } else {
@@ -391,7 +404,7 @@ class DomainModule extends AbstractModule
     {
         $check = $this->domainCheck($row['domain']);
         if ($check['avail'] === 1) {
-            throw new Excepion('Object does not exist');
+            throw new Exception('Object does not exist');
         }
 
         try {
@@ -758,7 +771,7 @@ class DomainModule extends AbstractModule
                 }
             }
 
-            if ($res['premium'] === self::DOMAIN_PREMIUM && !empty($res['fee']['category_name'])) {
+            if (isset($res['premium']) && $res['premium'] === self::DOMAIN_PREMIUM && !empty($res['fee']['category_name'])) {
                 return $res;
             } else {
                 $checkPremium = $this->_domainCheck($domain, false, $command ?? 'create');
@@ -787,6 +800,7 @@ class DomainModule extends AbstractModule
                 'restore' => $data['restore'],
                 'transfer' => $data['transfer'],
                 'category_name' => $data['category_name'] ?? null,
+                'premium' => 1,
             ] : null,
         ]));
     }
@@ -901,12 +915,16 @@ class DomainModule extends AbstractModule
         if ($fee  == $row['standart_price'] && in_array($op, ['renew', 'transfer'], true)) {
             return array_merge($row, array_filter([
                 'fee' => $fee,
+                'category' => $data['category'],
+                'category_name' => $data['category_name'],
             ]));
         }
 
         return array_merge($row, array_filter([
             'fee' => $fee,
             'reason' => self::DOMAIN_PREMIUM_REASON,
+            'category' => $data['category'],
+            'category_name' => $data['category_name'],
             'allFee' => $allFee === true ? $data['fee'] : null,
         ]));
     }
@@ -951,6 +969,8 @@ class DomainModule extends AbstractModule
             'curExpDate'    => $row['expires'],
             'period'        => $row['period'],
             'fee'           => $row['fee'] ?? null,
+            'category'      => $row['category'],
+            'category_name' => $row['category_name'],
         ]), array_filter([
             'domain'            => 'name',
             'expiration_date'   => 'exDate',
@@ -970,6 +990,7 @@ class DomainModule extends AbstractModule
             'pw'        => $row['password'],
             'period'    => $row['period'],
             'fee'       => $row['fee'] ?? null,
+            'category_name' => $row['category_name'] ?? null,
             'keysys'    => $row['keysys'] ?? null,
         ]), [
             'domain'            => 'name',
@@ -998,7 +1019,6 @@ class DomainModule extends AbstractModule
         if (empty($data)) {
             return $row;
         }
-
         try {
             return $this->tool->commonRequest("{$this->object}:update", array_filter([
                 'name'      => $row['domain'],
@@ -1192,6 +1212,8 @@ class DomainModule extends AbstractModule
             self::RENEW_DOMAIN_PARAMETER_VALUE_RANGE_ERROR,
             self::RENEW_DOMAIN_COMMAND_USE_ERROR,
             self::RENEW_DOMAIN_CORRECT_EXPIRY_DATE,
+            self::RENEW_DOMAIN_WRONG_YEAR_PROVIDED_ERROR,
+            self::RENEW_DOMAIN_EXPIRE_DATE_NOT_MATCH,
             str_replace('__DOMAIN__', $domain, self::RENEW_DOMAIN_MAIN_COMMAND_USE_ERROR),
             str_replace('__DOMAIN__', $domain, self::RENEW_DOMAIN_OXRS_COMMAND_USE_ERROR),
         ];

@@ -70,13 +70,15 @@ class HeppyTool
         'verificationCode' => 'urn:ietf:params:xml:ns:verificationCode-1.0',
         'price' => ['urn:ar:params:xml:ns:price-1.1'],
         'charge' => ['http://www.unitedtld.com/epp/charge-1.0'],
-        'fee05' => ['urn:ietf:params:xml:ns:fee-0.5', 'version' => '05'],
-        'fee06' => ['urn:ietf:params:xml:ns:fee-0.6', 'version' => '06'],
-        'fee07' => ['urn:ietf:params:xml:ns:fee-0.7', 'version' => '07'],
-        'fee08' => ['urn:ietf:params:xml:ns:fee-0.8', 'version' => '08'],
-        'fee09' => ['urn:ietf:params:xml:ns:fee-0.9', 'version' => '09'],
-        'fee11' => ['urn:ietf:params:xml:ns:fee-0.11','version' => '11'],
+        'fee10' => ['urn:ietf:params:xml:ns:epp:fee-1.0', 'version' => '10'],
+        'fee23' => ['urn:ietf:params:xml:ns:fee-0.23','version' => '23'],
         'fee21' => ['urn:ietf:params:xml:ns:fee-0.21','version' => '21'],
+        'fee11' => ['urn:ietf:params:xml:ns:fee-0.11','version' => '11'],
+        'fee09' => ['urn:ietf:params:xml:ns:fee-0.9', 'version' => '09'],
+        'fee08' => ['urn:ietf:params:xml:ns:fee-0.8', 'version' => '08'],
+        'fee07' => ['urn:ietf:params:xml:ns:fee-0.7', 'version' => '07'],
+        'fee06' => ['urn:ietf:params:xml:ns:fee-0.6', 'version' => '06'],
+        'fee05' => ['urn:ietf:params:xml:ns:fee-0.5', 'version' => '05'],
         'coa' => 'urn:ietf:params:xml:ns:coa-1.0',
         'idnLang' => 'http://www.verisign.com/epp/idnLang-1.0',
         'premiumdomain' => 'http://www.verisign.com/epp/premiumdomain-1.0',
@@ -100,8 +102,10 @@ class HeppyTool
         'fee07' => FeeExtension::class,
         'fee08' => FeeExtension::class,
         'fee09' => FeeExtension::class,
+        'fee10' => FeeExtension::class,
         'fee11' => FeeExtension::class,
         'fee21' => FeeExtension::class,
+        'fee23' => FeeExtension::class,
         'charge' => ChargeExtension::class,
         'idnLang' => IDNLangExtension::class,
         'price' => PriceExtension::class,
@@ -235,6 +239,7 @@ class HeppyTool
      */
     public function getExtensions(): array
     {
+        $feeExts = false;
         if ($this->extensions !== null) {
             return $this->extensions;
         }
@@ -255,6 +260,14 @@ class HeppyTool
 
             if (empty($this->extURNClasses[$name])) {
                 continue;
+            }
+
+            if (strpos($name, 'fee') !== false) {
+                if ($feeExts === true) {
+                    continue;
+                }
+
+                $feeExts = true;
             }
 
             $extension = $this->extURNClasses[$name];
@@ -284,6 +297,12 @@ class HeppyTool
         $this->objects = $helloData['objURIs'] ?? [];
 
         return $this->objects;
+    }
+
+    public function getSvID(): ?string
+    {
+        $hello = $this->getHelloData();
+        return $hello['svID'] ?? null;
     }
 
     public function getHelloData(): ?array

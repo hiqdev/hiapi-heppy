@@ -12,6 +12,7 @@ class ContactModule extends AbstractModule
 
     const UNIMPLEMENTED_OPTION_DISCLOSE = 'Unimplemented option Disclose element not supported';
     const UNSUPPORTED_DISCLOSE_FLAG = 'Data management policy violation Unsupported disclose flag';
+    const WHOIS_PRIVACY_NOT_AVAILABLE = 'Invalid attribute value; whois privacy not available for';
 
     /** {@inheritdoc} */
     public array $uris = [
@@ -28,7 +29,8 @@ class ContactModule extends AbstractModule
     /** {@inheritdoc} */
     public function isAvailable() : bool
     {
-        return true;
+        $exts = $this->tool->getExtensions();
+        return empty($exts['namestoreExt']) || $this->tool->getSvID() !== 'VeriSign Com/Net EPP Registration Server';
     }
 
     /**
@@ -156,6 +158,10 @@ class ContactModule extends AbstractModule
                 return $this->contactCreate($row, $addsymbols, false);
             }
 
+            if (strpos($e->getMessage(), self::WHOIS_PRIVACY_NOT_AVAILABLE) !== false && $disclose !== false) {
+                return $this->contactCreate($row, $addsymbols, false);
+            }
+
             throw new Exception($e->getMessage());
         }
     }
@@ -192,6 +198,10 @@ class ContactModule extends AbstractModule
             }
 
             if (strpos($e->getMessage(), self::UNSUPPORTED_DISCLOSE_FLAG) !== false && $disclose !== false) {
+                return $this->contactUpdate($row, $info, false);
+            }
+
+            if (strpos($e->getMessage(), self::WHOIS_PRIVACY_NOT_AVAILABLE) !== false && $disclose !== false) {
                 return $this->contactUpdate($row, $info, false);
             }
 
