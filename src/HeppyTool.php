@@ -314,11 +314,22 @@ class HeppyTool
         return $this->helloData;
     }
 
-    public function requestHello(): ?array
+    public function requestHello(int $tries = 0): ?array
     {
-        return $this->cache->getOrSet(['epp:hello', $this->getRegistrar(), $this->data['queue']], function() {
+        $res = $this->cache->getOrSet(['epp:hello', $this->getRegistrar(), $this->data['queue']], function() {
             return $this->request('epp:hello', []);
-        }, 3600);
+        }, 60 * 60 * 24);
+
+        if (empty($res)) {
+            if ($tries < 2) {
+                $this->cache->delete(['epp:hello', $this->getRegistrar(), $this->data['queue']]);
+                return $this->requestHello(++$tries);
+            } else {
+                throw new EppErrorException('could not get message from EPP');
+            }
+        }
+
+        return $res;
     }
 
     /**
@@ -453,6 +464,11 @@ class HeppyTool
         return $this->base;
     }
 
+    public function getRenameDomain()
+    {
+        return $this->data['rename_domain'] ?? null;
+    }
+
     /**
      * @param $client
      */
@@ -477,6 +493,10 @@ class HeppyTool
 
     public function getContactTypes()
     {
+        if (!empty($this->contacts['disabled']) && $this->contacts['disabled'] === true) {
+            return [];
+        }
+
         foreach (['registrant', 'admin', 'tech', 'billing'] as $type) {
             if (!empty($this->contacts['disabled']) && in_array($type, $this->contacts['disabled'], true)) {
                 continue;

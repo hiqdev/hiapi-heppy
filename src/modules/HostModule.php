@@ -123,8 +123,30 @@ class HostModule extends AbstractModule
      */
     public function hostDelete(array $row): array
     {
-        return $this->tool->commonRequest("{$this->object}:delete", [
+        try {
+            return $this->tool->commonRequest("{$this->object}:delete", [
+                'name'  => $row['host'],
+            ], [], [
+                'id'    => $row['id'],
+                'host'  => $row['host'],
+            ]);
+        }  catch (\Throwable $e) {
+            return $this->hostRename($row);
+        }
+    }
+
+    public function hostRename(array $row): array
+    {
+        $renameDomain = $this->tool->getRenameDomain();
+        if (empty($renameDomain)) {
+            throw new Exception("Rename does not supported");
+        }
+
+        return $this->tool->commonRequest("{$this->object}:update", [
             'name'  => $row['host'],
+            'chg'   => [
+                'name' => "{$row['host']}.{$renameDomain}",
+            ],
         ], [], [
             'id'    => $row['id'],
             'host'  => $row['host'],

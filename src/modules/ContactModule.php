@@ -235,7 +235,7 @@ class ContactModule extends AbstractModule
             'epp_id' => $local['epp_id'],
             'chg' => array_filter([
                 'name'      => $local['name'],
-                'org'       => $local['organization'] ?? null,
+                'org'       => $local['organization'] ?? '',
                 'email'     => $local['email'],
                 'fax'       => $local['fax_phone'] ?? null,
                 'voice'     => $local['voice_phone'],
