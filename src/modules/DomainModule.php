@@ -266,6 +266,9 @@ class DomainModule extends AbstractModule
     public function domainPrepareContacts(array $row): array
     {
         $remoteIds = [];
+        if (!$this->tool->getModule('contact')->isAvailable()) {
+            return $row;
+        }
         foreach ($this->tool->getContactTypes() as $type) {
             $contactId = $row["{$type}_info"]['id'];
             $remoteId = $remoteIds[$contactId] ?? null;
