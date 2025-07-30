@@ -102,7 +102,7 @@ class HeppyTool
         'fee07' => FeeExtension::class,
         'fee08' => FeeExtension::class,
         'fee09' => FeeExtension::class,
-        'fee10' => FeeExtension::class,
+        // 'fee10' => FeeExtension::class,
         'fee11' => FeeExtension::class,
         'fee21' => FeeExtension::class,
         'fee23' => FeeExtension::class,
