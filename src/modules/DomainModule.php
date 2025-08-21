@@ -19,6 +19,8 @@ class DomainModule extends AbstractModule
     const DOMAIN_STANDART = 'standard';
     const DOMAIN_PREMIUM = 'premium';
 
+    const DOMAIN_OBJECT_NOT_FOUND_USING_SEARCH_TERM = 'domain object not found using search term';
+
     const RENEW_DOMAIN_NOT_AVAILABLE_EXCEPTION = "Invalid command name; Renew Domain not available";
     const RENEW_DOMAIN_AUTORENEW_RENEWONCE_EXCEPTION = "Invalid attribute value; explicit renewals not allowed for this TLD; please set domain to AUTORENEW or RENEWONCE";
     const RENEW_DOMAIN_DOES_NOT_MATCH_EXPIRATION = 'Parameter value range error Does not match expiration';
@@ -111,6 +113,11 @@ class DomainModule extends AbstractModule
             if (strpos($e->getMessage(), "Domain {$row['domain']} does not exist") !== false) {
                 throw new Exception(self::OBJECT_DOES_NOT_EXIST);
             }
+
+            if (strpos($e->getMessage(), self::DOMAIN_OBJECT_NOT_FOUND_USING_SEARCH_TERM) !== false) {
+                throw new Exception(self::OBJECT_DOES_NOT_EXIST);
+            }
+
 
             if (strpos($e->getMessage(), self::AUTHORIZATION_ERROR) !== false) {
                 throw new Exception(self::AUTHORIZATION_ERROR);
