@@ -56,7 +56,11 @@
     },
     "autoload": {
         "psr-4": {
-            "hiapi\\heppy\\": "src",
+            "hiapi\\heppy\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
             "hiapi\\heppy\\tests\\": "tests"
         }
     },
