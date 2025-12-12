@@ -34,7 +34,7 @@ class RabbitMQClient implements ClientInterface
 
     protected $reply;
 
-    public function __construct(array $connections, string $queue)
+    public function __construct(array $connections, ?string $queue = '')
     {
         $this->connection = AMQPStreamConnection::create_connection($connections, [
             'heartbeat' => self::MESSAGE_TTL,

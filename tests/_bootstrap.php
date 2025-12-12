@@ -8,13 +8,23 @@
  * @copyright Copyright (c) 2017, HiQDev (http://hiqdev.com/)
  */
 
+use hiqdev\yii\compat\yii;
+use yii\web\Application;
+use Yiisoft\Composer\Config\Builder;
+use yii\di\Container;
+
+defined('APP_TYPE') or define('APP_TYPE', 'tests');
+
+$config = require Builder::path('tests');
+
 error_reporting(E_ALL);
 
-require_once __DIR__ . '/../../../autoload.php';
-require_once __DIR__ . '/../../../yiisoft/yii2/Yii.php';
 
-use hiqdev\composer\config\Builder;
-use yii\console\Application;
+if (yii::is2()) {
+    require_once __DIR__ . '/../../../yiisoft/yii2/Yii.php';
+    \Yii::setAlias('@root', dirname(__DIR__, 4));
+    \Yii::$app = new Application($config);
+} else {
+    \yii\helpers\Yii::setContainer(new Container($config));
+}
 
-Yii::setAlias('@root', dirname(__DIR__));
-Yii::$app = new Application(require Builder::path('tests'));
