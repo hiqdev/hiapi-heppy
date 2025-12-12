@@ -18,7 +18,7 @@ class HostModule extends AbstractModule
      */
     public function hostCheck($row): array
     {
-        $zone = $this->getZOne($row, true);
+        $zone = $this->getZone($row, true);
         $res = $this->tool->commonRequest("{$this->object}:check", [
             'names' => [$row['host']],
             'reasons' => 'reasons',
@@ -148,7 +148,7 @@ class HostModule extends AbstractModule
                 'name' => "{$row['host']}.{$renameDomain}",
             ],
         ], [], [
-            'id'    => $row['id'],
+            'id'    => $row['id'] ?? null,
             'host'  => $row['host'],
         ]);
     }
