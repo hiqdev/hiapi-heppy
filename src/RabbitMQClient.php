@@ -20,7 +20,7 @@ use RuntimeException;
  */
 class RabbitMQClient implements ClientInterface
 {
-    const int TIMEOUT = 10;
+    private const MESSAGE_TTL = 10;
 
     protected $connection;
 
@@ -37,7 +37,7 @@ class RabbitMQClient implements ClientInterface
     public function __construct(array $connections, string $queue)
     {
         $this->connection = AMQPStreamConnection::create_connection($connections, [
-            'heartbeat' => self::TIMEOUT,
+            'heartbeat' => self::MESSAGE_TTL,
         ]);
         $this->queue = $queue;
         $this->channel = $this->connection->channel();
@@ -54,7 +54,7 @@ class RabbitMQClient implements ClientInterface
             false,
             false,
             [
-                'x-message-ttl' => ['I', self::TIMEOUT * 1_000], // Time in milliseconds
+                'x-message-ttl' => ['I', self::MESSAGE_TTL * 1_000], // Time in milliseconds
             ]
         );
         $channel->basic_consume(
@@ -85,13 +85,13 @@ class RabbitMQClient implements ClientInterface
         $msg = new AMQPMessage($query, [
             'correlation_id'    => $this->correlation_id,
             'reply_to'          => $this->callback_queue,
-            'expiration'        => (string) (self::TIMEOUT * 1_000), // Time in milliseconds
+            'expiration'        => (string) (self::MESSAGE_TTL * 1_000), // Time in milliseconds
         ]);
         $this->channel->basic_publish($msg, '', $this->queue);
 
         $this->reply = null;
         while (!$this->reply) {
-            $this->channel->wait(null, null, 2 * self::TIMEOUT);
+            $this->channel->wait(null, null, 2 * self::MESSAGE_TTL);
         }
 
         return json_decode($this->reply, true);
