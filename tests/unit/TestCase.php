@@ -4,15 +4,12 @@ namespace hiapi\heppy\tests\unit;
 
 use hiapi\heppy\HeppyTool;
 use hiapi\heppy\RabbitMQClient;
-use mrdpBase;
+use hiapi\legacy\lib\mrdpBase;
 use PHPUnit\Framework\MockObject\MockObject;
 
 class TestCase extends \PHPUnit\Framework\TestCase
 {
-    /**
-     * @var HeppyTool
-     */
-    protected $tool;
+    protected HeppyTool $tool;
 
     /**
      * @param array $requestData
@@ -23,8 +20,8 @@ class TestCase extends \PHPUnit\Framework\TestCase
     public function createTool(
         array $requestData,
         array $responseData,
-        array $baseMethods = [])
-    {
+        ?array $baseMethods = null
+    ): HeppyTool {
         $base = $this->mockBase($baseMethods);
         $client = $this->mockClient($requestData, $responseData);
 
@@ -38,9 +35,9 @@ class TestCase extends \PHPUnit\Framework\TestCase
      * @param array|null $methods
      * @return MockObject
      */
-    protected function mockBase(array $methods = []): MockObject
+    protected function mockBase(?array $methods = null): MockObject
     {
-        return $this->mockEntity(mrdpBase::class, $methods);
+        return $this->mockEntity(mrdpBase::class, $methods ?? []);
     }
 
     /**
@@ -74,11 +71,11 @@ class TestCase extends \PHPUnit\Framework\TestCase
      * @param array $methods
      * @return MockObject
      */
-    private function mockEntity(string $entityName, array $methods): MockObject
+    protected function mockEntity(string $entityName, array $methods): MockObject
     {
         $entity =  $this->getMockBuilder($entityName)
             ->disableOriginalConstructor()
-            ->setMethods($this->getMethodsNames($methods))
+            ->onlyMethods($this->getMethodsNames($methods))
             ->getMock();
 
         foreach ($methods as $method) {
@@ -94,7 +91,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
      * @param array $methods
      * @return array
      */
-    private function getMethodsNames(array $methods): array
+    protected function getMethodsNames(array $methods): array
     {
         $methodNames = [];
 
@@ -106,12 +103,12 @@ class TestCase extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @param array $data
+     * @param array|null $data
      * @return array
      */
-    protected function addCommonSuccessResponse(array $data = null): array
+    protected function addCommonSuccessResponse(?array $data = null): array
     {
-        return array_merge($data, $this->getCommonSuccessResponse());
+        return array_merge($data ?? [], $this->getCommonSuccessResponse());
     }
 
     /**
@@ -129,12 +126,12 @@ class TestCase extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @param array $data
+     * @param array|null $data
      * @return array
      */
-    protected function addMappedCommonSuccessResponse(array $data = null): array
+    protected function addMappedCommonSuccessResponse(?array $data = null): array
     {
-        return array_merge($data, $this->getMappedCommonSuccessResponse());
+        return array_merge($data ?? [], $this->getMappedCommonSuccessResponse());
     }
 
     /**

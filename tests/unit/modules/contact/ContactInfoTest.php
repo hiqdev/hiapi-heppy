@@ -1,6 +1,6 @@
 <?php
 
-namespace hiapi\heppy\tests\unit\modules\contact_module;
+namespace hiapi\heppy\tests\unit\modules\contact;
 
 class ContactInfoTest extends ContactTestCase
 {
