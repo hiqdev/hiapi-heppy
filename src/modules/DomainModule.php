@@ -922,7 +922,7 @@ class DomainModule extends AbstractModule
         }
 
         $fee = $data['fee']['fee'] ?? $data['fee'][$op] ?? null;
-        if ($fee  == $row['standart_price'] && in_array($op, ['renew', 'transfer'], true)) {
+        if (floatval((string) $fee) <= floatval((string) $row['standart_price']) && in_array($op, ['renew', 'transfer'], true)) {
             return array_merge($row, array_filter([
                 'fee' => $fee,
                 'category' => $data['category'],
