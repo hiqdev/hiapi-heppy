@@ -2,6 +2,9 @@
 
 namespace hiapi\heppy\modules;
 
+use Exception;
+use Throwable;
+
 class HostModule extends AbstractModule
 {
     /** {@inheritdoc} */
@@ -18,7 +21,7 @@ class HostModule extends AbstractModule
      */
     public function hostCheck($row): array
     {
-        $zone = $this->getZOne($row, true);
+        $zone = $this->getZone($row, true);
         $res = $this->tool->commonRequest("{$this->object}:check", [
             'names' => [$row['host']],
             'reasons' => 'reasons',
@@ -40,8 +43,8 @@ class HostModule extends AbstractModule
     {
         try {
             $check = $this->hostCheck($row);
-        } catch (\Throwable $e) {
-            throw new \Exception($e->getMessage());
+        } catch (Throwable $e) {
+            throw new Exception($e->getMessage());
         }
 
         return  (int) $check['avail'] === 1 ? $this->hostCreate($row) : $this->hostUpdate($row);
@@ -130,7 +133,7 @@ class HostModule extends AbstractModule
                 'id'    => $row['id'],
                 'host'  => $row['host'],
             ]);
-        }  catch (\Throwable $e) {
+        }  catch (Throwable $e) {
             return $this->hostRename($row);
         }
     }
@@ -148,7 +151,7 @@ class HostModule extends AbstractModule
                 'name' => "{$row['host']}.{$renameDomain}",
             ],
         ], [], [
-            'id'    => $row['id'],
+            'id'    => $row['id'] ?? null,
             'host'  => $row['host'],
         ]);
     }
