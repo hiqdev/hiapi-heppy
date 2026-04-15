@@ -29,7 +29,7 @@ class IDNLangExtension extends AbstractExtension implements ExtensionInterface
     public function addExtension(string $command, array $data): array
     {
         $language = $data['language'] ?? $this->detectLanguage($data['name']);
-        if ($language === 'END') {
+        if ($language === 'ENG' || $language === null) {
             return $data;
         }
 
@@ -68,9 +68,9 @@ class IDNLangExtension extends AbstractExtension implements ExtensionInterface
      * @param string
      * @return string
      */
-    protected function detectLanguage(string $name = null): string
+    protected function detectLanguage(?string $name = null): ?string
     {
-        return idn::detectLang($name);
+        return $name === null ? null : idn::detectLang($name);
     }
 
 }
