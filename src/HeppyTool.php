@@ -268,6 +268,10 @@ class HeppyTool
                 }
 
                 $feeExts = true;
+
+                if ($this->getSvID() === 'Verisign CTLD EPP Registration Server') {
+                    continue ;
+                }
             }
 
             $extension = $this->extURNClasses[$name];
