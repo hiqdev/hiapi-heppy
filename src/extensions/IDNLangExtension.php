@@ -11,7 +11,7 @@
 namespace hiapi\heppy\extensions;
 
 use hiapi\heppy\interfaces\ExtensionInterface;
-use hiapi\heppy\helpers\LanguageHelper;
+use hiapi\heppy\helpers\idn;
 
 /**
  * IDNLang class of EPP extension
@@ -29,6 +29,10 @@ class IDNLangExtension extends AbstractExtension implements ExtensionInterface
     public function addExtension(string $command, array $data): array
     {
         $language = $data['language'] ?? $this->detectLanguage($data['name']);
+        if ($language === 'END') {
+            return $data;
+        }
+
         $data['extensions'][] = array_filter([
             'command' => "idnLang",
             'language' => strtoupper($language ?? 'RUS'),
@@ -66,7 +70,7 @@ class IDNLangExtension extends AbstractExtension implements ExtensionInterface
      */
     protected function detectLanguage(string $name = null): string
     {
-        return LanguageHelper::getInstance()->detect($name);
+        return idn::detectLang($name);
     }
 
 }
