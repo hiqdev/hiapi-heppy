@@ -33,22 +33,33 @@ class ContactInfoTest extends ContactTestCase
 
         $result = $tool->contactInfo($this->contactData);
 
-        $this->assertSame($result, $this->addMappedCommonSuccessResponse([
+        // parseEPPInfo() prepends first_name / last_name / organization (all null
+        // because the mock response has no int/loc sections).  The remaining keys
+        // follow the order defined in the $returns mapping of contactInfo().
+        $this->assertSame($result, [
+            'first_name'  => null,
+            'last_name'   => null,
+            'organization' => null,
             'epp_id'      => $this->eppId,
-            'name'        => 'WhoisProtectService.net',
             'password'    => 'rQ4&lP7*rZ',
-            'email'       => 'silverfires21.me@whoisprotectservice.net',
             'fax_phone'   => '+357.95713635',
             'voice_phone' => '+357.95713635',
+            'statuses'    => [
+                'ok'     => null,
+                'linked' => null,
+            ],
+            'email'       => 'silverfires21.me@whoisprotectservice.net',
+            'name'        => 'WhoisProtectService.net',
             'country'     => 'CY',
             'city'        => 'Limassol',
             'roid'        => 'C2865751-AGRS',
             'postal_code' => '3025',
             'street1'     => 'Agios Fylaxeos 66 and Chr. Perevou 2, Kalia Court, off. 601',
-            'statuses'    => [
-                'ok'     => null,
-                'linked' => null,
-            ],
-        ]));
+            'result_msg'  => 'Command completed successfully',
+            'result_code' => '1000',
+            'result_lang' => 'en-US',
+            'server_trid' => 'SRW-425500000011746893',
+            'client_trid' => 'AA-00',
+        ]);
     }
 }

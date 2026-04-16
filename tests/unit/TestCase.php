@@ -4,7 +4,8 @@ namespace hiapi\heppy\tests\unit;
 
 use hiapi\heppy\HeppyTool;
 use hiapi\heppy\RabbitMQClient;
-use mrdpBase;
+use hiapi\heppy\tests\unit\Stubs\HeppyBaseStub;
+use hiapi\heppy\tests\unit\Stubs\HeppyToolStub;
 use PHPUnit\Framework\MockObject\MockObject;
 
 class TestCase extends \PHPUnit\Framework\TestCase
@@ -15,58 +16,104 @@ class TestCase extends \PHPUnit\Framework\TestCase
     protected $tool;
 
     /**
-     * @param array $requestData
-     * @param array $responseData
-     * @param array|null $baseMethods
+     * @param array $requestData      (doc-only; not used for strict input matching)
+     * @param array $responseData     default response returned for every EPP command
+     * @param array $baseMethods
+     * @param array $extraResponses   command-specific overrides: ['domain:info' => rawEppArray]
+     *                                Pass \Throwable instances to make that command throw.
      * @return HeppyTool
      */
     public function createTool(
         array $requestData,
         array $responseData,
-        array $baseMethods = [])
-    {
+        array $baseMethods = [],
+        array $extraResponses = []
+    ): HeppyTool {
         $base = $this->mockBase($baseMethods);
-        $client = $this->mockClient($requestData, $responseData);
+        $client = $this->mockClient($requestData, $responseData, $extraResponses);
 
-        $this->tool = new HeppyTool($base, []);
+        $this->tool = new HeppyToolStub($base, []);
         $this->tool->setClient($client);
 
         return $this->tool;
     }
 
     /**
-     * @param array|null $methods
+     * @param array $methods
      * @return MockObject
      */
     protected function mockBase(array $methods = []): MockObject
     {
-        return $this->mockEntity(mrdpBase::class, $methods);
+        return $this->mockEntity(HeppyBaseStub::class, $methods);
     }
 
     /**
-     * @param array $requestData
+     * Create a flexible RabbitMQClient mock.
+     *
+     * Returns $responseData for any EPP command unless an override is provided in
+     * $extraResponses.  Pass a \Throwable as the value to make a specific command
+     * throw instead of returning data — useful to force code paths that catch EPP
+     * errors (e.g. skip contact-info lookups in domainInfo).
+     *
+     * @param array $requestData    (doc-only; not checked)
      * @param array $responseData
+     * @param array $extraResponses
      * @return MockObject
      */
-    protected function mockClient(array $requestData, array $responseData): MockObject
-    {
-        return $this->mockEntity(RabbitMQClient::class, [
-           [
-               'methodName' => 'request',
-               'inputData'  => $requestData,
-               'outputData' => $responseData
-           ]
-        ]);
+    protected function mockClient(
+        array $requestData,
+        array $responseData,
+        array $extraResponses = []
+    ): MockObject {
+        $mock = $this->createMock(RabbitMQClient::class);
+
+        if (empty($extraResponses)) {
+            $mock->method('request')->willReturn($responseData);
+        } else {
+            $mock->method('request')->willReturnCallback(
+                function (array $data) use ($responseData, $extraResponses) {
+                    $command = $data['command'] ?? null;
+                    if (array_key_exists($command, $extraResponses)) {
+                        $override = $extraResponses[$command];
+                        if ($override instanceof \Throwable) {
+                            throw $override;
+                        }
+                        return $override;
+                    }
+                    return $responseData;
+                }
+            );
+        }
+
+        return $mock;
     }
 
     /**
+     * Create a flexible module mock whose configured methods return their
+     * outputData for **any** input (no strict ->with() matching).
+     *
      * @param string $moduleClassName
-     * @param array $methods
+     * @param array  $methods
      * @return MockObject
      */
     protected function mockModule(string $moduleClassName, array $methods): MockObject
     {
-        return $this->mockEntity($moduleClassName, $methods);
+        $builder = $this->getMockBuilder($moduleClassName)
+            ->disableOriginalConstructor();
+
+        $methodNames = $this->getMethodsNames($methods);
+        if (!empty($methodNames)) {
+            $builder->onlyMethods($methodNames);
+        }
+
+        $entity = $builder->getMock();
+
+        foreach ($methods as $method) {
+            $entity->method($method['methodName'])
+                ->willReturn($method['outputData']);
+        }
+
+        return $entity;
     }
 
     /**
@@ -76,10 +123,15 @@ class TestCase extends \PHPUnit\Framework\TestCase
      */
     private function mockEntity(string $entityName, array $methods): MockObject
     {
-        $entity =  $this->getMockBuilder($entityName)
-            ->disableOriginalConstructor()
-            ->setMethods($this->getMethodsNames($methods))
-            ->getMock();
+        $builder = $this->getMockBuilder($entityName)
+            ->disableOriginalConstructor();
+
+        $methodNames = $this->getMethodsNames($methods);
+        if (!empty($methodNames)) {
+            $builder->onlyMethods($methodNames);
+        }
+
+        $entity = $builder->getMock();
 
         foreach ($methods as $method) {
             $entity->method($method['methodName'])
@@ -97,12 +149,42 @@ class TestCase extends \PHPUnit\Framework\TestCase
     private function getMethodsNames(array $methods): array
     {
         $methodNames = [];
-
         foreach ($methods as $method) {
             $methodNames[] = $method['methodName'];
         }
-
         return $methodNames;
+    }
+
+    /**
+     * Minimal raw EPP domain:info response that is safe to use as a stub for
+     * intermediate domainInfo() calls within domainDelete / domainSetNSs / lock
+     * operations. Contains non-empty statuses so domainDisableUpdateProhibited()
+     * doesn't crash, but no lock flags so lock-state checks short-circuit.
+     */
+    protected function getStubDomainInfoEppResponse(array $extra = []): array
+    {
+        return array_merge([
+            'result_code' => '1000',
+            'result_msg'  => 'Command completed successfully',
+            'result_lang' => 'en-US',
+            'svTRID'      => 'SRW-425500000011746893',
+            'clTRID'      => 'AA-00',
+            'statuses'    => ['ok' => 'ok'],
+        ], $extra);
+    }
+
+    /**
+     * Like getStubDomainInfoEppResponse() but with lock statuses set so that
+     * domainDisableLock correctly detects them and removes them.
+     */
+    protected function getLockedDomainInfoEppResponse(): array
+    {
+        return $this->getStubDomainInfoEppResponse([
+            'statuses' => [
+                'clientTransferProhibited' => 'clientTransferProhibited',
+                'clientDeleteProhibited'   => 'clientDeleteProhibited',
+            ],
+        ]);
     }
 
     /**

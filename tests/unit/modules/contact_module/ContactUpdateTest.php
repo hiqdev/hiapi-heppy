@@ -21,8 +21,9 @@ class ContactUpdateTest extends ContactTestCase
 
         $result = $tool->contactUpdate($contactData, $contactInfo);
 
+        // fixContactID() lowercases the id and replaces underscores with hyphens
         $this->assertSame($result, $this->addMappedCommonSuccessResponse([
-            'epp_id' => $this->eppId
+            'epp_id' => 'mr-25844511f',
         ]));
     }
 }
