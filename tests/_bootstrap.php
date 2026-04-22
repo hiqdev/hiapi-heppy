@@ -10,6 +10,7 @@
 
 // Load the root project's Composer autoloader
 $loader = require dirname(__DIR__, 3) . '/autoload.php';
+require_once dirname(__DIR__, 3) . '/yiisoft/yii2/Yii.php';
 
 // Register test namespace manually:
 // autoload-dev of vendor packages is not included in the root project's autoloader
