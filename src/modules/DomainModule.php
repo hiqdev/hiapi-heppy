@@ -154,6 +154,15 @@ class DomainModule extends AbstractModule
         $info['another_registrar'] = $info['epp_client_id'] !== $this->tool->getRegistrar();
         $info = $this->fixStatuses($info);
 
+        if (!empty($info['secDNS'])) {
+            foreach ($info['secDNS'] as &$secDNS) {
+                $secDNS['alg'] = $secDNS['keyAlg'] ?? $secDNS['alg'] ?? null;
+                $secDNS['flags'] = $secDNS['keyFlags'] ?? $secDNS['flags'] ?? null;
+                $secDNS['protocol'] = $secDNS['keyProtocol'] ?? $secDNS['protocol'] ?? null;
+            }
+        }
+
+
         return $this->getContactsInfo($info);
     }
 

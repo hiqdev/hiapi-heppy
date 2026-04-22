@@ -73,6 +73,7 @@ class HeppyTool
         'fee10' => ['urn:ietf:params:xml:ns:epp:fee-1.0', 'version' => '10'],
         'fee23' => ['urn:ietf:params:xml:ns:fee-0.23','version' => '23'],
         'fee21' => ['urn:ietf:params:xml:ns:fee-0.21','version' => '21'],
+        'fee23' => ['urn:ietf:params:xml:ns:fee-0.23','version' => '23'],
         'fee11' => ['urn:ietf:params:xml:ns:fee-0.11','version' => '11'],
         'fee09' => ['urn:ietf:params:xml:ns:fee-0.9', 'version' => '09'],
         'fee08' => ['urn:ietf:params:xml:ns:fee-0.8', 'version' => '08'],
@@ -446,15 +447,19 @@ class HeppyTool
     protected function getClient(): ClientInterface
     {
         if ($this->_client === null) {
-            $this->_client = new RabbitMQClient([
-                [
-                    'host'      => $this->data['url']       ?? null,
-                    'port'      => $this->data['port']      ?? 5672,
-                    'user'      => $this->data['login']     ?? 'guest',
-                    'password'  => $this->data['password']  ?? 'guest',
-                    'vhost'     => $this->data['vhost']     ?? '/',
-                ],
-            ], $this->data['queue'] ?? null);
+            if (!empty($this->data['socket_path'])) {
+                $this->_client = new SocketClient($this->data['socket_path']);
+            } else {
+                $this->_client = new RabbitMQClient([
+                    [
+                        'host'      => $this->data['url']       ?? null,
+                        'port'      => $this->data['port']      ?? 5672,
+                        'user'      => $this->data['login']     ?? 'guest',
+                        'password'  => $this->data['password']  ?? 'guest',
+                        'vhost'     => $this->data['vhost']     ?? '/',
+                    ],
+                ], $this->data['queue'] ?? null);
+            }
         }
 
         return $this->_client;

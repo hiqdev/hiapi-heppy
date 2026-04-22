@@ -11,8 +11,9 @@ class DomainInfoTest extends TestCase
         $domain   = 'silverfires1.me';
         $password = 'adf-AA01';
 
-        // Make contact:info throw so getContactsInfo() skips all contact lookups.
-        // (The catch block inside getContactsInfo() handles any \Throwable.)
+        // Mock returns the new heppy format:
+        // - admin/billing/tech are always lists
+        // - statuses dict uses the status name as value (not null)
         $tool = $this->createTool([
             'name'    => $domain,
             'pw'      => $password,
@@ -31,13 +32,11 @@ class DomainInfoTest extends TestCase
             'pw'         => $password,
             'registrant' => 'MR_25844382',
             'statuses'   => [
-                'inactive'                 => null,
+                'inactive'                 => 'inactive',
                 'serverTransferProhibited' => 'realtime',
             ],
             'exDate'     => '2019-11-09T10:43:04.0Z',
-        ]), [], [
-            'contact:info' => new \Exception('Contact not found'),
-        ]);
+        ]));
 
         $result = $tool->domainInfo([
             'domain'   => $domain,
@@ -45,9 +44,9 @@ class DomainInfoTest extends TestCase
             'id'       => null,
         ]);
 
-        // Dates are formatted to 'Y-m-d H:i:s' by getUTCDateTime()->format().
-        // fixStatuses() expands each (key => value) pair into two entries so that
-        // both the key and the value are individually searchable.
+        // fixStatuses() preserves the new-format dict as-is (key=>value pairs).
+        // Dates are converted to 'Y-m-d H:i:s' by getUTCDateTime()->format().
+        // getContactsInfo() skips contacts when the mock throws on mismatch.
         // another_registrar is true because the mock tool has no 'registrar' data.
         $this->assertSame($result, array_merge([
             'domain'          => $domain,
@@ -66,9 +65,7 @@ class DomainInfoTest extends TestCase
             'epp_client_id'   => 'OTE1186-EP1',
             'statuses'        => [
                 'inactive'                 => 'inactive',
-                'serverTransferProhibited' => 'serverTransferProhibited',
-                ''                         => null,
-                'realtime'                 => 'realtime',
+                'serverTransferProhibited' => 'realtime',
             ],
         ], $this->getMappedCommonSuccessResponse(), [
             'another_registrar' => true,
