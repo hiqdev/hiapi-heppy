@@ -4,11 +4,8 @@ namespace hiapi\heppy\tests\unit\extensions;
 
 use hiapi\heppy\extensions\KeySysExtension;
 use hiapi\heppy\HeppyTool;
-use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-#[AllowMockObjectsWithoutExpectations]
 class KeySysExtensionTest extends TestCase
 {
     private function makeExtension(): KeySysExtension
@@ -36,7 +33,7 @@ class KeySysExtensionTest extends TestCase
         ];
     }
 
-    #[DataProvider('isApplicableProvider')]
+    /** @dataProvider isApplicableProvider */
     public function testIsApplicable(string $command, array $data, bool $expected): void
     {
         $ext = $this->makeExtension();

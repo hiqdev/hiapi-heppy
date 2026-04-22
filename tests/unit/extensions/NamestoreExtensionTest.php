@@ -4,11 +4,8 @@ namespace hiapi\heppy\tests\unit\extensions;
 
 use hiapi\heppy\extensions\NamestoreExtension;
 use hiapi\heppy\HeppyTool;
-use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-#[AllowMockObjectsWithoutExpectations]
 class NamestoreExtensionTest extends TestCase
 {
     private function makeExtension(): NamestoreExtension
@@ -43,7 +40,7 @@ class NamestoreExtensionTest extends TestCase
         ];
     }
 
-    #[DataProvider('isApplicableProvider')]
+    /** @dataProvider isApplicableProvider */
     public function testIsApplicable(string $command, bool $expected): void
     {
         $ext = $this->makeExtension();

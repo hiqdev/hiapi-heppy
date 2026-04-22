@@ -4,11 +4,8 @@ namespace hiapi\heppy\tests\unit\extensions;
 
 use hiapi\heppy\extensions\IDNLangExtension;
 use hiapi\heppy\HeppyTool;
-use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-#[AllowMockObjectsWithoutExpectations]
 class IDNLangExtensionTest extends TestCase
 {
     private function makeExtension(): IDNLangExtension
@@ -31,7 +28,7 @@ class IDNLangExtensionTest extends TestCase
         ];
     }
 
-    #[DataProvider('isApplicableProvider')]
+    /** @dataProvider isApplicableProvider */
     public function testIsApplicable(string $command, string $domain, bool $expected): void
     {
         $ext = $this->makeExtension();
@@ -53,7 +50,7 @@ class IDNLangExtensionTest extends TestCase
         ];
     }
 
-    #[DataProvider('addExtensionProvider')]
+    /** @dataProvider addExtensionProvider */
     public function testAddExtensionDetectsLanguage(string $domain, string $expectedLang): void
     {
         $ext  = $this->makeExtension();

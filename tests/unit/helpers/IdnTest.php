@@ -11,7 +11,6 @@
 namespace hiapi\heppy\tests\unit\helpers;
 
 use hiapi\heppy\helpers\idn;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -22,8 +21,8 @@ class IdnTest extends TestCase
     /**
      * @param string $name
      * @param string $expected
+     * @dataProvider detectLangProvider
      */
-    #[DataProvider('detectLangProvider')]
     public function testDetectLang(string $name, string $expected): void
     {
         $this->assertEquals($expected, idn::detectLang($name));

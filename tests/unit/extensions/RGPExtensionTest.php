@@ -4,11 +4,8 @@ namespace hiapi\heppy\tests\unit\extensions;
 
 use hiapi\heppy\extensions\RGPExtension;
 use hiapi\heppy\HeppyTool;
-use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-#[AllowMockObjectsWithoutExpectations]
 class RGPExtensionTest extends TestCase
 {
     private function makeExtension(): RGPExtension
@@ -35,7 +32,7 @@ class RGPExtensionTest extends TestCase
         ];
     }
 
-    #[DataProvider('isApplicableProvider')]
+    /** @dataProvider isApplicableProvider */
     public function testIsApplicable(string $command, array $data, bool $expected): void
     {
         $ext = $this->makeExtension();

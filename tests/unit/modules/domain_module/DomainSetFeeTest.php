@@ -5,8 +5,6 @@ namespace hiapi\heppy\tests\unit\modules\domain_module;
 use Exception;
 use hiapi\heppy\modules\DomainModule;
 use hiapi\heppy\HeppyTool;
-use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 use yii\caching\CacheInterface;
@@ -17,7 +15,6 @@ use yii\caching\CacheInterface;
  * All tests run without any real registry connection: the cache is stubbed
  * to return controlled domainCheck data; no RabbitMQ/EPP socket is opened.
  */
-#[AllowMockObjectsWithoutExpectations]
 class DomainSetFeeTest extends TestCase
 {
     private string $domain = 'premium.me';
@@ -125,7 +122,7 @@ class DomainSetFeeTest extends TestCase
         ];
     }
 
-    #[DataProvider('renewFeeProvider')]
+    /** @dataProvider renewFeeProvider */
     public function testDomainRenewFeeGuard(string $fee, string $standardPrice, bool $expectException): void
     {
         if ($expectException) {
