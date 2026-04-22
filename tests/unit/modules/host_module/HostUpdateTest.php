@@ -42,7 +42,7 @@ class HostUpdateTest extends TestCase
             'created_by'   => 'OTE1186-EP1',
             'created_date' => '2018-11-22T10:49:18.0Z',
             'statuses'     => [
-                'ok' => null,
+                'ok' => 'ok',
             ],
         ]));
 

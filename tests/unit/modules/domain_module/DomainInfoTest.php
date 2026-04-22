@@ -36,7 +36,10 @@ class DomainInfoTest extends TestCase
                 'serverTransferProhibited' => 'realtime',
             ],
             'exDate'     => '2019-11-09T10:43:04.0Z',
-        ]));
+        ]), [], [
+            // Make contact:info throw so getContactsInfo() skips all contacts
+            'contact:info' => new \Exception('Contact lookup not needed in this test'),
+        ]);
 
         $result = $tool->domainInfo([
             'domain'   => $domain,

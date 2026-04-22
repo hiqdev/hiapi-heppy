@@ -103,7 +103,7 @@ class ContactModule extends AbstractModule
             'disclose'      => 'disclose',
         ], $map));
 
-        return $this->parseEPPInfo($res, $map);
+        return $this->parseEPPInfo($this->fixStatuses($res), $map);
     }
 
     /**

@@ -72,7 +72,7 @@ class HostModule extends AbstractModule
      */
     public function hostInfo(array $row): array
     {
-        return $this->tool->commonRequest("{$this->object}:info", [
+        $info = $this->tool->commonRequest("{$this->object}:info", [
             'name'      => $row['host'],
         ], [
             'host'          => 'name',
@@ -82,6 +82,7 @@ class HostModule extends AbstractModule
             'created_date'  => 'crDate',
             'statuses'      => 'statuses',
         ]);
+        return $this->fixStatuses($info);
     }
 
     /**

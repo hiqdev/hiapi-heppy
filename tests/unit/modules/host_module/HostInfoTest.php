@@ -23,8 +23,8 @@ class HostInfoTest extends TestCase
                 0 => '192.0.1.1',
             ],
             'statuses'    => [
-                'ok'     => null,
-                'linked' => null,
+                'ok'     => 'ok',
+                'linked' => 'linked',
             ],
         ]));
 
@@ -47,8 +47,8 @@ class HostInfoTest extends TestCase
             'created_by'   => 'OTE1186-EP1',
             'created_date' => '2018-11-21T09:55:19.0Z',
             'statuses'     => [
-                'ok'     => null,
-                'linked' => null,
+                'ok'     => 'ok',
+                'linked' => 'linked',
             ],
         ]));
     }
