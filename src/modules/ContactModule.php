@@ -254,9 +254,9 @@ class ContactModule extends AbstractModule
         ];
     }
 
-    private function normalizeStreets(array &$addr, array $info): void
+    private function normalizeStreets(array &$addr): void
     {
-        $streets = $addr['street'] ?? $info['street'] ?? null;
+        $streets = $addr['street'] ?? null;
         if (empty($streets)) {
             return;
         }
@@ -296,7 +296,7 @@ class ContactModule extends AbstractModule
             $first_name = $first_name ?? $org ?? null;
             $last_name = $last_name ?? $org ?? null;
             $addr = $addr ?? ($info[$type]['addr'] ?? null);
-            if ($addr) { $this->normalizeStreets($addr, $info[$type]); }
+            if ($addr) { $this->normalizeStreets($addr); break; }
         }
 
         // Flat format: heppy flattens postalInfo fields into the response root
