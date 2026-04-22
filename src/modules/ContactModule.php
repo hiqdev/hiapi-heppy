@@ -254,6 +254,24 @@ class ContactModule extends AbstractModule
         ];
     }
 
+    private function normalizeStreets(array &$addr, array $info): void
+    {
+        $streets = $addr['street'] ?? $info['street'] ?? null;
+        if (empty($streets)) {
+            return;
+        }
+
+        if (is_string($streets)) {
+            $streets = [$streets];
+        }
+
+        foreach (['street1', 'street2', 'street3'] as $i => $key) {
+            if (!empty($streets[$i])) {
+                $addr[$key] = $streets[$i];
+            }
+        }
+    }
+
     private function parseEPPInfo(array $info, array $map): array
     {
         $first_name = null;
@@ -278,6 +296,7 @@ class ContactModule extends AbstractModule
             $first_name = $first_name ?? $org ?? null;
             $last_name = $last_name ?? $org ?? null;
             $addr = $addr ?? ($info[$type]['addr'] ?? null);
+            if ($addr) { $this->normalizeStreets($addr, $info[$type]); }
         }
 
         // Flat format: heppy flattens postalInfo fields into the response root
@@ -287,7 +306,6 @@ class ContactModule extends AbstractModule
             } else {
                 $first_name = $info['name'];
             }
-            $last_name = $last_name ?? $first_name;
         }
 
         $data = [];

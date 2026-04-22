@@ -160,6 +160,7 @@ class DomainModule extends AbstractModule
                 $secDNS['flags'] = $secDNS['keyFlags'] ?? $secDNS['flags'] ?? null;
                 $secDNS['protocol'] = $secDNS['keyProtocol'] ?? $secDNS['protocol'] ?? null;
             }
+            unset($secDNS);
         }
 
 
@@ -674,7 +675,7 @@ class DomainModule extends AbstractModule
 
         $info = $this->domainInfo($row);
 
-        if (empty($info['statuses']['pendingRestore']) && !in_array('rgp', $info['statuses'], true) && !in_array('pendingDelete', $info['statuses'], true)) {
+        if (!array_key_exists('pendingRestore', $info['statuses']) && !array_key_exists('rgp', $info['statuses']) && !array_key_exists('pendingDelete', $info['statuses'])) {
             return $row;
         }
 

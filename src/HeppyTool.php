@@ -74,7 +74,6 @@ class HeppyTool
         'fee23' => ['urn:ietf:params:xml:ns:fee-0.23','version' => '23'],
         'fee21' => ['urn:ietf:params:xml:ns:fee-0.21','version' => '21'],
         'fee23' => ['urn:ietf:params:xml:ns:fee-0.23','version' => '23'],
-        'fee11' => ['urn:ietf:params:xml:ns:fee-0.11','version' => '11'],
         'fee09' => ['urn:ietf:params:xml:ns:fee-0.9', 'version' => '09'],
         'fee08' => ['urn:ietf:params:xml:ns:fee-0.8', 'version' => '08'],
         'fee07' => ['urn:ietf:params:xml:ns:fee-0.7', 'version' => '07'],
@@ -319,15 +318,27 @@ class HeppyTool
         return $this->helloData;
     }
 
+    private function getCacheKey(array $key): array
+    {
+        if (!empty($this->data['socket_path'])) {
+            $key[] = $this->data['socket_path'];
+        }
+        if (!empty($this->data['queue'])) {
+            $key[] = $this->data['queue'];
+        }
+
+        return $key;
+    }
+
     public function requestHello(int $tries = 0): ?array
     {
-        $res = $this->cache->getOrSet(['epp:hello', $this->getRegistrar(), $this->data['queue']], function() {
+        $res = $this->cache->getOrSet($this->getCacheKey(['epp:hello', $this->getRegistrar()]), function() {
             return $this->request('epp:hello', []);
         }, 60 * 60 * 24);
 
         if (empty($res)) {
             if ($tries < 2) {
-                $this->cache->delete(['epp:hello', $this->getRegistrar(), $this->data['queue']]);
+                $this->cache->delete($this->getCacheKey(['epp:hello', $this->getRegistrar()]));
                 return $this->requestHello(++$tries);
             } else {
                 throw new EppErrorException('could not get message from EPP');
