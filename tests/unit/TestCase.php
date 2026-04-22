@@ -16,21 +16,23 @@ class TestCase extends \PHPUnit\Framework\TestCase
     protected $tool;
 
     /**
-     * @param array $requestData      (doc-only; not used for strict input matching)
+     * @param array $requestData
      * @param array $responseData     default response returned for every EPP command
      * @param array $baseMethods
      * @param array $extraResponses   command-specific overrides: ['domain:info' => rawEppArray]
      *                                Pass \Throwable instances to make that command throw.
+     * @param bool $loose             If true, mockClient will not strictly match requestData
      * @return HeppyTool
      */
     public function createTool(
         array $requestData,
         array $responseData,
         array $baseMethods = [],
-        array $extraResponses = []
+        array $extraResponses = [],
+        bool $loose = true
     ): HeppyTool {
         $base = $this->mockBase($baseMethods);
-        $client = $this->mockClient($requestData, $responseData, $extraResponses);
+        $client = $this->mockClient($requestData, $responseData, $extraResponses, $loose);
 
         $this->tool = new HeppyToolStub($base, []);
         $this->tool->setClient($client);
@@ -55,17 +57,24 @@ class TestCase extends \PHPUnit\Framework\TestCase
      * throw instead of returning data — useful to force code paths that catch EPP
      * errors (e.g. skip contact-info lookups in domainInfo).
      *
-     * @param array $requestData    (doc-only; not checked)
+     * @param array $requestData
      * @param array $responseData
      * @param array $extraResponses
+     * @param bool $loose
      * @return MockObject
      */
     protected function mockClient(
         array $requestData,
         array $responseData,
-        array $extraResponses = []
+        array $extraResponses = [],
+        bool $loose = true
     ): MockObject {
         $mock = $this->createMock(RabbitMQClient::class);
+
+        if (!$loose && !empty($requestData)) {
+            $mock->expects($this->once())->method('request')->with($requestData)->willReturn($responseData);
+            return $mock;
+        }
 
         if (empty($extraResponses)) {
             $mock->method('request')->willReturn($responseData);
@@ -89,14 +98,14 @@ class TestCase extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * Create a flexible module mock whose configured methods return their
-     * outputData for **any** input (no strict ->with() matching).
+     * Create a module mock.
      *
      * @param string $moduleClassName
-     * @param array  $methods
+     * @param array  $methods         Each entry can have 'methodName', 'outputData' and optional 'inputData'
+     * @param bool   $loose           If true, will not strictly match inputData even if present
      * @return MockObject
      */
-    protected function mockModule(string $moduleClassName, array $methods): MockObject
+    protected function mockModule(string $moduleClassName, array $methods, bool $loose = true): MockObject
     {
         $builder = $this->getMockBuilder($moduleClassName)
             ->disableOriginalConstructor();
@@ -109,8 +118,11 @@ class TestCase extends \PHPUnit\Framework\TestCase
         $entity = $builder->getMock();
 
         foreach ($methods as $method) {
-            $entity->method($method['methodName'])
-                ->willReturn($method['outputData']);
+            $m = $entity->method($method['methodName']);
+            if (!$loose && isset($method['inputData'])) {
+                $m->with($method['inputData']);
+            }
+            $m->willReturn($method['outputData']);
         }
 
         return $entity;
