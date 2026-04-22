@@ -49,8 +49,12 @@ class SocketClient implements ClientInterface
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new RuntimeException('Failed to decode JSON: ' . json_last_error_msg() . '. Payload: ' . $response);
         }
+        
+        if (!is_array($decoded)) {
+            throw new RuntimeException('Decoded JSON is not an array. Payload: ' . $response);
+        }
 
-        return $decoded ?? [];
+        return $decoded;
     }
 
     private function connect(): \Socket
