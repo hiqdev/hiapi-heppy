@@ -4,8 +4,11 @@ namespace hiapi\heppy\tests\unit\extensions;
 
 use hiapi\heppy\extensions\PriceExtension;
 use hiapi\heppy\HeppyTool;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
+#[AllowMockObjectsWithoutExpectations]
 class PriceExtensionTest extends TestCase
 {
     private function makeExtension(string $currency = 'USD'): PriceExtension
@@ -33,7 +36,7 @@ class PriceExtensionTest extends TestCase
         ];
     }
 
-    /** @dataProvider isApplicableProvider */
+    #[DataProvider('isApplicableProvider')]
     public function testIsApplicable(string $command, array $data, bool $expected): void
     {
         $ext = $this->makeExtension();
