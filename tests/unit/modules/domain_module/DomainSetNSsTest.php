@@ -29,6 +29,7 @@ class DomainSetNSsTest extends TestCase
                     'nss'        => [
                         'ns3.silverfires1.me',
                     ],
+                    'statuses'   => ['ok' => 'ok'],
                     'result_msg' => 'Command completed successfully',
                 ],
             ],

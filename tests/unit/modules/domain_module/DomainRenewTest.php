@@ -10,6 +10,11 @@ class DomainRenewTest extends TestCase
     {
         $domain = 'silverfires1.me';
 
+        // domain:check is called by _domainSetFee(); return a non-premium result
+        $domainCheckResponse = $this->addCommonSuccessResponse([
+            'avails' => [$domain => '1'],
+        ]);
+
         $tool = $this->createTool([
             'name'          => $domain,
             'curExpDate'    => '2019-11-09',
@@ -18,20 +23,22 @@ class DomainRenewTest extends TestCase
         ], $this->addCommonSuccessResponse([
             'name'          => 'silverfires1.me',
             'exDate'        => '2020-11-09T10:43:04.0Z',
-        ]));
+        ]), [], [
+            'domain:check' => $domainCheckResponse,
+        ]);
 
         $result = $tool->domainRenew([
             'domain'        => $domain,
             'amount'        => '1',
             'period'        => '1',
             'expires'       => '2019-11-09',
-            'coupon'        => NULL,
+            'coupon'        => null,
             'id'            => 25844450,
             'type'          => 'drenewal',
             'object'        => 'domain',
             'client_id'     => '2024202',
             'seller_id'     => '1004697',
-            'expires_time'  => NULL,
+            'expires_time'  => '2019-11-09',   // must be a string, not null
         ]);
 
         $this->assertSame($result, $this->addMappedCommonSuccessResponse([

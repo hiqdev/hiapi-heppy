@@ -73,7 +73,7 @@ class HeppyTool
         'fee10' => ['urn:ietf:params:xml:ns:epp:fee-1.0', 'version' => '10'],
         'fee23' => ['urn:ietf:params:xml:ns:fee-0.23','version' => '23'],
         'fee21' => ['urn:ietf:params:xml:ns:fee-0.21','version' => '21'],
-        'fee11' => ['urn:ietf:params:xml:ns:fee-0.11','version' => '11'],
+        'fee23' => ['urn:ietf:params:xml:ns:fee-0.23','version' => '23'],
         'fee09' => ['urn:ietf:params:xml:ns:fee-0.9', 'version' => '09'],
         'fee08' => ['urn:ietf:params:xml:ns:fee-0.8', 'version' => '08'],
         'fee07' => ['urn:ietf:params:xml:ns:fee-0.7', 'version' => '07'],
@@ -268,6 +268,10 @@ class HeppyTool
                 }
 
                 $feeExts = true;
+
+                if ($this->getSvID() === 'Verisign CTLD EPP Registration Server') {
+                    continue ;
+                }
             }
 
             $extension = $this->extURNClasses[$name];
@@ -314,15 +318,27 @@ class HeppyTool
         return $this->helloData;
     }
 
+    private function getCacheKey(array $key): array
+    {
+        if (!empty($this->data['socket_path'])) {
+            $key[] = $this->data['socket_path'];
+        }
+        if (!empty($this->data['queue'])) {
+            $key[] = $this->data['queue'];
+        }
+
+        return $key;
+    }
+
     public function requestHello(int $tries = 0): ?array
     {
-        $res = $this->cache->getOrSet(['epp:hello', $this->getRegistrar(), $this->data['queue']], function() {
+        $res = $this->cache->getOrSet($this->getCacheKey(['epp:hello', $this->getRegistrar()]), function() {
             return $this->request('epp:hello', []);
         }, 60 * 60 * 24);
 
         if (empty($res)) {
             if ($tries < 2) {
-                $this->cache->delete(['epp:hello', $this->getRegistrar(), $this->data['queue']]);
+                $this->cache->delete($this->getCacheKey(['epp:hello', $this->getRegistrar()]));
                 return $this->requestHello(++$tries);
             } else {
                 throw new EppErrorException('could not get message from EPP');
@@ -442,15 +458,19 @@ class HeppyTool
     protected function getClient(): ClientInterface
     {
         if ($this->_client === null) {
-            $this->_client = new RabbitMQClient([
-                [
-                    'host'      => $this->data['url']       ?? null,
-                    'port'      => $this->data['port']      ?? 5672,
-                    'user'      => $this->data['login']     ?? 'guest',
-                    'password'  => $this->data['password']  ?? 'guest',
-                    'vhost'     => $this->data['vhost']     ?? '/',
-                ],
-            ], $this->data['queue'] ?? null);
+            if (!empty($this->data['socket_path'])) {
+                $this->_client = new SocketClient($this->data['socket_path']);
+            } else {
+                $this->_client = new RabbitMQClient([
+                    [
+                        'host'      => $this->data['url']       ?? null,
+                        'port'      => $this->data['port']      ?? 5672,
+                        'user'      => $this->data['login']     ?? 'guest',
+                        'password'  => $this->data['password']  ?? 'guest',
+                        'vhost'     => $this->data['vhost']     ?? '/',
+                    ],
+                ], $this->data['queue'] ?? null);
+            }
         }
 
         return $this->_client;

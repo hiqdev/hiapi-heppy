@@ -80,7 +80,9 @@ class ContactModule extends AbstractModule
             'org'           => 'org',
             'roid'          => 'roid',
             'postal_code'   => 'pc',
-            'street1'       => 'street',
+            'street1'       => 'street1',
+            'street2'       => 'street2',
+            'street3'       => 'street3',
             'province'      => 'sp',
             'password'      => 'pw',
         ];
@@ -101,7 +103,7 @@ class ContactModule extends AbstractModule
             'disclose'      => 'disclose',
         ], $map));
 
-        return $this->parseEPPInfo($res, $map);
+        return $this->parseEPPInfo($this->fixStatuses($res), $map);
     }
 
     /**
@@ -252,16 +254,39 @@ class ContactModule extends AbstractModule
         ];
     }
 
+    private function normalizeStreets(array &$addr): void
+    {
+        $streets = $addr['street'] ?? null;
+        if (empty($streets)) {
+            return;
+        }
+
+        if (is_string($streets)) {
+            $streets = [$streets];
+        }
+
+        foreach (['street1', 'street2', 'street3'] as $i => $key) {
+            if (!empty($streets[$i])) {
+                $addr[$key] = $streets[$i];
+            }
+        }
+    }
+
     private function parseEPPInfo(array $info, array $map): array
     {
+        $first_name = null;
+        $last_name = null;
+        $org = null;
+        $addr = null;
+
         foreach (['int', 'loc'] as $type) {
             if (empty($info[$type])) {
                 continue;
             }
 
-            if (isset($info[$type]['name']) && empty($first_name)) {
-                if (strpos($info[$type]['name'], " ") !== false) {
-                    [$first_name, $last_name] = explode(" ", $info[$type]['name'] ?? '', 2);
+            if (isset($info[$type]['name']) && $first_name === null) {
+                if (strpos($info[$type]['name'], ' ') !== false) {
+                    [$first_name, $last_name] = explode(' ', $info[$type]['name'], 2);
                 } else {
                     $first_name = $info[$type]['name'];
                 }
@@ -271,9 +296,22 @@ class ContactModule extends AbstractModule
             $first_name = $first_name ?? $org ?? null;
             $last_name = $last_name ?? $org ?? null;
             $addr = $addr ?? ($info[$type]['addr'] ?? null);
+            if ($addr) { $this->normalizeStreets($addr); break; }
         }
 
-        $data['organization'] = $org ?? null;
+        // Flat format: heppy flattens postalInfo fields into the response root
+        if ($first_name === null && !empty($info['name'])) {
+            if (strpos($info['name'], ' ') !== false) {
+                [$first_name, $last_name] = explode(' ', $info['name'], 2);
+            } else {
+                $first_name = $info['name'];
+            }
+        }
+
+        $data = [];
+        $data['organization'] = $org ?? ($info['org'] ?? null);
+
+        // Extract fields from nested addr (backward compat)
         foreach ($map as $api => $epp) {
             if (isset($addr[$epp])) {
                 $data[$api] = $addr[$epp];
@@ -282,7 +320,7 @@ class ContactModule extends AbstractModule
 
         return array_merge([
             'first_name' => $first_name,
-            'last_name' => $last_name,
+            'last_name'  => $last_name,
         ], $data, $info);
     }
 
