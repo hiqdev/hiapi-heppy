@@ -34,7 +34,7 @@ class KeySysExtension extends AbstractExtension implements ExtensionInterface
 
     public function addExtension(string $command, array $data): array
     {
-        if (empty($data['keysys'])) {
+        if (empty($data['keysys']) || !is_array($data['keysys'])) {
             return $data;
         }
 
