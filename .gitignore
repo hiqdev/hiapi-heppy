@@ -16,6 +16,9 @@
 .idea
 .project
 .settings
+.claude
+.phpunit.result.cache
+
 Thumbs.db
 nbproject
 
