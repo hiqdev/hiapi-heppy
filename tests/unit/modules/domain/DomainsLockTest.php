@@ -31,22 +31,21 @@ class DomainsLockTest extends TestCase
 
     public function testDomainsEnableLock()
     {
+        // domain:info is fetched inside domainUpdateStatuses to read current statuses.
+        // Return a response with no lock flags so all locks are added.
         $tool = $this->createTool([
             'name'    => $this->domain,
             'command' => 'domain:update',
-            'add'     => [
-                'statuses' => [
-                    'clientDeleteProhibited'   => null,
-                    'clientTransferProhibited' => null,
-                ],
-            ],
-        ], $this->getCommonSuccessResponse());
+        ], $this->getCommonSuccessResponse(), [], [
+            'domain:info' => $this->getStubDomainInfoEppResponse(),
+        ]);
 
         $result = $tool->domainsEnableLock($this->getApiData());
 
+        // domainUpdateStatuses strips 'id' from the row before calling domainUpdate,
+        // so the result only contains 'domain' plus the common EPP success fields.
         $this->assertSame($result, [
             $this->id => $this->addMappedCommonSuccessResponse([
-                'id'     => $this->id,
                 'domain' => $this->domain,
             ]),
         ]);
@@ -54,23 +53,18 @@ class DomainsLockTest extends TestCase
 
     public function testDomainsDisableLock()
     {
+        // domain:info must report existing lock statuses so they are removed.
         $tool = $this->createTool([
             'name' => $this->domain,
             'command' => 'domain:update',
-            'rem'  => [
-                'statuses' => [
-                    'clientUpdateProhibited'   => null,
-                    'clientDeleteProhibited'   => null,
-                    'clientTransferProhibited' => null,
-                ],
-            ],
-        ], $this->getCommonSuccessResponse());
+        ], $this->getCommonSuccessResponse(), [], [
+            'domain:info' => $this->getLockedDomainInfoEppResponse(),
+        ]);
 
         $result = $tool->domainsDisableLock($this->getApiData());
 
         $this->assertSame($result, [
             $this->id => $this->addMappedCommonSuccessResponse([
-                'id'     => $this->id,
                 'domain' => $this->domain,
             ]),
         ]);

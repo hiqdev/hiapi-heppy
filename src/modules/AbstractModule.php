@@ -227,17 +227,23 @@ class AbstractModule
         }
 
         $statuses = is_array($info['statuses']) ? $info['statuses'] : explode(',', $info['statuses']);
+        $normalized = [];
 
         foreach ($statuses as $k => $v) {
-            if ($v === 'Spam') {
-                $statuses[$k] = is_string($k) ? $k : 'serverHold';
+            if (is_int($k)) {
+                // Flat list format: ['ok', 'serverHold']
+                $name = ($v === 'Spam') ? 'serverHold' : $v;
+                $normalized[$name] = $name;
+            } elseif ($v === 'Spam') {
+                // 'Spam' is a registrar-specific alias for serverHold
+                $normalized[$k] = $k;
             } else {
-                $statuses[$k] = $k;
-                $statuses[$v] = $v;
+                // Dict format: ['ok' => 'ok'] or ['serverTransferProhibited' => 'realtime']
+                $normalized[$k] = $v;
             }
         }
 
-        $info['statuses'] = $statuses;
+        $info['statuses'] = $normalized;
 
         return $info;
     }

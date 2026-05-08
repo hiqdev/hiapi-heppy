@@ -11,7 +11,6 @@
 namespace hiapi\heppy\extensions;
 
 use hiapi\heppy\interfaces\ExtensionInterface;
-use hiapi\heppy\helpers\LanguageHelper;
 
 /**
  * IDNLang class of EPP extension

@@ -12,9 +12,9 @@ class ContactTestCase extends TestCase
 
     protected $changedData;
 
-    public function __construct()
+    protected function setUp(): void
     {
-        parent::__construct();
+        parent::setUp();
         $this->contactData = $this->getContactData();
         $this->changedData = $this->getChangedData();
     }

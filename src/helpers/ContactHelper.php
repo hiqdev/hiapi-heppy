@@ -11,7 +11,7 @@
 namespace hiapi\heppy\helpers;
 
 /**
- * LanguageHelper
+ * ContactHelper
  * Find right language code for domain name
  */
 final class ContactHelper

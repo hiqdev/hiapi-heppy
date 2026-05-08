@@ -74,7 +74,7 @@ abstract class AbstractExtension
      * @param string|null $name
      * @return null|string
      */
-    protected function findZone(string $command, array $data, string $name = null): ?string
+    protected function findZone(string $command, array $data, ?string $name = null): ?string
     {
         if (isset($data['zone'])) {
             return $data['zone'];
@@ -90,7 +90,7 @@ abstract class AbstractExtension
      * @param string|null $name
      * @return null|string
      */
-    protected function findFullZone(string $command, array $data, string $name = null): ?string
+    protected function findFullZone(string $command, array $data, ?string $name = null): ?string
     {
         if (isset($data['zone'])) {
             return $data['zone'];
@@ -108,7 +108,7 @@ abstract class AbstractExtension
      * @param string $name
      * @return null|string
      */
-    protected function findName(string $command, array $data, string $name = null): ?string
+    protected function findName(string $command, array $data, ?string $name = null): ?string
     {
         $parts = $this->getNamesParts($data, $name);
 
@@ -120,7 +120,7 @@ abstract class AbstractExtension
      * @param string $name
      * @return array
      */
-    protected function getNamesParts(array $data, string $name = null): ?array
+    protected function getNamesParts(array $data, ?string $name = null): ?array
     {
         if (!$name && isset($data['domain'])) {
             $name = $data['domain'];

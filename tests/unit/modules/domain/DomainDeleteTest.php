@@ -13,7 +13,9 @@ class DomainDeleteTest extends TestCase
         $tool = $this->createTool([
             'name'      => $domain,
             'command'   => 'domain:delete',
-        ], $this->getCommonSuccessResponse());
+        ], $this->getCommonSuccessResponse(), [], [
+            'domain:info' => $this->getStubDomainInfoEppResponse(),
+        ]);
 
         $result = $tool->domainDelete([
             'domain'    => $domain,

@@ -154,6 +154,16 @@ class DomainModule extends AbstractModule
         $info['another_registrar'] = $info['epp_client_id'] !== $this->tool->getRegistrar();
         $info = $this->fixStatuses($info);
 
+        if (!empty($info['secDNS'])) {
+            foreach ($info['secDNS'] as &$secDNS) {
+                $secDNS['alg'] = $secDNS['keyAlg'] ?? $secDNS['alg'] ?? null;
+                $secDNS['flags'] = $secDNS['keyFlags'] ?? $secDNS['flags'] ?? null;
+                $secDNS['protocol'] = $secDNS['keyProtocol'] ?? $secDNS['protocol'] ?? null;
+            }
+            unset($secDNS);
+        }
+
+
         return $this->getContactsInfo($info);
     }
 
@@ -228,7 +238,7 @@ class DomainModule extends AbstractModule
         $zone = $this->getZone($row);
         $row = $this->_domainSetFee($row, 'create');
 
-        if (!empty($row['fee']) && floatval((string) $row['fee']) > floatval((string) $row['standart_price'])) {
+        if (!empty($row['fee']) && floatval((string) $row['fee']) > floatval((string) $row['standard_price'])) {
             throw new Exception($row['reason']);
         }
 
@@ -361,7 +371,7 @@ class DomainModule extends AbstractModule
     {
         $row = $this->_domainSetFee($row, 'renew');
 
-        if (!empty($row['fee']) && floatval((string) $row['fee']) > floatval((string) $row['standart_price'])) {
+        if (!empty($row['fee']) && floatval((string) $row['fee']) > floatval((string) $row['standard_price'])) {
             throw new Exception($row['reason']);
         }
 
@@ -437,7 +447,7 @@ class DomainModule extends AbstractModule
     public function domainTransfer(array $row): array
     {
         $row = $this->_domainSetFee($row, 'transfer');
-        if (!empty($row['fee']) && floatval((string) $row['fee']) > floatval((string) $row['standart_price'])) {
+        if (!empty($row['fee']) && floatval((string) $row['fee']) > floatval((string) $row['standard_price'])) {
             throw new Exception($row['reason']);
         }
 
@@ -665,7 +675,7 @@ class DomainModule extends AbstractModule
 
         $info = $this->domainInfo($row);
 
-        if (empty($info['statuses']['pendingRestore']) && !in_array('rgp', $info['statuses'], true) && !in_array('pendingDelete', $info['statuses'], true)) {
+        if (!array_key_exists('pendingRestore', $info['statuses']) && !array_key_exists('rgp', $info['statuses']) && !array_key_exists('pendingDelete', $info['statuses'])) {
             return $row;
         }
 
@@ -922,7 +932,7 @@ class DomainModule extends AbstractModule
         }
 
         $fee = $data['fee']['fee'] ?? $data['fee'][$op] ?? null;
-        if ($fee  == $row['standart_price'] && in_array($op, ['renew', 'transfer'], true)) {
+        if (floatval((string) $fee) <= floatval((string) $row['standard_price']) && in_array($op, ['renew', 'transfer'], true)) {
             return array_merge($row, array_filter([
                 'fee' => $fee,
                 'category' => $data['category'],

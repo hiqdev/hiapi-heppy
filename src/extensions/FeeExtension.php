@@ -24,7 +24,7 @@ class FeeExtension extends AbstractExtension implements ExtensionInterface
             'check' => ['*' => true],
             'create' => ['*' => true],
             'renew' => ['*' => true],
-            'transfer' => ['request' => true, 'query' => 'true'],
+            'transfer' => ['request' => true, 'query' => true],
             // 'update' => ['restore' => true],
             // 'restore' => ['*' => true],
         ],
@@ -59,6 +59,7 @@ class FeeExtension extends AbstractExtension implements ExtensionInterface
             'currency' => strtoupper($this->tool->getCurrency() ?? 'USD'),
             'fee' => $data['fee'] ?? null,
             'period' => $data['period'] ?? ($data['amount'] ?? 1),
+            'unit' => $data['unit'] ?? 'y',
             'action' => $data['fee-action'] ?? ($command === 'domain:check' ? 'create' : substr($command, 7)),
         ]);
 
