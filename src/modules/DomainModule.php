@@ -570,13 +570,10 @@ class DomainModule extends AbstractModule
      */
     public function domainSetPassword(array $row): array
     {
-        $info = $this->domainInfo(['domain' => $row['domain']]);
-
-        $row = $this->prepareDataForUpdate($row, $info, [
-            'password' => 'pw',
+        return $this->domainUpdate([
+            'domain' => $row['domain'],
+            'chg'    => ['pw' => $row['password']],
         ]);
-
-        return $this->domainUpdate($row);
     }
 
     /**
