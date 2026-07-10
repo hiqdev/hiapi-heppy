@@ -1,6 +1,6 @@
 <?php
 
-namespace hiapi\heppy\tests\unit\modules\domain_module;
+namespace hiapi\heppy\tests\unit\modules\domain;
 
 use Exception;
 use hiapi\heppy\modules\DomainModule;
