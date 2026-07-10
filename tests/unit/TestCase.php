@@ -43,7 +43,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
      */
     protected function mockBase(?array $methods = null): MockObject
     {
-        return $this->mockEntity(HeppyBaseStub::class, $methods);
+        return $this->mockEntity(HeppyBaseStub::class, $methods ?? []);
     }
 
     /**
