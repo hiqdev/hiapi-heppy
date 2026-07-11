@@ -77,7 +77,7 @@ class DomainModule extends AbstractModule
     {
         try {
             $info =  $this->tool->commonRequest("{$this->object}:info", array_filter([
-                'name'      => $row['domain'],
+                'name'      => $row['domain'] ?? null,
                 'pw'        => $row['password'] ?? null,
             ], $this->getFilterCallback()), [
                 'domain'            => 'name',
@@ -151,7 +151,7 @@ class DomainModule extends AbstractModule
             }
         }
 
-        $info['another_registrar'] = $info['epp_client_id'] !== $this->tool->getRegistrar();
+        $info['another_registrar'] = ($info['epp_client_id'] ?? null) !== $this->tool->getRegistrar();
         $info = $this->fixStatuses($info);
 
         if (!empty($info['secDNS'])) {
@@ -336,14 +336,13 @@ class DomainModule extends AbstractModule
 
         $this->domainDisableLock($info);
         return $this->tool->commonRequest("{$this->object}:delete", array_filter([
-            'name'     => $row['domain'],
-            $this->isKeySysExtensionEnabled() !== true || empty($this->KeySYSDelete[$this->getDomainTopZone($row['domain'])])
+            'name'   => $row['domain'],
+            'keysys' => ($this->isKeySysExtensionEnabled() !== true || empty($this->KeySYSDelete[$this->getDomainTopZone($row['domain'])]))
                 ? null
-                : 'keysys' => [
+                : [
                     'command' => 'keysys:delete',
                     'target' => $this->KeySYSDelete[$this->getDomainTopZone($row['domain'])] ?? null,
                 ],
-
             ])
         );
     }
@@ -572,6 +571,7 @@ class DomainModule extends AbstractModule
     {
         return $this->domainUpdate([
             'domain' => $row['domain'],
+            'id'     => $row['id'] ?? null,
             'chg'    => ['pw' => $row['password']],
         ]);
     }
@@ -986,8 +986,8 @@ class DomainModule extends AbstractModule
             'curExpDate'    => $row['expires'],
             'period'        => $row['period'],
             'fee'           => $row['fee'] ?? null,
-            'category'      => $row['category'],
-            'category_name' => $row['category_name'],
+            'category'      => $row['category'] ?? null,
+            'category_name' => $row['category_name'] ?? null,
         ]), array_filter([
             'domain'            => 'name',
             'expiration_date'   => 'exDate',
@@ -1024,7 +1024,7 @@ class DomainModule extends AbstractModule
      * @param array $row
      * @return array
      */
-    private function domainUpdate(array $row, array $keysys = null, array $neulevel = null): array
+    private function domainUpdate(array $row, ?array $keysys = null, ?array $neulevel = null): array
     {
         $data = array_filter([
             'add'       => $row['add'] ?? null,

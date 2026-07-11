@@ -31,7 +31,7 @@ class HostModule extends AbstractModule
         ]);
 
         return [
-            'avail' => $res['avails'][$row['host']],
+            'avail' => $res['avails'][$row['host']] ?? null,
         ];
     }
 
@@ -90,7 +90,7 @@ class HostModule extends AbstractModule
      * @param array $info
      * @return array
      */
-    public function hostUpdate(array $row, array $info = null): array
+    public function hostUpdate(array $row, ?array $info = null): array
     {
         if (empty($info)) {
             $info = $this->hostInfo($row);

@@ -3,12 +3,14 @@
 namespace hiapi\heppy\tests\unit\modules\domain;
 
 use hiapi\heppy\tests\unit\TestCase;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 
 /**
  * domainsCheck() now iterates domains one-by-one via domainCheck(), which itself
  * makes two _domainCheck() calls per domain.  The result is a map of
  * domain → per-domain check result, not the old combined avails/reasons array.
  */
+#[AllowMockObjectsWithoutExpectations]
 class DomainsCheckTest extends TestCase
 {
     public function testDomainsCheck()

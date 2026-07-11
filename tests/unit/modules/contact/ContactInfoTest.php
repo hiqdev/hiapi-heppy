@@ -2,6 +2,9 @@
 
 namespace hiapi\heppy\tests\unit\modules\contact;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+
+#[AllowMockObjectsWithoutExpectations]
 class ContactInfoTest extends ContactTestCase
 {
     public function testContactInfo()

@@ -3,7 +3,9 @@
 namespace hiapi\heppy\tests\unit\modules\domain;
 
 use hiapi\heppy\tests\unit\TestCase;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 
+#[AllowMockObjectsWithoutExpectations]
 class DomainTransferTest extends TestCase
 {
     public function testDomainTransfer()
