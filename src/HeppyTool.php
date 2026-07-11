@@ -200,7 +200,9 @@ class HeppyTool
 
     public function getRegistrar() : ?string
     {
-        return (string) ($this->data['registrar'] ?? null);
+        $registrar = $this->data['registrar'] ?? null;
+
+        return $registrar === null ? null : (string) $registrar;
     }
 
     public function getContract() : ?string
