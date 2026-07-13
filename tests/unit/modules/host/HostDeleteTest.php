@@ -1,9 +1,11 @@
 <?php
 
-namespace hiapi\heppy\tests\unit\modules\host_module;
+namespace hiapi\heppy\tests\unit\modules\host;
 
 use hiapi\heppy\tests\unit\TestCase;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 
+#[AllowMockObjectsWithoutExpectations]
 class HostDeleteTest extends TestCase
 {
     public function testHostDelete()

@@ -136,7 +136,7 @@ class ContactModule extends AbstractModule
                 'pc'        => !empty($row['postal_code'])  ? substr($row['postal_code'], 0, 15) : null,
                 'sp'        => $row['province']     ?? null,
                 'pw'        => $row['password'] ?: $this->generatePassword(16, $addsymbols),
-                'disclose'  => $disclose !== false ? ($row['whois_protected'] ? '0' : '1') : null,
+                'disclose'  => $disclose !== false ? (($row['whois_protected'] ?? null) ? '0' : '1') : null,
                 'domain'    => $row['domain'] ?? null,
                 'neulevel'  => $this->setNexusData($row),
             ], $this->getFilterCallback()), [
@@ -249,7 +249,7 @@ class ContactModule extends AbstractModule
                 'street3'   => $local['street3'] ?? null,
                 'sp'        => $local['province'] ?? null,
                 'pw'        => $local['password'] ?? '/1yIv!QaQ(6U',
-                'disclose'  => $disclose !== false ? (strval((int) (!$local['whois_protected']))) : null,
+                'disclose'  => $disclose !== false ? (strval((int) (!($local['whois_protected'] ?? null)))) : null,
             ], function($v) {return !is_null($v);}),
         ];
     }

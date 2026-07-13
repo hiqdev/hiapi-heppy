@@ -18,6 +18,7 @@
 .settings
 .claude
 .phpunit.result.cache
+.phpunit.cache
 
 Thumbs.db
 nbproject

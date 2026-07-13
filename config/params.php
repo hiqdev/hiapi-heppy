@@ -9,7 +9,7 @@
  */
 
 return [
-    'hiapi.heppy.rabbitmq.host'     => 'localhost',
+    'hiapi.heppy.rabbitmq.host'     => 'rabbitmq',
     'hiapi.heppy.rabbitmq.port'     => 5672,
     'hiapi.heppy.rabbitmq.user'     => 'guest',
     'hiapi.heppy.rabbitmq.password' => 'guest',

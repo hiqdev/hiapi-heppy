@@ -1,6 +1,6 @@
 <?php
 
-namespace hiapi\heppy\tests\unit\modules\domain_module;
+namespace hiapi\heppy\tests\unit\modules\domain;
 
 use Exception;
 use hiapi\heppy\modules\DomainModule;
@@ -61,7 +61,6 @@ class DomainSetFeeTest extends TestCase
     private function callSetFee(DomainModule $module, array $row, string $op): array
     {
         $method = new ReflectionMethod(DomainModule::class, '_domainSetFee');
-        $method->setAccessible(true);
         return $method->invoke($module, $row, $op);
     }
 

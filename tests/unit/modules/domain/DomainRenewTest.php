@@ -1,9 +1,11 @@
 <?php
 
-namespace hiapi\heppy\tests\unit\modules\domain_module;
+namespace hiapi\heppy\tests\unit\modules\domain;
 
 use hiapi\heppy\tests\unit\TestCase;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 
+#[AllowMockObjectsWithoutExpectations]
 class DomainRenewTest extends TestCase
 {
     public function testDomainRenew()

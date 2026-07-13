@@ -10,10 +10,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class TestCase extends \PHPUnit\Framework\TestCase
 {
-    /**
-     * @var HeppyTool
-     */
-    protected $tool;
+    protected HeppyTool $tool;
 
     /**
      * @param array $requestData
@@ -44,9 +41,9 @@ class TestCase extends \PHPUnit\Framework\TestCase
      * @param array $methods
      * @return MockObject
      */
-    protected function mockBase(array $methods = []): MockObject
+    protected function mockBase(?array $methods = null): MockObject
     {
-        return $this->mockEntity(HeppyBaseStub::class, $methods);
+        return $this->mockEntity(HeppyBaseStub::class, $methods ?? []);
     }
 
     /**
@@ -133,7 +130,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
      * @param array $methods
      * @return MockObject
      */
-    private function mockEntity(string $entityName, array $methods): MockObject
+    protected function mockEntity(string $entityName, array $methods): MockObject
     {
         $builder = $this->getMockBuilder($entityName)
             ->disableOriginalConstructor();
@@ -158,7 +155,7 @@ class TestCase extends \PHPUnit\Framework\TestCase
      * @param array $methods
      * @return array
      */
-    private function getMethodsNames(array $methods): array
+    protected function getMethodsNames(array $methods): array
     {
         $methodNames = [];
         foreach ($methods as $method) {
@@ -203,9 +200,9 @@ class TestCase extends \PHPUnit\Framework\TestCase
      * @param array $data
      * @return array
      */
-    protected function addCommonSuccessResponse(array $data = null): array
+    protected function addCommonSuccessResponse(?array $data = null): array
     {
-        return array_merge($data, $this->getCommonSuccessResponse());
+        return array_merge($data ?? [], $this->getCommonSuccessResponse());
     }
 
     /**
@@ -223,12 +220,12 @@ class TestCase extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @param array $data
+     * @param array|null $data
      * @return array
      */
-    protected function addMappedCommonSuccessResponse(array $data = null): array
+    protected function addMappedCommonSuccessResponse(?array $data = null): array
     {
-        return array_merge($data, $this->getMappedCommonSuccessResponse());
+        return array_merge($data ?? [], $this->getMappedCommonSuccessResponse());
     }
 
     /**

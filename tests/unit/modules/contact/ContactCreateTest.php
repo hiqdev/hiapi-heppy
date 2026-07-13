@@ -1,7 +1,10 @@
 <?php
 
-namespace hiapi\heppy\tests\unit\modules\contact_module;
+namespace hiapi\heppy\tests\unit\modules\contact;
 
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+
+#[AllowMockObjectsWithoutExpectations]
 class ContactCreateTest extends ContactTestCase
 {
     public function testContactCreate()

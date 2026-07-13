@@ -1,10 +1,12 @@
 <?php
 
-namespace hiapi\heppy\tests\unit\modules\domain_module;
+namespace hiapi\heppy\tests\unit\modules\domain;
 
 use hiapi\heppy\modules\DomainModule;
 use hiapi\heppy\tests\unit\TestCase;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 
+#[AllowMockObjectsWithoutExpectations]
 class DomainRegisterTest extends TestCase
 {
     private $domain = 'silverfires21.me';
