@@ -387,14 +387,15 @@ class HeppyTool
         }
 
         if ($rc !== '1') {
-            if (!empty($response['msg'])) {
+            $msg = $response['msg'] ?? $response['result_msg'] ?? null;
+            if (!empty($msg)) {
                 if (in_array($response['result_code'], ['2200', '2501', '2502', '2500', '2002', '2500']) && $second === false) {
                     unset($this->_client);
                     $this->_client = null;
                     sleep(5);
                     return $this->commonRequest($command, $input, $returns, $payload, true);
                 }
-                throw new EppErrorException(trim($response['msg'] . " " . ($response['result_reason'] ?? '')), (int) $response['result_code'], $response);
+                throw new EppErrorException(trim($msg . " " . ($response['result_reason'] ?? '')), (int) $response['result_code'], $response);
             }
 
             if ($second === false) {
