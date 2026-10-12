@@ -45,6 +45,12 @@ use DateTime;
  */
 class HeppyTool
 {
+    /** EPP result codes after which the session is reopened and the command retried once */
+    public const RECONNECT_RESULT_CODES = ['2002', '2200', '2500', '2501', '2502'];
+
+    /** @var int seconds to wait before retrying a failed command */
+    protected int $retryDelaySeconds = 5;
+
     private $_client;
 
     private $base;
@@ -387,22 +393,23 @@ class HeppyTool
         }
 
         if ($rc !== '1') {
-            if (!empty($response['msg'])) {
-                if (in_array($response['result_code'], ['2200', '2501', '2502', '2500', '2002', '2500']) && $second === false) {
+            $message = $response['result_msg'] ?? null;
+            if (!empty($message)) {
+                if (in_array($response['result_code'], self::RECONNECT_RESULT_CODES, true) && $second === false) {
                     unset($this->_client);
                     $this->_client = null;
-                    sleep(5);
-                    return $this->commonRequest($command, $input, $returns, $payload, true);
+                    sleep($this->retryDelaySeconds);
+                    return $this->commonRequest($command, $origin, $returns, $payload, true);
                 }
-                throw new EppErrorException(trim($response['msg'] . " " . ($response['result_reason'] ?? '')), (int) $response['result_code'], $response);
+                throw new EppErrorException(trim($message . " " . ($response['result_reason'] ?? '')), (int) $response['result_code'], $response);
             }
 
             if ($second === false) {
-                sleep(5);
-                return $this->commonRequest($command, $input, $returns, $payload, true);
+                sleep($this->retryDelaySeconds);
+                return $this->commonRequest($command, $origin, $returns, $payload, true);
             }
 
-            throw new EppErrorException($response['msg'] ?? ('failed heppy request: ' . var_export($response, true)), (int) $response['result_code'], $response);
+            throw new EppErrorException('failed heppy request: ' . var_export($response, true), (int) $response['result_code'], $response);
         }
 
         $returns = $this->addCommonResponseFields($returns);
