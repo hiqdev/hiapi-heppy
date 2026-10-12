@@ -378,9 +378,20 @@ class DomainModule extends AbstractModule
         if ($expired === true) {
             $info = $this->tool->domainInfo($row);
             $realExpDate = $this->tool->getDateTime($info['expiration_date']);
-            $interval = $realExpDate->diff($curExpDate);
-            $period = $row['period'] - ((int) $interval->format("%y"));
-            if ($period === 0) {
+
+            // Domain is already renewed in registry: our expiry date + period matches registry expiry date
+            $expectedExpDate = $curExpDate->modify("+{$row['period']} years");
+            if ($realExpDate->format('Y-m-d') === $expectedExpDate->format('Y-m-d')) {
+                return array_merge($row, $info);
+            }
+
+            $years = (int) $curExpDate->diff($realExpDate)->format("%r%y");
+            if ($years < 0) {
+                throw new Exception("registry expiry date {$realExpDate->format('Y-m-d')} is earlier than {$curExpDate->format('Y-m-d')}");
+            }
+
+            $period = $row['period'] - $years;
+            if ($period <= 0) {
                 return array_merge($row, $info);
             }
 
