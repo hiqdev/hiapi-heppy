@@ -1090,8 +1090,8 @@ class DomainModule extends AbstractModule
 
             $row[$type] = [$insensative ? strtolower($row[$type]) : $row[$type]];
             $info[$type] = is_array($info[$type])
-                ? array_map(function($v) use ($insensative) { return  $insensative ? strtolower($v) : $v; }, $info[$type])
-                : [$insensative ? strtolower($info[$type]) : $info[$type]];
+                ? array_map(function($v) use ($insensative) { return  $insensative ? strtolower($v ?? '') : $v; }, $info[$type])
+                : [$insensative ? strtolower($info[$type] ?? '') : $info[$type]];
         }
 
         $row = $this->prepareDataForUpdate($row, $info, $contactTypes);

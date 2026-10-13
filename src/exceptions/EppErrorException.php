@@ -9,7 +9,7 @@ use Throwable;
  */
 class EppErrorException  extends \Exception implements ExceptionInterface
 {
-    public function __construct(string $message = "", int $code = null, array $data = null, Throwable $previous = null)
+    public function __construct(string $message = "", ?int $code = null, ?array $data = null, ?Throwable $previous = null)
     {
         $message = $data['text'] ?? $message;
 
