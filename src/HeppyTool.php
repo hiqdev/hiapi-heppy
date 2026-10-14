@@ -45,6 +45,15 @@ use DateTime;
  */
 class HeppyTool
 {
+    /** EPP result codes after which the session is reopened and the command retried once */
+    public const RECONNECT_RESULT_CODES = ['2002', '2200', '2500', '2501', '2502'];
+
+    /** Response keys that may hold the registry's result text, in lookup order */
+    public const RESPONSE_MESSAGE_KEYS = ['msg', 'result_msg'];
+
+    /** @var int seconds to wait before retrying a failed command */
+    protected int $retryDelaySeconds = 5;
+
     private $_client;
 
     private $base;
@@ -387,23 +396,23 @@ class HeppyTool
         }
 
         if ($rc !== '1') {
-            $msg = $response['msg'] ?? $response['result_msg'] ?? null;
+            $msg = $this->getResponseMessage($response);
             if (!empty($msg)) {
-                if (in_array($response['result_code'], ['2200', '2501', '2502', '2500', '2002', '2500']) && $second === false) {
+                if (in_array($response['result_code'], self::RECONNECT_RESULT_CODES, true) && $second === false) {
                     unset($this->_client);
                     $this->_client = null;
-                    sleep(5);
+                    sleep($this->retryDelaySeconds);
                     return $this->commonRequest($command, $origin, $returns, $payload, true);
                 }
                 throw new EppErrorException(trim($msg . " " . ($response['result_reason'] ?? '')), (int) $response['result_code'], $response);
             }
 
             if ($second === false) {
-                sleep(5);
+                sleep($this->retryDelaySeconds);
                 return $this->commonRequest($command, $origin, $returns, $payload, true);
             }
 
-            throw new EppErrorException($response['msg'] ?? ('failed heppy request: ' . var_export($response, true)), (int) $response['result_code'], $response);
+            throw new EppErrorException($this->getResponseMessage($response) ?? ('failed heppy request: ' . var_export($response, true)), (int) $response['result_code'], $response);
         }
 
         $returns = $this->addCommonResponseFields($returns);
@@ -416,6 +425,21 @@ class HeppyTool
         }
 
         return array_filter($res);
+    }
+
+    /**
+     * @param array $response
+     * @return string|null the registry's result text
+     */
+    protected function getResponseMessage(array $response): ?string
+    {
+        foreach (self::RESPONSE_MESSAGE_KEYS as $key) {
+            if (isset($response[$key])) {
+                return $response[$key];
+            }
+        }
+
+        return null;
     }
 
     protected function applyExtensions(string $command, array $input): array

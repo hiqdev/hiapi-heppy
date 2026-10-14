@@ -75,7 +75,7 @@ class PollModule extends AbstractModule
             'request_client' => 'reID',
             'action_date' => 'acDate',
             'action_client' => 'acID',
-            'message' => 'msg',
+            'message' => 'result_msg',
             'time' => 'exDate',
         ]);
     }
