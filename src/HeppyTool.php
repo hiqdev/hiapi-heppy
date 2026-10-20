@@ -398,6 +398,10 @@ class HeppyTool
 
         if (isset($response['result_code'])) {
             $rc = substr($response['result_code'], 0, 1);
+        } elseif (!empty($response['_error'])) {
+            // heppy could not get a reply from the registry (timeout, dropped
+            // connection, another request's reply) and says why.
+            throw new EppErrorException('failed heppy request: ' . $response['_error']);
         } else {
             throw new EppErrorException('failed heppy request: no answer');
         }
