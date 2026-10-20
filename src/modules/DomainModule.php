@@ -127,6 +127,21 @@ class DomainModule extends AbstractModule
 
         }
 
+        if (empty($info['statuses'])) {
+            // RFC 5731 requires at least one status in domain:info. A success reply
+            // without one is not a usable answer (lock/delete/restore read the
+            // statuses): fail this domain with what's needed to find the exchange
+            // in the heppy and registry logs.
+            throw new EppErrorException(sprintf(
+                'domain:info reply for %s has no statuses (result %s %s, clTRID %s, svTRID %s)',
+                $row['domain'] ?? '?',
+                $info['result_code'] ?? '?',
+                $info['result_msg'] ?? '?',
+                $info['client_trid'] ?? '?',
+                $info['server_trid'] ?? '?'
+            ), (int) ($info['result_code'] ?? 0));
+        }
+
         foreach (['domain', 'name'] as $key) {
             if (!empty($info[$key])) {
                 $info[$key] = mb_strtolower($info[$key]);
