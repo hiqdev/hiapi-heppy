@@ -52,7 +52,8 @@ class TestCase extends \PHPUnit\Framework\TestCase
      * Returns $responseData for any EPP command unless an override is provided in
      * $extraResponses.  Pass a \Throwable as the value to make a specific command
      * throw instead of returning data — useful to force code paths that catch EPP
-     * errors (e.g. skip contact-info lookups in domainInfo).
+     * errors (e.g. skip contact-info lookups in domainInfo).  Pass a \Closure to
+     * build the response from the request data (e.g. per domain).
      *
      * @param array $requestData
      * @param array $responseData
@@ -83,6 +84,9 @@ class TestCase extends \PHPUnit\Framework\TestCase
                         $override = $extraResponses[$command];
                         if ($override instanceof \Throwable) {
                             throw $override;
+                        }
+                        if ($override instanceof \Closure) {
+                            return $override($data);
                         }
                         return $override;
                     }

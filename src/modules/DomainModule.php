@@ -626,7 +626,13 @@ class DomainModule extends AbstractModule
     public function domainsEnableLock(array $rows): array
     {
         foreach ($rows as $id => $row) {
-            $res[$id] = $this->tool->domainEnableLock($row);
+            try {
+                $res[$id] = $this->tool->domainEnableLock($row);
+            } catch (Throwable $e) {
+                $res[$id] = array_merge($row, [
+                    '_error' => $e->getMessage(),
+                ]);
+            }
         }
 
         return $res;
@@ -647,7 +653,13 @@ class DomainModule extends AbstractModule
     public function domainsDisableLock(array $rows): array
     {
         foreach ($rows as $id => $row) {
-            $res[$id] = $this->tool->domainDisableLock($row);
+            try {
+                $res[$id] = $this->tool->domainDisableLock($row);
+            } catch (Throwable $e) {
+                $res[$id] = array_merge($row, [
+                    '_error' => $e->getMessage(),
+                ]);
+            }
         }
 
         return $res;
