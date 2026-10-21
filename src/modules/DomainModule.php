@@ -820,7 +820,7 @@ class DomainModule extends AbstractModule
         return array_merge($data, array_filter([
             'avail' => (int) $data['avails'][$domain],
             'premium' => isset($data['category']) && $data['category'] === self::DOMAIN_PREMIUM ? self::DOMAIN_PREMIUM : null,
-            'reason' => isset($data['category']) && $data['category'] === self::DOMAIN_PREMIUM ? self::DOMAIN_PREMIUM_REASON : ($data[$domain]['reason'] ?? null),
+            'reason' => isset($data['category']) && $data['category'] === self::DOMAIN_PREMIUM ? self::DOMAIN_PREMIUM_REASON : ($data['reasons'][$domain] ?? null),
             'category_name' => $data['category_name'] ?? null,
             'fee' => isset($data['category']) && $data['category'] === self::DOMAIN_PREMIUM ? [
                 'create' => $data['create'],
@@ -835,16 +835,18 @@ class DomainModule extends AbstractModule
 
     protected function _parseCheckFee(string $domain, array $data, array $res): array
     {
+        $availSource = isset($res['avails'][$domain]) ? $res : $data;
+
         if (empty($res['fee']) || empty($res['fee'][$domain]) || empty($res['fee'][$domain]['class'])) {
-            return [
+            return $this->withRegistryReason([
                 'avail' => (int) ($res['avails'][$domain] ?? $data['avails'][$domain]),
-            ];
+            ], $domain, $availSource);
         }
 
         if ($res['fee'][$domain]['class'] === self::DOMAIN_STANDART) {
-            return [
+            return $this->withRegistryReason([
                 'avail' => (int) ($res['avails'][$domain] ?? $data['avails'][$domain]),
-            ];
+            ], $domain, $availSource);
         }
 
         $res['fee'][$domain]['premium'] = 1;
@@ -867,11 +869,26 @@ class DomainModule extends AbstractModule
         $res['fee'][$domain] = array_merge($priceD, [
             'currency' => $this->tool->getCurrency(),
         ]);
-        return [
+        return $this->withRegistryReason([
             'avail' => (int) $data['avails'][$domain],
             'reason' => (int) $priceD['premium'] === 1 ? self::DOMAIN_PREMIUM_REASON : null,
             'fee' => (int) $priceD['premium'] === 1 ? $res['fee'][$domain] : null,
-        ];
+        ], $domain, $data);
+    }
+
+    /**
+     * Adds the registry reason of an unavailable domain, taken from the check that gave `avail`.
+     * A reason already set (the premium reason) is kept: `_domainSetFee()` relies on it.
+     */
+    private function withRegistryReason(array $result, string $domain, array $availSource): array
+    {
+        if ($result['avail'] !== 0 || !empty($result['reason']) || empty($availSource['reasons'][$domain])) {
+            return $result;
+        }
+
+        $result['reason'] = $availSource['reasons'][$domain];
+
+        return $result;
     }
 
     protected function _domainCheck(string $domain, $withoutExt = false, string $action = 'create'): array
