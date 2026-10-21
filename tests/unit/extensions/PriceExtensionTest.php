@@ -104,6 +104,16 @@ class PriceExtensionTest extends TestCase
         $this->assertEmpty($result['extensions']);
     }
 
+    public function testAddExtensionAddsPriceWhenWithoutExtIsMissing(): void
+    {
+        $ext  = $this->makeExtension();
+        $data = ['name' => 'example.me', 'extensions' => []];
+
+        $result = $ext->addExtension('domain:renew', $data);
+
+        $this->assertSame('price:renew', $result['extensions'][0]['command']);
+    }
+
     public function testAddExtensionCommandSuffixForCheck(): void
     {
         $ext  = $this->makeExtension();
