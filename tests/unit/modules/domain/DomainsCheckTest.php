@@ -52,11 +52,46 @@ class DomainsCheckTest extends TestCase
         $this->assertSame(1, $result[$domain42]['avail']);
     }
 
-    public function testFeeCheckKeepsRegistryReasonOfUnavailableDomain()
+    public function testNotAccreditedReasonOfFirstCheckWinsOverFeeCheckReason()
     {
         $domain = 'silverfires1.me';
         $tool = $this->createCheckTool(
             ['avails' => [$domain => '0'], 'reasons' => [$domain => DomainModule::ZONE_NOT_ACCREDITED]],
+            [
+                'avails'  => [$domain => '0'],
+                'reasons' => [$domain => 'In use'],
+                'fee'     => [$domain => ['class' => DomainModule::DOMAIN_STANDART]],
+            ],
+        );
+
+        $result = $tool->domainsCheck(['domains' => [$domain]]);
+
+        $this->assertSame(['avail' => 0, 'reason' => DomainModule::ZONE_NOT_ACCREDITED], $result[$domain]);
+    }
+
+    public function testNotAccreditedReasonOfFirstCheckWinsOverPriceCheckReason()
+    {
+        $domain = 'silverfires1.me';
+        $tool = $this->createCheckTool(
+            ['avails' => [$domain => '0'], 'reasons' => [$domain => DomainModule::ZONE_NOT_ACCREDITED]],
+            [
+                'avails'  => [$domain => '0'],
+                'reasons' => [$domain => 'In use'],
+                'price'   => [$domain => ['createPrice' => '10.00', 'premium' => '0']],
+            ],
+        );
+
+        $result = $tool->domainsCheck(['domains' => [$domain]]);
+
+        $this->assertSame(0, $result[$domain]['avail']);
+        $this->assertSame(DomainModule::ZONE_NOT_ACCREDITED, $result[$domain]['reason']);
+    }
+
+    public function testFeeCheckReasonWhenFirstCheckHasNone()
+    {
+        $domain = 'silverfires1.me';
+        $tool = $this->createCheckTool(
+            ['avails' => [$domain => '1']],
             [
                 'avails'  => [$domain => '0'],
                 'reasons' => [$domain => 'In use'],

@@ -835,18 +835,16 @@ class DomainModule extends AbstractModule
 
     protected function _parseCheckFee(string $domain, array $data, array $res): array
     {
-        $availSource = isset($res['avails'][$domain]) ? $res : $data;
-
         if (empty($res['fee']) || empty($res['fee'][$domain]) || empty($res['fee'][$domain]['class'])) {
             return $this->withRegistryReason([
                 'avail' => (int) ($res['avails'][$domain] ?? $data['avails'][$domain]),
-            ], $domain, $availSource);
+            ], $domain, $data, $res);
         }
 
         if ($res['fee'][$domain]['class'] === self::DOMAIN_STANDART) {
             return $this->withRegistryReason([
                 'avail' => (int) ($res['avails'][$domain] ?? $data['avails'][$domain]),
-            ], $domain, $availSource);
+            ], $domain, $data, $res);
         }
 
         $res['fee'][$domain]['premium'] = 1;
@@ -873,20 +871,25 @@ class DomainModule extends AbstractModule
             'avail' => (int) $data['avails'][$domain],
             'reason' => (int) $priceD['premium'] === 1 ? self::DOMAIN_PREMIUM_REASON : null,
             'fee' => (int) $priceD['premium'] === 1 ? $res['fee'][$domain] : null,
-        ], $domain, $data);
+        ], $domain, $data, $res);
     }
 
     /**
-     * Adds the registry reason of an unavailable domain, taken from the check that gave `avail`.
+     * Adds the registry reason of an unavailable domain. The first check, without
+     * the fee/price extension, gives it (e.g. `not accredited`); the fee/price
+     * check's reason is used only when the first one has none.
      * A reason already set (the premium reason) is kept: `_domainSetFee()` relies on it.
      */
-    private function withRegistryReason(array $result, string $domain, array $availSource): array
+    private function withRegistryReason(array $result, string $domain, array $firstCheck, array $secondCheck): array
     {
-        if ($result['avail'] !== 0 || !empty($result['reason']) || empty($availSource['reasons'][$domain])) {
+        if ($result['avail'] !== 0 || !empty($result['reason'])) {
             return $result;
         }
 
-        $result['reason'] = $availSource['reasons'][$domain];
+        $reason = ($firstCheck['reasons'][$domain] ?? null) ?: ($secondCheck['reasons'][$domain] ?? null);
+        if (!empty($reason)) {
+            $result['reason'] = $reason;
+        }
 
         return $result;
     }
