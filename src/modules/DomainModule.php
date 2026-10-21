@@ -13,6 +13,7 @@ namespace hiapi\heppy\modules;
 use hiapi\heppy\exceptions\EppErrorException;
 use Exception;
 use Throwable;
+use Yii;
 
 class DomainModule extends AbstractModule
 {
@@ -192,12 +193,26 @@ class DomainModule extends AbstractModule
      */
     public function domainsCheck(array $row): array
     {
-        foreach ($row['domains'] as $domain) {
+        $res = [];
+        $errors = [];
+        foreach ($row['domains'] ?? [] as $domain) {
             try {
                 $res[$domain] = $this->domainCheck($domain);
             } catch (\Throwable $e) {
-                throw new Exception($e->getMessage());
+                $errors[$domain] = $e;
             }
+        }
+
+        if ($errors && !$res) {
+            $e = reset($errors);
+            throw new Exception($e->getMessage(), 0, $e);
+        }
+
+        // hiapi reads anything but a result here as available: a domain whose
+        // check failed is unavailable, the others keep their results.
+        foreach ($errors as $domain => $e) {
+            Yii::warning("domain:check of {$domain} failed: {$e->getMessage()}", __METHOD__);
+            $res[$domain] = ['avail' => 0];
         }
 
         return $res;
@@ -790,11 +805,12 @@ class DomainModule extends AbstractModule
     {
         try {
             $res = $this->_domainCheck($domain, true);
-            if ((int) $res['avails'][$domain] === 0 && $command === null) {
-                if ($res['reasons'][$domain] !== self::ZONE_NOT_ACCREDITED) {
+            if ($this->checkAvail($res, $domain) === 0 && $command === null) {
+                $reason = $this->checkReason($res, $domain);
+                if ($reason !== self::ZONE_NOT_ACCREDITED) {
                     return [
-                        'avail' => (int) $res['avails'][$domain],
-                        'reason' => $res['reasons'][$domain] ?? null,
+                        'avail' => 0,
+                        'reason' => $reason,
                     ];
                 }
             }
@@ -805,7 +821,17 @@ class DomainModule extends AbstractModule
                 $checkPremium = $this->_domainCheck($domain, false, $command ?? 'create');
             }
         } catch (Throwable $e) {
-            throw new Exception($e->getMessage());
+            throw new Exception($e->getMessage(), 0, $e);
+        }
+
+        if ($this->checkAvail($checkPremium, $domain) === null) {
+            // HQD-549: some registry answers the fee/price check without <domain:cd>;
+            // availability then comes from the first check.
+            Yii::warning(sprintf(
+                'domain:check with fee/price extension has no availability: zone %s, result code %s',
+                $this->getDomainZone($domain),
+                $checkPremium['result_code'] ?? 'none'
+            ), __METHOD__);
         }
 
         if (!empty($checkPremium['price'])) {
@@ -818,15 +844,15 @@ class DomainModule extends AbstractModule
     protected function _parseCheckCharge(string $domain, array $data): array
     {
         return array_merge($data, array_filter([
-            'avail' => (int) $data['avails'][$domain],
+            'avail' => $this->checkAvail($data, $domain),
             'premium' => isset($data['category']) && $data['category'] === self::DOMAIN_PREMIUM ? self::DOMAIN_PREMIUM : null,
-            'reason' => isset($data['category']) && $data['category'] === self::DOMAIN_PREMIUM ? self::DOMAIN_PREMIUM_REASON : ($data['reasons'][$domain] ?? null),
+            'reason' => isset($data['category']) && $data['category'] === self::DOMAIN_PREMIUM ? self::DOMAIN_PREMIUM_REASON : $this->checkReason($data, $domain),
             'category_name' => $data['category_name'] ?? null,
             'fee' => isset($data['category']) && $data['category'] === self::DOMAIN_PREMIUM ? [
-                'create' => $data['create'],
-                'renew' => $data['renew'],
-                'restore' => $data['restore'],
-                'transfer' => $data['transfer'],
+                'create' => $data['create'] ?? null,
+                'renew' => $data['renew'] ?? null,
+                'restore' => $data['restore'] ?? null,
+                'transfer' => $data['transfer'] ?? null,
                 'category_name' => $data['category_name'] ?? null,
                 'premium' => 1,
             ] : null,
@@ -837,20 +863,20 @@ class DomainModule extends AbstractModule
     {
         if (empty($res['fee']) || empty($res['fee'][$domain]) || empty($res['fee'][$domain]['class'])) {
             return $this->withRegistryReason([
-                'avail' => (int) ($res['avails'][$domain] ?? $data['avails'][$domain]),
+                'avail' => $this->checkAvail($res, $domain) ?? (int) $this->checkAvail($data, $domain),
             ], $domain, $data, $res);
         }
 
-        if ($res['fee'][$domain]['class'] === self::DOMAIN_STANDART) {
+        if (strtolower($res['fee'][$domain]['class']) === self::DOMAIN_STANDART) {
             return $this->withRegistryReason([
-                'avail' => (int) ($res['avails'][$domain] ?? $data['avails'][$domain]),
+                'avail' => $this->checkAvail($res, $domain) ?? (int) $this->checkAvail($data, $domain),
             ], $domain, $data, $res);
         }
 
         $res['fee'][$domain]['premium'] = 1;
         $res['fee'][$domain]['currency'] = $this->tool->getCurrency();
         return [
-            'avail' => (int) ($res['avails'][$domain] ?? $data['avails'][$domain]),
+            'avail' => $this->checkAvail($res, $domain) ?? (int) $this->checkAvail($data, $domain),
             'reason' => self::DOMAIN_PREMIUM_REASON,
             'fee' => $res['fee'][$domain],
         ];
@@ -859,7 +885,7 @@ class DomainModule extends AbstractModule
     protected function _parseCheckPrice(string $domain, array $data, array $res): array
     {
         $priceD = [];
-        foreach ($res['price'][$domain] as $key => $value) {
+        foreach ($res['price'][$domain] ?? [] as $key => $value) {
             $key = str_replace('Price', '', $key);
             $priceD[$key] = $value;
         }
@@ -868,9 +894,9 @@ class DomainModule extends AbstractModule
             'currency' => $this->tool->getCurrency(),
         ]);
         return $this->withRegistryReason([
-            'avail' => (int) $data['avails'][$domain],
-            'reason' => (int) $priceD['premium'] === 1 ? self::DOMAIN_PREMIUM_REASON : null,
-            'fee' => (int) $priceD['premium'] === 1 ? $res['fee'][$domain] : null,
+            'avail' => (int) $this->checkAvail($data, $domain),
+            'reason' => (int) ($priceD['premium'] ?? 0) === 1 ? self::DOMAIN_PREMIUM_REASON : null,
+            'fee' => (int) ($priceD['premium'] ?? 0) === 1 ? $res['fee'][$domain] : null,
         ], $domain, $data, $res);
     }
 
@@ -886,12 +912,40 @@ class DomainModule extends AbstractModule
             return $result;
         }
 
-        $reason = ($firstCheck['reasons'][$domain] ?? null) ?: ($secondCheck['reasons'][$domain] ?? null);
+        $reason = $this->checkReason($firstCheck, $domain) ?: $this->checkReason($secondCheck, $domain);
         if (!empty($reason)) {
             $result['reason'] = $reason;
         }
 
         return $result;
+    }
+
+    /**
+     * Availability of a domain in a domain:check reply: heppy keys it by the
+     * lowercased name and passes the `avail` attribute as is, an xs:boolean
+     * ("1"/"0" or "true"/"false").
+     *
+     * @return int|null 1 or 0; null when the reply does not say
+     */
+    private function checkAvail(array $check, string $domain): ?int
+    {
+        $avail = $check['avails'][mb_strtolower($domain)] ?? $check['avails'][$domain] ?? null;
+        if ($avail === null) {
+            return null;
+        }
+
+        return match (strtolower(trim((string) $avail))) {
+            '1', 'true' => 1,
+            '0', 'false' => 0,
+            default => null,
+        };
+    }
+
+    private function checkReason(array $check, string $domain): ?string
+    {
+        $reason = $check['reasons'][mb_strtolower($domain)] ?? $check['reasons'][$domain] ?? null;
+
+        return $reason === null || $reason === '' ? null : (string) $reason;
     }
 
     protected function _domainCheck(string $domain, $withoutExt = false, string $action = 'create'): array

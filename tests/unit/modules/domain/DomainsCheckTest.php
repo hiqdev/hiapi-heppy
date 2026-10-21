@@ -8,7 +8,10 @@ use hiapi\heppy\RabbitMQClient;
 use hiapi\heppy\tests\unit\Stubs\HeppyToolStub;
 use hiapi\heppy\tests\unit\TestCase;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 use ReflectionMethod;
+use Yii;
+use yii\log\Logger;
 
 /**
  * domainsCheck() now iterates domains one-by-one via domainCheck(), which itself
@@ -105,8 +108,8 @@ class DomainsCheckTest extends TestCase
     }
 
     /**
-     * The second check's reply has no avails (HQD-549): `_parseCheckCharge()` still
-     * warns about it here; this test only pins the reason fallback.
+     * The second check's reply has no avails (HQD-549): availability and reason
+     * come from the first check.
      */
     public function testFeeCheckWithoutAvailsKeepsFirstCheckReason()
     {
@@ -186,6 +189,144 @@ class DomainsCheckTest extends TestCase
         $result = $method->invoke($module, $domain, true);
 
         $this->assertSame('In use', $result['reason']);
+    }
+
+    public function testFeeCheckWithoutAvailsIsLoggedNotWarned()
+    {
+        $domain = 'silverfires42.me';
+        $tool = $this->createCheckTool(['avails' => [$domain => '1']], []);
+        $logged = count(Yii::getLogger()->messages);
+
+        $result = $tool->domainsCheck(['domains' => [$domain]]);
+
+        $this->assertSame(['avail' => 1], $result[$domain]);
+        $messages = array_slice(Yii::getLogger()->messages, $logged);
+        $this->assertCount(1, $messages);
+        $this->assertSame(Logger::LEVEL_WARNING, $messages[0][1]);
+        $this->assertSame(
+            'domain:check with fee/price extension has no availability: zone .me, result code 1000',
+            $messages[0][0]
+        );
+    }
+
+    public function testEmptyDomainListGivesEmptyResult()
+    {
+        $tool = $this->createCheckTool([], []);
+
+        $this->assertSame([], $tool->domainsCheck(['domains' => []]));
+    }
+
+    public function testFailedDomainIsUnavailableAndOthersKeepTheirResults()
+    {
+        $tool = $this->createCheckToolBy(function (array $data) {
+            $domain = $data['names'][0];
+            if ($domain === 'bad.me') {
+                throw new \Exception('Parameter value syntax error');
+            }
+
+            return ['avails' => [$domain => '1']];
+        });
+
+        $result = $tool->domainsCheck(['domains' => ['a.me', 'bad.me', 'c.me']]);
+
+        $this->assertSame(['a.me' => ['avail' => 1], 'c.me' => ['avail' => 1], 'bad.me' => ['avail' => 0]], $result);
+    }
+
+    public function testAllDomainsFailedThrows()
+    {
+        $tool = $this->createCheckToolBy(function () {
+            throw new \Exception('The connection timed out');
+        });
+
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('The connection timed out');
+
+        $tool->domainsCheck(['domains' => ['a.me', 'b.me']]);
+    }
+
+    public static function booleanAvails(): array
+    {
+        return [
+            'true'  => ['true', 1],
+            'TRUE'  => ['TRUE', 1],
+            'false' => ['false', 0],
+            '1'     => ['1', 1],
+            '0'     => ['0', 0],
+        ];
+    }
+
+    #[DataProvider('booleanAvails')]
+    public function testAvailIsReadAsXmlBoolean(string $avail, int $expected)
+    {
+        $domain = 'silverfires1.me';
+        $tool = $this->createCheckTool(['avails' => [$domain => $avail]], ['avails' => [$domain => $avail]]);
+
+        $result = $tool->domainsCheck(['domains' => [$domain]]);
+
+        $this->assertSame($expected, $result[$domain]['avail']);
+    }
+
+    public function testMixedCaseNameIsFoundInLowercasedReply()
+    {
+        $tool = $this->createCheckTool(
+            ['avails' => ['silverfires1.me' => '0'], 'reasons' => ['silverfires1.me' => 'In use']],
+            [],
+        );
+
+        $result = $tool->domainsCheck(['domains' => ['SilverFires1.ME']]);
+
+        $this->assertSame(['avail' => 0, 'reason' => 'In use'], $result['SilverFires1.ME']);
+    }
+
+    public function testUnavailableDomainWithoutReason()
+    {
+        $domain = 'silverfires1.me';
+        $tool = $this->createCheckTool(['avails' => [$domain => '0']], []);
+
+        $result = $tool->domainsCheck(['domains' => [$domain]]);
+
+        $this->assertSame(['avail' => 0, 'reason' => null], $result[$domain]);
+    }
+
+    public function testFeeClassIsComparedCaseInsensitively()
+    {
+        $domain = 'silverfires42.me';
+        $tool = $this->createCheckTool(
+            ['avails' => [$domain => '1']],
+            ['avails' => [$domain => '1'], 'fee' => [$domain => ['class' => 'Standard', 'fee' => '10.00']]],
+        );
+
+        $result = $tool->domainsCheck(['domains' => [$domain]]);
+
+        $this->assertSame(['avail' => 1], $result[$domain]);
+    }
+
+    public function testPriceReplyWithoutPremiumFlagIsStandard()
+    {
+        $domain = 'silverfires42.me';
+        $tool = $this->createCheckTool(
+            ['avails' => [$domain => '1']],
+            ['avails' => [$domain => '1'], 'price' => [$domain => ['createPrice' => '10.00']]],
+        );
+
+        $result = $tool->domainsCheck(['domains' => [$domain]]);
+
+        $this->assertSame(1, $result[$domain]['avail']);
+        $this->assertNull($result[$domain]['reason']);
+        $this->assertNull($result[$domain]['fee']);
+    }
+
+    private function createCheckToolBy(\Closure $reply): HeppyTool
+    {
+        $client = $this->createMock(RabbitMQClient::class);
+        $client->method('request')->willReturnCallback(
+            fn (array $data) => $this->addCommonSuccessResponse($reply($data))
+        );
+
+        $tool = new HeppyToolStub($this->mockBase(), []);
+        $tool->setClient($client);
+
+        return $tool;
     }
 
     /**
