@@ -347,13 +347,20 @@ class HeppyTool
             return $this->request('epp:hello', []);
         }, 60 * 60 * 24);
 
-        if (empty($res)) {
+        // Only a greeting (it always carries svID) may stay cached: it decides the
+        // extensions every request gets for a day. An error or another request's
+        // reply would otherwise send everything without e.g. namestoreExt.
+        if (empty($res['svID'])) {
+            $this->cache->delete($this->getCacheKey(['epp:hello', $this->getRegistrar()]));
             if ($tries < 2) {
-                $this->cache->delete($this->getCacheKey(['epp:hello', $this->getRegistrar()]));
                 return $this->requestHello(++$tries);
-            } else {
-                throw new EppErrorException('could not get message from EPP');
             }
+
+            // Only identifying fields: another request's reply may carry e.g. authInfo.
+            $got = is_array($res)
+                ? array_intersect_key($res, array_flip(['_error', 'result_code', 'result_msg', 'clTRID', 'svTRID']))
+                : $res;
+            throw new EppErrorException('could not get EPP greeting, got: ' . json_encode($got, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
         }
 
         return $res;
@@ -391,6 +398,10 @@ class HeppyTool
 
         if (isset($response['result_code'])) {
             $rc = substr($response['result_code'], 0, 1);
+        } elseif (!empty($response['_error'])) {
+            // heppy could not get a reply from the registry (timeout, dropped
+            // connection, another request's reply) and says why.
+            throw new EppErrorException('failed heppy request: ' . $response['_error']);
         } else {
             throw new EppErrorException('failed heppy request: no answer');
         }

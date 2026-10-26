@@ -128,6 +128,21 @@ class DomainModule extends AbstractModule
 
         }
 
+        if (empty($info['statuses'])) {
+            // RFC 5731 requires at least one status in domain:info. A success reply
+            // without one is not a usable answer (lock/delete/restore read the
+            // statuses): fail this domain with what's needed to find the exchange
+            // in the heppy and registry logs.
+            throw new EppErrorException(sprintf(
+                'domain:info reply for %s has no statuses (result %s %s, clTRID %s, svTRID %s)',
+                $row['domain'] ?? '?',
+                $info['result_code'] ?? '?',
+                $info['result_msg'] ?? '?',
+                $info['client_trid'] ?? '?',
+                $info['server_trid'] ?? '?'
+            ), (int) ($info['result_code'] ?? 0));
+        }
+
         foreach (['domain', 'name'] as $key) {
             if (!empty($info[$key])) {
                 $info[$key] = mb_strtolower($info[$key]);
@@ -626,7 +641,13 @@ class DomainModule extends AbstractModule
     public function domainsEnableLock(array $rows): array
     {
         foreach ($rows as $id => $row) {
-            $res[$id] = $this->tool->domainEnableLock($row);
+            try {
+                $res[$id] = $this->tool->domainEnableLock($row);
+            } catch (Throwable $e) {
+                $res[$id] = array_merge($row, [
+                    '_error' => $e->getMessage(),
+                ]);
+            }
         }
 
         return $res;
@@ -647,7 +668,13 @@ class DomainModule extends AbstractModule
     public function domainsDisableLock(array $rows): array
     {
         foreach ($rows as $id => $row) {
-            $res[$id] = $this->tool->domainDisableLock($row);
+            try {
+                $res[$id] = $this->tool->domainDisableLock($row);
+            } catch (Throwable $e) {
+                $res[$id] = array_merge($row, [
+                    '_error' => $e->getMessage(),
+                ]);
+            }
         }
 
         return $res;

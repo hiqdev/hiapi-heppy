@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit backupGlobals="false" colors="true" processIsolation="false" stopOnFailure="false" bootstrap="tests/_bootstrap.php" cacheDirectory=".phpunit.cache" backupStaticProperties="false">
+<phpunit backupGlobals="false" colors="true" processIsolation="false" stopOnFailure="false" bootstrap="tests/_bootstrap.php" cacheDirectory=".phpunit.cache" backupStaticProperties="false" defaultTestSuite="unit">
   <testsuites>
     <testsuite name="unit">
       <directory>./tests/unit/</directory>
+    </testsuite>
+    <!-- Against a running heppyd + EPP stub stack, see tests/stub/ -->
+    <testsuite name="stub">
+      <directory>./tests/stub/</directory>
     </testsuite>
   </testsuites>
 </phpunit>

@@ -4,6 +4,7 @@ namespace hiapi\heppy\tests\unit\modules\domain;
 
 use hiapi\heppy\tests\unit\TestCase;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 #[AllowMockObjectsWithoutExpectations]
 class DomainsLockTest extends TestCase
@@ -70,5 +71,42 @@ class DomainsLockTest extends TestCase
                 'domain' => $this->domain,
             ]),
         ]);
+    }
+
+    public static function lockBatches(): array
+    {
+        return [
+            'domainsEnableLock'  => ['domainsEnableLock', 'getStubDomainInfoEppResponse'],
+            'domainsDisableLock' => ['domainsDisableLock', 'getLockedDomainInfoEppResponse'],
+        ];
+    }
+
+    /**
+     * HQD-577: a failing domain must not abort the rest of the batch.
+     */
+    #[DataProvider('lockBatches')]
+    public function testFailingDomainDoesNotAbortBatch(string $method, string $infoResponse)
+    {
+        $broken = 'broken-' . $this->domain;
+        $tool = $this->createTool([], $this->getCommonSuccessResponse(), [], [
+            'domain:info' => function (array $data) use ($broken, $infoResponse) {
+                $info = $this->{$infoResponse}();
+                if (strcasecmp($data['name'] ?? '', $broken) === 0) {
+                    unset($info['statuses']);
+                }
+                return $info;
+            },
+        ]);
+
+        $result = $tool->{$method}([
+            1 => ['domain' => $broken, 'id' => 1],
+            $this->id => ['domain' => $this->domain, 'id' => $this->id],
+        ]);
+
+        $this->assertSame($broken, $result[1]['domain']);
+        $this->assertStringContainsString("domain:info reply for $broken has no statuses", $result[1]['_error']);
+        $this->assertSame($this->addMappedCommonSuccessResponse([
+            'domain' => $this->domain,
+        ]), $result[$this->id]);
     }
 }
