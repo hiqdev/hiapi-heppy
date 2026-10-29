@@ -52,7 +52,7 @@ class ContactInfoTest extends ContactTestCase
         // first_name only; last_name falls back to org). organization comes from int.org.
         // Keys from addr are extracted into $data first, so they appear before epp_id/
         // password/etc. which come from $info (commonRequest result).
-        // fixStatuses() is only called in DomainModule, so statuses pass through as-is.
+        // fixStatuses() leaves name => name statuses unchanged.
         $this->assertSame($result, [
             'first_name'   => 'WhoisProtectService.net',
             'last_name'    => 'PROTECTSERVICE, LTD.',
