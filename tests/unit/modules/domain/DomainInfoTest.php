@@ -36,6 +36,7 @@ class DomainInfoTest extends TestCase
             'statuses'   => [
                 'inactive'                 => 'inactive',
                 'serverTransferProhibited' => 'realtime',
+                'serverHold'               => 'Compliance',
             ],
             'exDate'     => '2019-11-09T10:43:04.0Z',
         ]), [], [
@@ -49,7 +50,7 @@ class DomainInfoTest extends TestCase
             'id'       => null,
         ]);
 
-        // fixStatuses() preserves the new-format dict as-is (key=>value pairs).
+        // fixStatuses() replaces registry descriptions with the status name.
         // Dates are converted to 'Y-m-d H:i:s' by getUTCDateTime()->format().
         // getContactsInfo() skips contacts when the mock throws on mismatch.
         // another_registrar is true because the mock tool has no 'registrar' data.
@@ -70,7 +71,8 @@ class DomainInfoTest extends TestCase
             'epp_client_id'   => 'OTE1186-EP1',
             'statuses'        => [
                 'inactive'                 => 'inactive',
-                'serverTransferProhibited' => 'realtime',
+                'serverTransferProhibited' => 'serverTransferProhibited',
+                'serverHold'               => 'serverHold',
             ],
         ], $this->getMappedCommonSuccessResponse(), [
             'another_registrar' => true,

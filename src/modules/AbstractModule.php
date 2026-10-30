@@ -233,14 +233,13 @@ class AbstractModule
             if (is_int($k)) {
                 // Flat list format: ['ok', 'serverHold']
                 $name = ($v === 'Spam') ? 'serverHold' : $v;
-                $normalized[$name] = $name;
-            } elseif ($v === 'Spam') {
-                // 'Spam' is a registrar-specific alias for serverHold
-                $normalized[$k] = $k;
             } else {
-                // Dict format: ['ok' => 'ok'] or ['serverTransferProhibited' => 'realtime']
-                $normalized[$k] = $v;
+                // Dict format from heppy: status => description, e.g.
+                // ['serverHold' => 'Compliance']. The description is free
+                // registry text; consumers read the values as status names.
+                $name = $k;
             }
+            $normalized[$name] = $name;
         }
 
         $info['statuses'] = $normalized;
