@@ -47,6 +47,9 @@ class DomainModule extends AbstractModule
 
     const ZONE_NOT_ACCREDITED = 'not accredited';
 
+    /** One text for every zone, so the log groups them; the zone goes in the context. */
+    const FEE_CHECK_WITHOUT_AVAILABILITY = 'domain:check with fee/price extension has no availability';
+
     const AUTHORIZATION_ERROR = 'Authorization error';
 
     /** {@inheritdoc} */
@@ -854,11 +857,7 @@ class DomainModule extends AbstractModule
         if ($this->checkAvail($checkPremium, $domain) === null) {
             // HQD-549: some registry answers the fee/price check without <domain:cd>;
             // availability then comes from the first check.
-            Yii::warning(sprintf(
-                'domain:check with fee/price extension has no availability: zone %s, result code %s',
-                $this->getDomainZone($domain),
-                $checkPremium['result_code'] ?? 'none'
-            ), __METHOD__);
+            $this->warnFeeCheckWithoutAvailability($domain, $command ?? 'create', $checkPremium);
         }
 
         if (!empty($checkPremium['price'])) {
@@ -866,6 +865,26 @@ class DomainModule extends AbstractModule
         }
 
         return $this->_parseCheckFee($domain, $res, $checkPremium);
+    }
+
+    /**
+     * Logs a fee/price check reply without availability, with what the reply did carry:
+     * whether a premium domain can still be told from a standard one depends on it.
+     * Every key but `message` reaches the log target as context.
+     */
+    private function warnFeeCheckWithoutAvailability(string $domain, string $command, array $checkPremium): void
+    {
+        Yii::warning([
+            'message' => self::FEE_CHECK_WITHOUT_AVAILABILITY,
+            'domain' => $domain,
+            'zone' => $this->getDomainZone($domain),
+            'command' => $command,
+            'result_code' => $checkPremium['result_code'] ?? null,
+            'reply_keys' => array_keys($checkPremium),
+            'fee' => $checkPremium['fee'][$domain] ?? null,
+            'price' => $checkPremium['price'][$domain] ?? null,
+            'category' => $checkPremium['category'] ?? null,
+        ], __METHOD__);
     }
 
     protected function _parseCheckCharge(string $domain, array $data): array

@@ -203,10 +203,31 @@ class DomainsCheckTest extends TestCase
         $messages = array_slice(Yii::getLogger()->messages, $logged);
         $this->assertCount(1, $messages);
         $this->assertSame(Logger::LEVEL_WARNING, $messages[0][1]);
-        $this->assertSame(
-            'domain:check with fee/price extension has no availability: zone .me, result code 1000',
-            $messages[0][0]
-        );
+        $payload = $messages[0][0];
+        $this->assertSame(DomainModule::FEE_CHECK_WITHOUT_AVAILABILITY, $payload['message']);
+        $this->assertSame($domain, $payload['domain']);
+        $this->assertSame('.me', $payload['zone']);
+        $this->assertSame('create', $payload['command']);
+        $this->assertSame('1000', $payload['result_code']);
+        $this->assertNull($payload['fee']);
+        $this->assertNull($payload['price']);
+    }
+
+    public function testFeeCheckWithoutAvailsLogsTheFeeDataItCarried()
+    {
+        $domain = 'premium.me';
+        $fee = ['class' => DomainModule::DOMAIN_PREMIUM, 'create' => '500.00'];
+        $tool = $this->createCheckTool(['avails' => [$domain => '1']], ['fee' => [$domain => $fee]]);
+        $logged = count(Yii::getLogger()->messages);
+
+        $result = $this->callDomainCheck($tool, $domain);
+
+        $this->assertSame(DomainModule::DOMAIN_PREMIUM_REASON, $result['reason']);
+        $messages = array_slice(Yii::getLogger()->messages, $logged);
+        $this->assertCount(1, $messages);
+        $payload = $messages[0][0];
+        $this->assertSame($fee, $payload['fee']);
+        $this->assertContains('fee', $payload['reply_keys']);
     }
 
     public function testEmptyDomainListGivesEmptyResult()
