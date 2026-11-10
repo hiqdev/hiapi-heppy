@@ -27,4 +27,29 @@ class HostDeleteTest extends TestCase
             'host' => $host,
         ]));
     }
+
+    public function testHostDeleteWithoutIdSendsDeleteAndLeavesIdOut()
+    {
+        $host = 'ns42.silverfires1.me';
+
+        $tool = $this->createTool([
+            'name'    => $host,
+            'command' => 'host:delete',
+        ], $this->getCommonSuccessResponse());
+
+        set_error_handler(static function (int $severity, string $message, string $file, int $line): bool {
+            throw new \ErrorException($message, 0, $severity, $file, $line);
+        });
+        try {
+            $result = $tool->hostDelete([
+                'host' => $host,
+            ]);
+        } finally {
+            restore_error_handler();
+        }
+
+        $this->assertSame($result, $this->addMappedCommonSuccessResponse([
+            'host' => $host,
+        ]));
+    }
 }
