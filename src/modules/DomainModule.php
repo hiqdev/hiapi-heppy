@@ -1044,16 +1044,16 @@ class DomainModule extends AbstractModule
         if (floatval((string) $fee) <= floatval((string) $row['standard_price']) && in_array($op, ['renew', 'transfer'], true)) {
             return array_merge($row, array_filter([
                 'fee' => $fee,
-                'category' => $data['category'],
-                'category_name' => $data['category_name'],
+                'category' => $data['category'] ?? null,
+                'category_name' => $data['category_name'] ?? null,
             ]));
         }
 
         return array_merge($row, array_filter([
             'fee' => $fee,
             'reason' => self::DOMAIN_PREMIUM_REASON,
-            'category' => $data['category'],
-            'category_name' => $data['category_name'],
+            'category' => $data['category'] ?? null,
+            'category_name' => $data['category_name'] ?? null,
             'allFee' => $allFee === true ? $data['fee'] : null,
         ]));
     }
