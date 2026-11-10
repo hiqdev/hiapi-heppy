@@ -111,6 +111,37 @@ class DomainSetFeeTest extends TestCase
         $this->assertSame(DomainModule::DOMAIN_PREMIUM_REASON, $result['reason']);
     }
 
+    public static function premiumWithoutCategoryProvider(): array
+    {
+        return [
+            'fee within standard_price on renew' => ['50.00', 'renew', false],
+            'fee above standard_price on create' => ['200.00', 'create', true],
+        ];
+    }
+
+    #[DataProvider('premiumWithoutCategoryProvider')]
+    public function testPremiumCheckWithoutCategoryLeavesCategoryOut(string $fee, string $op, bool $expectReason): void
+    {
+        $checkData = $this->premiumCheckData($fee);
+        unset($checkData['category'], $checkData['category_name']);
+        $module = $this->makeModule($checkData);
+        $row    = ['domain' => $this->domain, 'standard_price' => '100.00'];
+
+        set_error_handler(static function (int $severity, string $message, string $file, int $line): bool {
+            throw new \ErrorException($message, 0, $severity, $file, $line);
+        });
+        try {
+            $result = $this->callSetFee($module, $row, $op);
+        } finally {
+            restore_error_handler();
+        }
+
+        $this->assertSame($fee, $result['fee']);
+        $this->assertArrayNotHasKey('category', $result);
+        $this->assertArrayNotHasKey('category_name', $result);
+        $this->assertSame($expectReason, isset($result['reason']));
+    }
+
     // -------------------------------------------------------------------
     // domainRenew fee guard — verifies the standard_price key is read
     // -------------------------------------------------------------------
