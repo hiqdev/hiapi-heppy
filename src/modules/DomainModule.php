@@ -48,7 +48,7 @@ class DomainModule extends AbstractModule
     const ZONE_NOT_ACCREDITED = 'not accredited';
 
     /** One text for every zone, so the log groups them; the zone goes in the context. */
-    const FEE_CHECK_WITHOUT_AVAILABILITY = 'domain:check with fee/price extension has no availability';
+    const FEE_CHECK_WITHOUT_AVAILABILITY = 'domain:check with fee extension has no availability';
 
     const AUTHORIZATION_ERROR = 'Authorization error';
 
@@ -845,44 +845,46 @@ class DomainModule extends AbstractModule
                 }
             }
 
+            $feeAction = $command ?? 'create';
             if (isset($res['premium']) && $res['premium'] === self::DOMAIN_PREMIUM && !empty($res['fee']['category_name'])) {
                 return $res;
             } else {
-                $checkPremium = $this->_domainCheck($domain, false, $command ?? 'create');
+                $checkPremium = $this->_domainCheck($domain, false, $feeAction);
             }
         } catch (Throwable $e) {
             throw new Exception($e->getMessage(), 0, $e);
         }
 
-        if ($this->checkAvail($checkPremium, $domain) === null) {
-            // HQD-549: some registry answers the fee/price check without <domain:cd>;
-            // availability then comes from the first check.
-            $this->warnFeeCheckWithoutAvailability($domain, $command ?? 'create', $checkPremium);
-        }
-
+        // A price-extension reply carries no <domain:cd> by design: the registry sends
+        // only the price block, premium flag included. Availability always comes from
+        // the first check there (_parseCheckPrice), so a missing one is no news.
         if (!empty($checkPremium['price'])) {
             return $this->_parseCheckPrice($domain, $res, $checkPremium);
+        }
+
+        if ($this->checkAvail($checkPremium, $domain) === null) {
+            // HQD-549: availability then comes from the first check.
+            $this->warnFeeCheckWithoutAvailability($domain, $feeAction, $checkPremium);
         }
 
         return $this->_parseCheckFee($domain, $res, $checkPremium);
     }
 
     /**
-     * Logs a fee/price check reply without availability, with what the reply did carry:
+     * Logs a fee check reply without availability, with what the reply did carry:
      * whether a premium domain can still be told from a standard one depends on it.
      * Every key but `message` reaches the log target as context.
      */
-    private function warnFeeCheckWithoutAvailability(string $domain, string $command, array $checkPremium): void
+    private function warnFeeCheckWithoutAvailability(string $domain, string $feeAction, array $checkPremium): void
     {
         Yii::warning([
             'message' => self::FEE_CHECK_WITHOUT_AVAILABILITY,
             'domain' => $domain,
             'zone' => $this->getDomainZone($domain),
-            'command' => $command,
+            'command' => $feeAction,
             'result_code' => $checkPremium['result_code'] ?? null,
             'reply_keys' => array_keys($checkPremium),
             'fee' => $checkPremium['fee'][$domain] ?? null,
-            'price' => $checkPremium['price'][$domain] ?? null,
             'category' => $checkPremium['category'] ?? null,
         ], __METHOD__);
     }

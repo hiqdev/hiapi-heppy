@@ -191,7 +191,7 @@ class DomainsCheckTest extends TestCase
         $this->assertSame('In use', $result['reason']);
     }
 
-    public function testFeeCheckWithoutAvailsIsLoggedNotWarned()
+    public function testFeeCheckWithoutAvailsIsWarnedOnceWithItsContext()
     {
         $domain = 'silverfires42.me';
         $tool = $this->createCheckTool(['avails' => [$domain => '1']], []);
@@ -210,7 +210,27 @@ class DomainsCheckTest extends TestCase
         $this->assertSame('create', $payload['command']);
         $this->assertSame('1000', $payload['result_code']);
         $this->assertNull($payload['fee']);
-        $this->assertNull($payload['price']);
+    }
+
+    /**
+     * A price-extension reply has no <domain:cd>, only the price block: the premium
+     * flag and price come from it, availability from the first check, and nothing is logged.
+     */
+    public function testPriceCheckWithoutAvailsIsNotLogged()
+    {
+        $domain = 'premium.me';
+        $tool = $this->createCheckTool(
+            ['avails' => [$domain => '1']],
+            ['price' => [$domain => ['createPrice' => '248.00', 'premium' => '1']]],
+        );
+        $logged = count(Yii::getLogger()->messages);
+
+        $result = $this->callDomainCheck($tool, $domain);
+
+        $this->assertSame(1, $result['avail']);
+        $this->assertSame(DomainModule::DOMAIN_PREMIUM_REASON, $result['reason']);
+        $this->assertSame('248.00', $result['fee']['create']);
+        $this->assertSame([], array_slice(Yii::getLogger()->messages, $logged));
     }
 
     public function testFeeCheckWithoutAvailsLogsTheFeeDataItCarried()
