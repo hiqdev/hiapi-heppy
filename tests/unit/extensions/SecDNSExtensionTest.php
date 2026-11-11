@@ -28,7 +28,7 @@ class SecDNSExtensionTest extends TestCase
             'digest'      => 'AABBCCDDEEFF',
             'digest_type' => null,
             'max_sig_life' => null,
-            'pub_key'     => null,
+            'key_pub'     => null,
         ], $override);
     }
 
@@ -79,7 +79,7 @@ class SecDNSExtensionTest extends TestCase
     public function testAddExtensionFiltersNullFields(): void
     {
         $ext    = $this->makeExtension();
-        $secDNS = $this->makeSecDNSData(['max_sig_life' => null, 'pub_key' => null]);
+        $secDNS = $this->makeSecDNSData(['max_sig_life' => null, 'key_pub' => null]);
         $data   = ['extensions' => [], 'secDNS' => $secDNS];
 
         $result = $ext->addExtension('domain:update', $data);
@@ -93,7 +93,7 @@ class SecDNSExtensionTest extends TestCase
     {
         $ext    = $this->makeExtension();
         $secDNS = $this->makeSecDNSData();
-        unset($secDNS['max_sig_life'], $secDNS['pub_key'], $secDNS['digest_type']);
+        unset($secDNS['max_sig_life'], $secDNS['key_pub'], $secDNS['digest_type']);
         $data   = ['extensions' => [], 'secDNS' => $secDNS];
 
         $result = $ext->addExtension('domain:update', $data);
@@ -103,6 +103,26 @@ class SecDNSExtensionTest extends TestCase
         $this->assertArrayNotHasKey('pubKey',     $added['add']);
         $this->assertArrayNotHasKey('digestType', $added['add']);
         $this->assertSame(12345, $added['add']['keyTag']);
+    }
+
+    public function testAddExtensionPassesStoredKeyData(): void
+    {
+        $ext    = $this->makeExtension();
+        $secDNS = $this->makeSecDNSData([
+            'digest'       => null,
+            'key_flags'    => 256,
+            'key_protocol' => 3,
+            'key_pub'      => 'AwEAAa',
+        ]);
+        $data   = ['extensions' => [], 'secDNS' => $secDNS];
+
+        $result = $ext->addExtension('domain:update', $data);
+
+        $added = $result['extensions'][0]['add'];
+        $this->assertSame(256,      $added['flags']);
+        $this->assertSame(3,        $added['protocol']);
+        $this->assertSame(5,        $added['keyAlg']);
+        $this->assertSame('AwEAAa', $added['pubKey']);
     }
 
     public function testAddExtensionSkipsWhenSecDNSEmpty(): void

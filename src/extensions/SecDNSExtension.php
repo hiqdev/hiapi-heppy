@@ -50,7 +50,9 @@ class SecDNSExtension extends AbstractExtension implements ExtensionInterface
                 'digestAlg' => $row['digest_alg'] ?? null,
                 'digest' => $row['digest'] ?? null,
                 'digestType' => $row['digest_type'] ?? null,
-                'pubKey' => $row['pub_key'] ?? null,
+                'flags' => $row['key_flags'] ?? null,
+                'protocol' => $row['key_protocol'] ?? null,
+                'pubKey' => $row['key_pub'] ?? null,
             ]),
         ];
 
