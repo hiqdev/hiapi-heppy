@@ -46,4 +46,35 @@ class DomainTransferTest extends TestCase
             'transfer_status'   => 'pending',
         ]));
     }
+
+    public function testApproveTransferWithoutPeriodSendsNoPeriod()
+    {
+        $domain = 'silverfires1.me';
+        $sent = null;
+        $tool = $this->createTool([], [], [], [
+            'domain:transfer' => function (array $data) use (&$sent, $domain): array {
+                $sent = $data;
+
+                return $this->addCommonSuccessResponse(['name' => $domain, 'trStatus' => 'clientApproved']);
+            },
+        ]);
+
+        $warnings = [];
+        set_error_handler(static function (int $errno, string $errstr) use (&$warnings): bool {
+            $warnings[] = $errstr;
+
+            return true;
+        });
+        try {
+            $tool->domainApproveTransfer(['domain' => $domain]);
+        } finally {
+            restore_error_handler();
+        }
+
+        $this->assertSame([], $warnings);
+        $this->assertSame('approve', $sent['op']);
+        $this->assertSame($domain, $sent['name']);
+        $this->assertArrayNotHasKey('period', $sent);
+        $this->assertArrayNotHasKey('pw', $sent);
+    }
 }
