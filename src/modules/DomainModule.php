@@ -50,6 +50,9 @@ class DomainModule extends AbstractModule
     /** One text for every zone, so the log groups them; the zone goes in the context. */
     const FEE_CHECK_WITHOUT_AVAILABILITY = 'domain:check with fee extension has no availability';
 
+    /** One text for every zone, so the log groups them; the zone goes in the context. */
+    const PRICE_CHECK_WITHOUT_DOMAIN = 'domain:check with price extension has no price for the domain';
+
     const AUTHORIZATION_ERROR = 'Authorization error';
 
     /** {@inheritdoc} */
@@ -859,6 +862,11 @@ class DomainModule extends AbstractModule
         // only the price block, premium flag included. Availability always comes from
         // the first check there (_parseCheckPrice), so a missing one is no news.
         if (!empty($checkPremium['price'])) {
+            if ($this->domainEntry($checkPremium, 'price', $domain) === null) {
+                // Without its entry the premium flag is lost and the domain reads as standard.
+                $this->warnPriceCheckWithoutDomain($domain, $feeAction, $checkPremium);
+            }
+
             return $this->_parseCheckPrice($domain, $res, $checkPremium);
         }
 
@@ -884,8 +892,24 @@ class DomainModule extends AbstractModule
             'command' => $feeAction,
             'result_code' => $checkPremium['result_code'] ?? null,
             'reply_keys' => array_keys($checkPremium),
-            'fee' => $checkPremium['fee'][$domain] ?? null,
+            'fee' => $this->domainEntry($checkPremium, 'fee', $domain),
             'category' => $checkPremium['category'] ?? null,
+        ], __METHOD__);
+    }
+
+    /**
+     * Logs a price check reply whose price block has no entry for the checked domain:
+     * its premium flag is then unknown and the domain is answered as standard.
+     */
+    private function warnPriceCheckWithoutDomain(string $domain, string $feeAction, array $checkPremium): void
+    {
+        Yii::warning([
+            'message' => self::PRICE_CHECK_WITHOUT_DOMAIN,
+            'domain' => $domain,
+            'zone' => $this->getDomainZone($domain),
+            'command' => $feeAction,
+            'result_code' => $checkPremium['result_code'] ?? null,
+            'price_names' => array_keys($checkPremium['price']),
         ], __METHOD__);
     }
 
@@ -909,31 +933,32 @@ class DomainModule extends AbstractModule
 
     protected function _parseCheckFee(string $domain, array $data, array $res): array
     {
-        if (empty($res['fee']) || empty($res['fee'][$domain]) || empty($res['fee'][$domain]['class'])) {
+        $fee = $this->domainEntry($res, 'fee', $domain);
+        if (empty($fee['class'])) {
             return $this->withRegistryReason([
                 'avail' => $this->checkAvail($res, $domain) ?? (int) $this->checkAvail($data, $domain),
             ], $domain, $data, $res);
         }
 
-        if (strtolower($res['fee'][$domain]['class']) === self::DOMAIN_STANDART) {
+        if (strtolower($fee['class']) === self::DOMAIN_STANDART) {
             return $this->withRegistryReason([
                 'avail' => $this->checkAvail($res, $domain) ?? (int) $this->checkAvail($data, $domain),
             ], $domain, $data, $res);
         }
 
-        $res['fee'][$domain]['premium'] = 1;
-        $res['fee'][$domain]['currency'] = $this->tool->getCurrency();
+        $fee['premium'] = 1;
+        $fee['currency'] = $this->tool->getCurrency();
         return [
             'avail' => $this->checkAvail($res, $domain) ?? (int) $this->checkAvail($data, $domain),
             'reason' => self::DOMAIN_PREMIUM_REASON,
-            'fee' => $res['fee'][$domain],
+            'fee' => $fee,
         ];
     }
 
     protected function _parseCheckPrice(string $domain, array $data, array $res): array
     {
         $priceD = [];
-        foreach ($res['price'][$domain] ?? [] as $key => $value) {
+        foreach ($this->domainEntry($res, 'price', $domain) ?? [] as $key => $value) {
             $key = str_replace('Price', '', $key);
             $priceD[$key] = $value;
         }
@@ -987,6 +1012,20 @@ class DomainModule extends AbstractModule
             '0', 'false' => 0,
             default => null,
         };
+    }
+
+    /**
+     * Entry of a domain in the `fee` or `price` block of a check reply: heppy keys it
+     * by the name as the registry wrote it, so the lowercased name is tried first,
+     * as in checkAvail().
+     *
+     * @return array|null null when the reply has no entry for the domain
+     */
+    private function domainEntry(array $check, string $block, string $domain): ?array
+    {
+        $entry = $check[$block][mb_strtolower($domain)] ?? $check[$block][$domain] ?? null;
+
+        return is_array($entry) ? $entry : null;
     }
 
     private function checkReason(array $check, string $domain): ?string
