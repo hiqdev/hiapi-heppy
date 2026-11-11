@@ -89,6 +89,22 @@ class SecDNSExtensionTest extends TestCase
         $this->assertArrayNotHasKey('pubKey',     $added['add']);
     }
 
+    public function testAddExtensionOmitsAbsentOptionalFields(): void
+    {
+        $ext    = $this->makeExtension();
+        $secDNS = $this->makeSecDNSData();
+        unset($secDNS['max_sig_life'], $secDNS['pub_key'], $secDNS['digest_type']);
+        $data   = ['extensions' => [], 'secDNS' => $secDNS];
+
+        $result = $ext->addExtension('domain:update', $data);
+
+        $added = $result['extensions'][0];
+        $this->assertArrayNotHasKey('maxSigLife', $added['add']);
+        $this->assertArrayNotHasKey('pubKey',     $added['add']);
+        $this->assertArrayNotHasKey('digestType', $added['add']);
+        $this->assertSame(12345, $added['add']['keyTag']);
+    }
+
     public function testAddExtensionSkipsWhenSecDNSEmpty(): void
     {
         $ext  = $this->makeExtension();

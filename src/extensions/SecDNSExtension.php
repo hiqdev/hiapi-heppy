@@ -44,13 +44,13 @@ class SecDNSExtension extends AbstractExtension implements ExtensionInterface
         $data['extensions'][] = [
             'command' => strpos($command, ':create') !== false ? "{$version}:create" : "{$version}:update",
             $row['command'] => array_filter([
-                'maxSigLife' => $row['max_sig_life'],
-                'keyTag' => $row['key_tag'],
-                'keyAlg' => $row['key_alg'],
-                'digestAlg' => $row['digest_alg'],
-                'digest' => $row['digest'],
-                'digestType' => $row['digest_type'],
-                'pubKey' => $row['pub_key'],
+                'maxSigLife' => $row['max_sig_life'] ?? null,
+                'keyTag' => $row['key_tag'] ?? null,
+                'keyAlg' => $row['key_alg'] ?? null,
+                'digestAlg' => $row['digest_alg'] ?? null,
+                'digest' => $row['digest'] ?? null,
+                'digestType' => $row['digest_type'] ?? null,
+                'pubKey' => $row['pub_key'] ?? null,
             ]),
         ];
 
