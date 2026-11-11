@@ -233,6 +233,70 @@ class DomainsCheckTest extends TestCase
         $this->assertSame([], array_slice(Yii::getLogger()->messages, $logged));
     }
 
+    /**
+     * heppy keys the price block by the name as the registry wrote it (lowercased):
+     * a mixed-case name asked by the client must still find its premium entry.
+     */
+    public function testMixedCaseNameFindsItsPriceEntry()
+    {
+        $domain = 'Premium.ME';
+        $tool = $this->createCheckTool(
+            ['avails' => ['premium.me' => '1']],
+            ['price' => ['premium.me' => ['createPrice' => '248.00', 'premium' => '1']]],
+        );
+        $logged = count(Yii::getLogger()->messages);
+
+        $result = $this->callDomainCheck($tool, $domain);
+
+        $this->assertSame(1, $result['avail']);
+        $this->assertSame(DomainModule::DOMAIN_PREMIUM_REASON, $result['reason']);
+        $this->assertSame('248.00', $result['fee']['create']);
+        $this->assertSame([], array_slice(Yii::getLogger()->messages, $logged));
+    }
+
+    public function testMixedCaseNameFindsItsFeeEntry()
+    {
+        $domain = 'Premium.ME';
+        $fee = ['class' => DomainModule::DOMAIN_PREMIUM, 'create' => '500.00'];
+        $tool = $this->createCheckTool(
+            ['avails' => ['premium.me' => '1']],
+            ['avails' => ['premium.me' => '1'], 'fee' => ['premium.me' => $fee]],
+        );
+        $logged = count(Yii::getLogger()->messages);
+
+        $result = $this->callDomainCheck($tool, $domain);
+
+        $this->assertSame(1, $result['avail']);
+        $this->assertSame(DomainModule::DOMAIN_PREMIUM_REASON, $result['reason']);
+        $this->assertSame('500.00', $result['fee']['create']);
+        $this->assertSame(1, $result['fee']['premium']);
+        $this->assertSame([], array_slice(Yii::getLogger()->messages, $logged));
+    }
+
+    public function testPriceCheckWithoutTheDomainIsWarnedWithItsContext()
+    {
+        $domain = 'premium.me';
+        $tool = $this->createCheckTool(
+            ['avails' => [$domain => '1']],
+            ['price' => ['other.me' => ['createPrice' => '248.00', 'premium' => '1']]],
+        );
+        $logged = count(Yii::getLogger()->messages);
+
+        $result = $this->callDomainCheck($tool, $domain);
+
+        $this->assertSame(1, $result['avail']);
+        $this->assertNull($result['reason']);
+        $messages = array_slice(Yii::getLogger()->messages, $logged);
+        $this->assertCount(1, $messages);
+        $this->assertSame(Logger::LEVEL_WARNING, $messages[0][1]);
+        $payload = $messages[0][0];
+        $this->assertSame(DomainModule::PRICE_CHECK_WITHOUT_DOMAIN, $payload['message']);
+        $this->assertSame($domain, $payload['domain']);
+        $this->assertSame('.me', $payload['zone']);
+        $this->assertSame('create', $payload['command']);
+        $this->assertSame(['other.me'], $payload['price_names']);
+    }
+
     public function testFeeCheckWithoutAvailsLogsTheFeeDataItCarried()
     {
         $domain = 'premium.me';
