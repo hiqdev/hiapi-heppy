@@ -1176,8 +1176,8 @@ class DomainModule extends AbstractModule
         return $this->tool->commonRequest("{$this->object}:transfer", array_filter([
             'op'        => $op,
             'name'      => $row['domain'],
-            'pw'        => $row['password'],
-            'period'    => $row['period'],
+            'pw'        => $row['password'] ?? null,
+            'period'    => $row['period'] ?? null,
             'fee'       => $row['fee'] ?? null,
             'category_name' => $row['category_name'] ?? null,
             'keysys'    => $row['keysys'] ?? null,
