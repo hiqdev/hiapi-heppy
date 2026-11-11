@@ -131,7 +131,7 @@ class HostModule extends AbstractModule
             return $this->tool->commonRequest("{$this->object}:delete", [
                 'name'  => $row['host'],
             ], [], [
-                'id'    => $row['id'],
+                'id'    => $row['id'] ?? null,
                 'host'  => $row['host'],
             ]);
         }  catch (Throwable $e) {
