@@ -48,11 +48,8 @@
     },
     "require-dev": {
         "yiisoft/yii2": "^2.0@dev",
-        "hiqdev/composer-config-plugin": "dev-master",
         "vlucas/phpdotenv": "^2.5",
-        "hiqdev/hidev-php": "<2.0 || dev-master",
-        "hiqdev/hidev-hiqdev": "<2.0 || dev-master",
-        "phpunit/phpunit": "^10.0 || ^11.0 || ^12.0"
+        "phpunit/phpunit": "^12.5"
     },
     "autoload": {
         "psr-4": {
