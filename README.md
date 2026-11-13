@@ -4,9 +4,6 @@
 
 [![Latest Stable Version](https://poser.pugx.org/hiqdev/hiapi-heppy/v/stable)](https://packagist.org/packages/hiqdev/hiapi-heppy)
 [![Total Downloads](https://poser.pugx.org/hiqdev/hiapi-heppy/downloads)](https://packagist.org/packages/hiqdev/hiapi-heppy)
-[![Build Status](https://img.shields.io/travis/hiqdev/hiapi-heppy.svg)](https://travis-ci.org/hiqdev/hiapi-heppy)
-[![Scrutinizer Code Coverage](https://img.shields.io/scrutinizer/coverage/g/hiqdev/hiapi-heppy.svg)](https://scrutinizer-ci.com/g/hiqdev/hiapi-heppy/)
-[![Scrutinizer Code Quality](https://img.shields.io/scrutinizer/g/hiqdev/hiapi-heppy.svg)](https://scrutinizer-ci.com/g/hiqdev/hiapi-heppy/)
 
 The plugin for integration [hEPPy] EPP client in hiAPI.
 
