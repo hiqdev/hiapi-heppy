@@ -38,10 +38,10 @@ class RabbitMQClient implements ClientInterface
 
     private RabbitMQConnectionFactory $connectionFactory;
 
-    public function __construct(array $connections, ?string $queue = '', ?RabbitMQConnectionFactory $connectionFactory = null)
+    public function __construct(array $connections, ?string $queue = '')
     {
         $this->connections = $connections;
-        $this->connectionFactory = $connectionFactory ?? new RabbitMQConnectionFactory();
+        $this->connectionFactory = new RabbitMQConnectionFactory();
         $this->queue = $queue;
         $this->open();
     }
