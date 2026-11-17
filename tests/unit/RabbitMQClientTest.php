@@ -3,6 +3,7 @@
 namespace hiapi\heppy\tests\unit;
 
 use hiapi\heppy\RabbitMQClient;
+use hiapi\heppy\RabbitMQConnectionFactory;
 use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Connection\AbstractConnection;
 use PhpAmqpLib\Exception\AMQPHeartbeatMissedException;
@@ -27,7 +28,8 @@ class RabbitMQClientTest extends TestCase
      */
     private function createClient(array $publishErrors = [], ?\Throwable $waitError = null): RabbitMQClient
     {
-        $this->client = new RabbitMQClient([[]], 'heppy', function () use (&$publishErrors, $waitError): AbstractConnection {
+        $factory = $this->createMock(RabbitMQConnectionFactory::class);
+        $factory->method('create')->willReturnCallback(function () use (&$publishErrors, $waitError): AbstractConnection {
             $this->opened++;
             $error = array_shift($publishErrors);
 
@@ -53,6 +55,8 @@ class RabbitMQClientTest extends TestCase
 
             return $connection;
         });
+
+        $this->client = new RabbitMQClient([[]], 'heppy', $factory);
 
         return $this->client;
     }

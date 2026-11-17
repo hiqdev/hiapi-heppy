@@ -10,9 +10,6 @@
 
 namespace hiapi\heppy;
 
-use Closure;
-use PhpAmqpLib\Connection\AbstractConnection;
-use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 use PhpAmqpLib\Exception\AMQPHeartbeatMissedException;
 use PhpAmqpLib\Exception\AMQPTimeoutException;
@@ -39,20 +36,19 @@ class RabbitMQClient implements ClientInterface
 
     private array $connections;
 
-    private Closure $connect;
+    private RabbitMQConnectionFactory $connectionFactory;
 
-    public function __construct(array $connections, ?string $queue = '', ?Closure $connect = null)
+    public function __construct(array $connections, ?string $queue = '', ?RabbitMQConnectionFactory $connectionFactory = null)
     {
         $this->connections = $connections;
-        $this->connect = $connect ?? fn (array $hosts, array $options): AbstractConnection
-            => AMQPStreamConnection::create_connection($hosts, $options);
+        $this->connectionFactory = $connectionFactory ?? new RabbitMQConnectionFactory();
         $this->queue = $queue;
         $this->open();
     }
 
     private function open(): void
     {
-        $this->connection = ($this->connect)($this->connections, [
+        $this->connection = $this->connectionFactory->create($this->connections, [
             'heartbeat' => self::MESSAGE_TTL,
         ]);
         $this->channel = $this->connection->channel();
