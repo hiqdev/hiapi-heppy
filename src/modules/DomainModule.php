@@ -130,7 +130,7 @@ class DomainModule extends AbstractModule
                 throw new Exception(self::AUTHORIZATION_ERROR);
             }
 
-            throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
+            $this->rethrow($e, new Exception($e->getMessage(), (int) $e->getCode(), $e));
 
         }
 
@@ -226,7 +226,7 @@ class DomainModule extends AbstractModule
 
         if ($errors && !$res) {
             $e = reset($errors);
-            throw new Exception($e->getMessage(), 0, $e);
+            $this->rethrow($e, new Exception($e->getMessage(), 0, $e));
         }
 
         // hiapi reads anything but a result here as available: a domain whose
@@ -340,7 +340,7 @@ class DomainModule extends AbstractModule
                     if ($e->getMessage() === self::UNIMPLEMENTED_OBJECT_FOR_THE_SUB_PRODUCT) {
                         break;
                     }
-                    throw new Exception($e->getMessage());
+                    $this->rethrow($e, new Exception($e->getMessage()));
                 }
 
                 $remoteId = $response['epp_id'];
@@ -480,7 +480,7 @@ class DomainModule extends AbstractModule
             if ($zone === 'eu' && $this->isKeySysExtensionEnabled()) {
                 return $row;
             }
-            throw new Exception($e->getMessage());
+            $this->rethrow($e, new Exception($e->getMessage()));
         }
 
         return $this->_domainSetFee($res, 'transfer');
@@ -821,11 +821,11 @@ class DomainModule extends AbstractModule
             return $this->tool->commonRequest($command, $input, $returns, $payload);
         } catch (EppErrorException $e) {
             if (strpos($e->getMessage(), 'does NOT support contact') === false) {
-                throw new EppErrorException($e->getMessage());
+                $this->rethrow($e, new EppErrorException($e->getMessage()));
             }
 
             if (!$this->isNamestoreExtensionEnabled() || $input['clearContact'] === true) {
-                throw new EppErrorException($e->getMessage());
+                $this->rethrow($e, new EppErrorException($e->getMessage()));
             }
 
             return $this->domainPerformOperation($command, $input, $returns, $payload, true);
@@ -855,7 +855,7 @@ class DomainModule extends AbstractModule
                 $checkPremium = $this->_domainCheck($domain, false, $feeAction);
             }
         } catch (Throwable $e) {
-            throw new Exception($e->getMessage(), 0, $e);
+            $this->rethrow($e, new Exception($e->getMessage(), 0, $e));
         }
 
         // A price-extension reply carries no <domain:cd> by design: the registry sends
@@ -1301,7 +1301,7 @@ class DomainModule extends AbstractModule
                 return $this->_domainSetContacts($orow, $info, $contactTypes, $fixEPPID, true);
             }
             if ($fixEPPID === false && $insensative === true) {
-                throw new Exception($e->getMessage());
+                $this->rethrow($e, new Exception($e->getMessage()));
             }
 
             return $this->_domainSetContacts($orow, $info, $contactTypes, false, false);

@@ -164,7 +164,7 @@ class ContactModule extends AbstractModule
                 return $this->contactCreate($row, $addsymbols, false);
             }
 
-            throw new Exception($e->getMessage());
+            $this->rethrow($e, new Exception($e->getMessage()));
         }
     }
 
@@ -207,7 +207,7 @@ class ContactModule extends AbstractModule
                 return $this->contactUpdate($row, $info, false);
             }
 
-            throw new Exception($e->getMessage());
+            $this->rethrow($e, new Exception($e->getMessage()));
         }
     }
 

@@ -12,6 +12,7 @@ namespace hiapi\heppy;
 
 use hiapi\heppy\exceptions\EppErrorException;
 use hiapi\heppy\exceptions\EppReplyException;
+use hiapi\heppy\exceptions\EppTransportException;
 use hiapi\heppy\exceptions\InvalidCallException;
 use hiapi\heppy\extensions\AbstractExtension;
 use hiapi\heppy\extensions\NamestoreExtension;
@@ -36,6 +37,8 @@ use PhpAmqpLib\Exception\AMQPNoDataException;
 use PhpAmqpLib\Exception\AMQPConnectionClosedException;
 use PhpAmqpLib\Exception\AMQPTimeoutException;
 use PhpAmqpLib\Exception\AMQPChannelClosedException;
+use PhpAmqpLib\Exception\AMQPIOException;
+use PhpAmqpLib\Exception\AMQPSocketException;
 
 use DateTimeImmutable;
 use DateTimeZone;
@@ -51,6 +54,12 @@ class HeppyTool
 
     /** Response keys that may hold the registry's result text, in lookup order */
     public const RESPONSE_MESSAGE_KEYS = ['msg', 'result_msg'];
+
+    public const ERROR_KIND_KEY = '_error_kind';
+
+    public const CONNECTION_ERROR_KIND = 'connection';
+
+    public const CONNECTION_TIMED_OUT = 'The connection timed out';
 
     /** @var int seconds to wait before retrying a failed command */
     protected int $retryDelaySeconds = 5;
@@ -361,7 +370,8 @@ class HeppyTool
             $got = is_array($res)
                 ? array_intersect_key($res, array_flip(['_error', 'result_code', 'result_msg', 'clTRID', 'svTRID']))
                 : $res;
-            throw new EppErrorException('could not get EPP greeting, got: ' . json_encode($got, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+            $message = 'could not get EPP greeting, got: ' . json_encode($got, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            throw $this->isConnectionFailure($res) ? new EppTransportException($message) : new EppErrorException($message);
         }
 
         return $res;
@@ -382,19 +392,21 @@ class HeppyTool
         bool $second = false
     ): array {
         $origin = $input;
-        $input = $this->applyExtensions($command, $input);
         try {
+            $input = $this->applyExtensions($command, $input);
             $response = $this->request($command, $input);
         } catch (AMQPTimeoutException $e) {
-            throw new \Exception("The connection timed out");
+            throw new EppTransportException(self::CONNECTION_TIMED_OUT, null, null, $e);
         } catch (AMQPChannelClosedException $e) {
             if ($second === true) {
-                throw new \Exception($e->getMessage());
+                throw new EppTransportException($e->getMessage(), null, null, $e);
             }
 
             unset($this->_client);
             $this->_client = null;
             return $this->commonRequest($command, $origin, $returns, $payload, true);
+        } catch (AMQPConnectionClosedException | AMQPIOException | AMQPSocketException $e) {
+            throw new EppTransportException($e->getMessage(), null, null, $e);
         }
 
         if (isset($response['result_code'])) {
@@ -402,9 +414,10 @@ class HeppyTool
         } elseif (!empty($response['_error'])) {
             // heppy could not get a reply from the registry (timeout, dropped
             // connection, another request's reply) and says why.
-            throw new EppErrorException('failed heppy request: ' . $response['_error']);
+            $message = 'failed heppy request: ' . $response['_error'];
+            throw $this->isConnectionFailure($response) ? new EppTransportException($message) : new EppErrorException($message);
         } else {
-            throw new EppErrorException('failed heppy request: no answer');
+            throw new EppTransportException('failed heppy request: no answer');
         }
 
         if ($rc !== '1') {
@@ -452,6 +465,11 @@ class HeppyTool
         }
 
         return null;
+    }
+
+    private function isConnectionFailure(mixed $response): bool
+    {
+        return is_array($response) && ($response[self::ERROR_KIND_KEY] ?? null) === self::CONNECTION_ERROR_KIND;
     }
 
     protected function applyExtensions(string $command, array $input): array

@@ -4,8 +4,12 @@ namespace hiapi\heppy\tests\unit;
 
 use hiapi\heppy\exceptions\EppErrorException;
 use hiapi\heppy\exceptions\EppReplyException;
+use hiapi\heppy\exceptions\EppTransportException;
+use hiapi\heppy\HeppyTool;
 use hiapi\heppy\RabbitMQClient;
 use hiapi\heppy\tests\unit\Stubs\HeppyToolStub;
+use PhpAmqpLib\Exception\AMQPHeartbeatMissedException;
+use PhpAmqpLib\Exception\AMQPTimeoutException;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 
 #[AllowMockObjectsWithoutExpectations]
@@ -29,6 +33,17 @@ class HeppyToolCommonRequestTest extends TestCase
 
         $tool = new HeppyToolStub($this->mockBase(), []);
         $tool->extURIs = [self::NAMESTORE_URI];
+        $tool->setClient($client);
+
+        return $tool;
+    }
+
+    private function createThrowingTool(\Throwable $error): HeppyToolStub
+    {
+        $client = $this->createMock(RabbitMQClient::class);
+        $client->method('request')->willThrowException($error);
+
+        $tool = new HeppyToolStub($this->mockBase(), []);
         $tool->setClient($client);
 
         return $tool;
@@ -153,5 +168,65 @@ class HeppyToolCommonRequestTest extends TestCase
         $this->assertCount(2, $this->sent);
         $this->assertSame(1, $this->countNamestoreExtensions($this->sent[0]));
         $this->assertSame($this->sent[0]['extensions'], $this->sent[1]['extensions']);
+    }
+
+    public function testHeppyConnectionErrorIsATransportFailure(): void
+    {
+        $tool = $this->createSequenceTool([[
+            '_error' => 'EPP: no reply from epp.example in 15.0s to clTRID AA-1, connection dropped',
+            HeppyTool::ERROR_KIND_KEY => HeppyTool::CONNECTION_ERROR_KIND,
+        ]]);
+
+        $this->expectException(EppTransportException::class);
+        $this->expectExceptionMessage('failed heppy request: EPP: no reply from epp.example in 15.0s to clTRID AA-1, connection dropped');
+
+        $this->renew($tool);
+    }
+
+    public function testHeppyErrorOfAnotherKindIsNotATransportFailure(): void
+    {
+        $tool = $this->createSequenceTool([['_error' => "('unknown command', 'domain:renew')"]]);
+
+        try {
+            $this->renew($tool);
+            $this->fail('EppErrorException expected');
+        } catch (EppErrorException $e) {
+            $this->assertSame(EppErrorException::class, $e::class);
+            $this->assertSame("failed heppy request: ('unknown command', 'domain:renew')", $e->getMessage());
+        }
+    }
+
+    public function testResponseWithoutResultCodeOrErrorIsATransportFailure(): void
+    {
+        $tool = $this->createSequenceTool([['svID' => 'test']]);
+
+        $this->expectException(EppTransportException::class);
+        $this->expectExceptionMessage('failed heppy request: no answer');
+
+        $this->renew($tool);
+    }
+
+    public function testRabbitMqTimeoutIsATransportFailure(): void
+    {
+        $timeout = new AMQPTimeoutException('The connection timed out after 20 sec while awaiting incoming data');
+        $tool = $this->createThrowingTool($timeout);
+
+        try {
+            $this->renew($tool);
+            $this->fail('EppTransportException expected');
+        } catch (EppTransportException $e) {
+            $this->assertSame(HeppyTool::CONNECTION_TIMED_OUT, $e->getMessage());
+            $this->assertSame($timeout, $e->getPrevious());
+        }
+    }
+
+    public function testMissedRabbitMqHeartbeatIsATransportFailure(): void
+    {
+        $tool = $this->createThrowingTool(new AMQPHeartbeatMissedException('Missed server heartbeat'));
+
+        $this->expectException(EppTransportException::class);
+        $this->expectExceptionMessage('Missed server heartbeat');
+
+        $this->renew($tool);
     }
 }
