@@ -44,7 +44,7 @@ class HostModule extends AbstractModule
         try {
             $check = $this->hostCheck($row);
         } catch (Throwable $e) {
-            throw new Exception($e->getMessage());
+            $this->rethrow($e, new Exception($e->getMessage()));
         }
 
         return  (int) $check['avail'] === 1 ? $this->hostCreate($row) : $this->hostUpdate($row);

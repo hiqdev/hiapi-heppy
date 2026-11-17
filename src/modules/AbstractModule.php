@@ -2,7 +2,9 @@
 
 namespace hiapi\heppy\modules;
 
+use hiapi\heppy\exceptions\EppTransportException;
 use hiapi\heppy\HeppyTool;
+use Throwable;
 
 class AbstractModule
 {
@@ -266,5 +268,10 @@ class AbstractModule
         $parts = explode('.', $domain);
 
         return array_pop($parts);
+    }
+
+    protected function rethrow(Throwable $e, Throwable $rewrapped): never
+    {
+        throw $e instanceof EppTransportException ? $e : $rewrapped;
     }
 }
