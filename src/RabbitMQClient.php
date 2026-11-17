@@ -10,8 +10,8 @@
 
 namespace hiapi\heppy;
 
-use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
+use PhpAmqpLib\Exception\AMQPHeartbeatMissedException;
 use PhpAmqpLib\Exception\AMQPTimeoutException;
 use RuntimeException;
 
@@ -34,12 +34,23 @@ class RabbitMQClient implements ClientInterface
 
     protected $reply;
 
-    public function __construct(array $connections, ?string $queue = '')
+    private array $connections;
+
+    private RabbitMQConnectionFactory $connectionFactory;
+
+    public function __construct(array $connections, ?string $queue = '', ?RabbitMQConnectionFactory $connectionFactory = null)
     {
-        $this->connection = AMQPStreamConnection::create_connection($connections, [
+        $this->connections = $connections;
+        $this->connectionFactory = $connectionFactory ?? new RabbitMQConnectionFactory();
+        $this->queue = $queue;
+        $this->open();
+    }
+
+    private function open(): void
+    {
+        $this->connection = $this->connectionFactory->create($this->connections, [
             'heartbeat' => self::MESSAGE_TTL,
         ]);
-        $this->queue = $queue;
         $this->channel = $this->connection->channel();
         $this->callback_queue = $this->startCallbackQueue($this->channel);
     }
@@ -82,12 +93,12 @@ class RabbitMQClient implements ClientInterface
         $this->correlation_id = uniqid();
 
         $query = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        $msg = new AMQPMessage($query, [
-            'correlation_id'    => $this->correlation_id,
-            'reply_to'          => $this->callback_queue,
-            'expiration'        => (string) (self::MESSAGE_TTL * 1_000), // Time in milliseconds
-        ]);
-        $this->channel->basic_publish($msg, '', $this->queue);
+        try {
+            $this->publish($query);
+        } catch (AMQPHeartbeatMissedException $e) {
+            $this->open();
+            $this->publish($query);
+        }
 
         $this->reply = null;
         while (!$this->reply) {
@@ -95,5 +106,15 @@ class RabbitMQClient implements ClientInterface
         }
 
         return json_decode($this->reply, true);
+    }
+
+    private function publish(string $query): void
+    {
+        $msg = new AMQPMessage($query, [
+            'correlation_id'    => $this->correlation_id,
+            'reply_to'          => $this->callback_queue,
+            'expiration'        => (string) (self::MESSAGE_TTL * 1_000), // Time in milliseconds
+        ]);
+        $this->channel->basic_publish($msg, '', $this->queue);
     }
 }
