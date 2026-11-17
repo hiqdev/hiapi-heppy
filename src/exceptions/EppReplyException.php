@@ -8,6 +8,8 @@ final class EppReplyException extends \Exception implements ExceptionInterface
 
     private const FIELDS = ['result_code', 'result_msg', 'result_reason', 'svTRID', 'clTRID'];
 
+    private const EXTENSIONS = 'extensions';
+
     public static function fromResponse(array $response): self
     {
         $parts = [];
@@ -15,6 +17,12 @@ final class EppReplyException extends \Exception implements ExceptionInterface
             if (isset($response[$field]) && is_scalar($response[$field])) {
                 $parts[] = $field . '=' . $response[$field];
             }
+        }
+        if (!empty($response[self::EXTENSIONS]) && is_array($response[self::EXTENSIONS])) {
+            $parts[] = self::EXTENSIONS . '=' . json_encode(
+                $response[self::EXTENSIONS],
+                JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE
+            );
         }
 
         return new self(self::MESSAGE_PREFIX . implode(', ', $parts), (int) ($response['result_code'] ?? 0));

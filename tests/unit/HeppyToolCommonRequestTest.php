@@ -96,6 +96,31 @@ class HeppyToolCommonRequestTest extends TestCase
         }
     }
 
+    public function testRegistryErrorReplyKeepsItsExtensionsAsJson(): void
+    {
+        $tool = $this->createSequenceTool([[
+            'result_code' => '2306',
+            'result_msg'  => 'Parameter value policy error',
+            'svTRID'      => '1096078890-1792505952818',
+            'extensions'  => [[
+                'command' => 'namestoreExt:nsExtErrData',
+                'msg'     => 'Specified sub-product does not exist',
+                'code'    => '1',
+            ]],
+        ]]);
+
+        try {
+            $this->renew($tool);
+            $this->fail('EppErrorException expected');
+        } catch (EppErrorException $e) {
+            $this->assertSame(
+                'EPP reply: result_code=2306, result_msg=Parameter value policy error, svTRID=1096078890-1792505952818, '
+                    . 'extensions=[{"command":"namestoreExt:nsExtErrData","msg":"Specified sub-product does not exist","code":"1"}]',
+                $e->getPrevious()->getMessage()
+            );
+        }
+    }
+
     public function testSessionErrorIsRetriedOnceWithTheSameExtensions(): void
     {
         $tool = $this->createSequenceTool([
