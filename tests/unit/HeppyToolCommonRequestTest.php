@@ -3,6 +3,7 @@
 namespace hiapi\heppy\tests\unit;
 
 use hiapi\heppy\exceptions\EppErrorException;
+use hiapi\heppy\exceptions\EppReplyException;
 use hiapi\heppy\RabbitMQClient;
 use hiapi\heppy\tests\unit\Stubs\HeppyToolStub;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
@@ -67,6 +68,57 @@ class HeppyToolCommonRequestTest extends TestCase
         }
 
         $this->assertCount(1, $this->sent);
+    }
+
+    public function testRegistryErrorKeepsTheReplyAsPrevious(): void
+    {
+        $tool = $this->createSequenceTool([[
+            'result_code'   => '2306',
+            'result_msg'    => 'Parameter value policy error',
+            'result_reason' => 'Connection Policy',
+            'svTRID'        => '1096078890-1792505952818',
+            'clTRID'        => 'AA-01',
+        ]]);
+
+        try {
+            $this->renew($tool);
+            $this->fail('EppErrorException expected');
+        } catch (EppErrorException $e) {
+            $this->assertSame('Parameter value policy error Connection Policy', $e->getMessage());
+            $reply = $e->getPrevious();
+            $this->assertInstanceOf(EppReplyException::class, $reply);
+            $this->assertSame(
+                'EPP reply: result_code=2306, result_msg=Parameter value policy error, '
+                    . 'result_reason=Connection Policy, svTRID=1096078890-1792505952818, clTRID=AA-01',
+                $reply->getMessage()
+            );
+            $this->assertSame(2306, $reply->getCode());
+        }
+    }
+
+    public function testRegistryErrorReplyKeepsItsExtensionsAsJson(): void
+    {
+        $tool = $this->createSequenceTool([[
+            'result_code' => '2306',
+            'result_msg'  => 'Parameter value policy error',
+            'svTRID'      => '1096078890-1792505952818',
+            'extensions'  => [[
+                'command' => 'namestoreExt:nsExtErrData',
+                'msg'     => 'Specified sub-product does not exist',
+                'code'    => '1',
+            ]],
+        ]]);
+
+        try {
+            $this->renew($tool);
+            $this->fail('EppErrorException expected');
+        } catch (EppErrorException $e) {
+            $this->assertSame(
+                'EPP reply: result_code=2306, result_msg=Parameter value policy error, svTRID=1096078890-1792505952818, '
+                    . 'extensions=[{"command":"namestoreExt:nsExtErrData","msg":"Specified sub-product does not exist","code":"1"}]',
+                $e->getPrevious()->getMessage()
+            );
+        }
     }
 
     public function testSessionErrorIsRetriedOnceWithTheSameExtensions(): void

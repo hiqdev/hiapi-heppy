@@ -130,7 +130,7 @@ class DomainModule extends AbstractModule
                 throw new Exception(self::AUTHORIZATION_ERROR);
             }
 
-            throw new Exception($e->getMessage());
+            throw new Exception($e->getMessage(), (int) $e->getCode(), $e);
 
         }
 
