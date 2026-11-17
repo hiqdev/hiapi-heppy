@@ -11,6 +11,7 @@
 namespace hiapi\heppy;
 
 use hiapi\heppy\exceptions\EppErrorException;
+use hiapi\heppy\exceptions\EppReplyException;
 use hiapi\heppy\exceptions\InvalidCallException;
 use hiapi\heppy\extensions\AbstractExtension;
 use hiapi\heppy\extensions\NamestoreExtension;
@@ -415,7 +416,7 @@ class HeppyTool
                     sleep($this->retryDelaySeconds);
                     return $this->commonRequest($command, $origin, $returns, $payload, true);
                 }
-                throw new EppErrorException(trim($msg . " " . ($response['result_reason'] ?? '')), (int) $response['result_code'], $response);
+                throw new EppErrorException(trim($msg . " " . ($response['result_reason'] ?? '')), (int) $response['result_code'], $response, EppReplyException::fromResponse($response));
             }
 
             if ($second === false) {
@@ -423,7 +424,7 @@ class HeppyTool
                 return $this->commonRequest($command, $origin, $returns, $payload, true);
             }
 
-            throw new EppErrorException($this->getResponseMessage($response) ?? ('failed heppy request: ' . var_export($response, true)), (int) $response['result_code'], $response);
+            throw new EppErrorException($this->getResponseMessage($response) ?? ('failed heppy request: ' . var_export($response, true)), (int) $response['result_code'], $response, EppReplyException::fromResponse($response));
         }
 
         $returns = $this->addCommonResponseFields($returns);
