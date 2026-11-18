@@ -598,12 +598,13 @@ class DomainModule extends AbstractModule
 
         $this->domainSetWhoisProtect($row, $row['whois_protected']);
 
-        $info = $this->domainInfo($row);
-
+        // the registry keeps no contacts: nothing to set, so no domain:info is needed either
         $contactTypes = $this->tool->getContactTypes();
         if (empty($contactTypes)) {
             return $row;
         }
+
+        $info = $this->domainInfo($row);
 
         $this->domainDisableUpdateProhibited($info);
 
