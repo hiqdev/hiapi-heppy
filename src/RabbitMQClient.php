@@ -22,6 +22,8 @@ class RabbitMQClient implements ClientInterface
 {
     private const MESSAGE_TTL = 10;
 
+    public const REPLY_TIMEOUT = 2 * self::MESSAGE_TTL;
+
     protected $connection;
 
     protected $queue;
@@ -102,7 +104,7 @@ class RabbitMQClient implements ClientInterface
 
         $this->reply = null;
         while (!$this->reply) {
-            $this->channel->wait(null, null, 2 * self::MESSAGE_TTL);
+            $this->channel->wait(null, null, self::REPLY_TIMEOUT);
         }
 
         return json_decode($this->reply, true);

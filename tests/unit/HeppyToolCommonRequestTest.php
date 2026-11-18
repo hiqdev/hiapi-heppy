@@ -215,7 +215,7 @@ class HeppyToolCommonRequestTest extends TestCase
             $this->renew($tool);
             $this->fail('EppTransportException expected');
         } catch (EppTransportException $e) {
-            $this->assertSame(HeppyTool::CONNECTION_TIMED_OUT, $e->getMessage());
+            $this->assertSame('heppy gave no reply to domain:renew within 20s', $e->getMessage());
             $this->assertSame($timeout, $e->getPrevious());
         }
     }

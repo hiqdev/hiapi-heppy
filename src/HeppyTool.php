@@ -59,7 +59,7 @@ class HeppyTool
 
     public const CONNECTION_ERROR_KIND = 'connection';
 
-    public const CONNECTION_TIMED_OUT = 'The connection timed out';
+    public const NO_REPLY_MESSAGE = 'heppy gave no reply to %s within %ds';
 
     /** @var int seconds to wait before retrying a failed command */
     protected int $retryDelaySeconds = 5;
@@ -396,7 +396,8 @@ class HeppyTool
             $input = $this->applyExtensions($command, $input);
             $response = $this->request($command, $input);
         } catch (AMQPTimeoutException $e) {
-            throw new EppTransportException(self::CONNECTION_TIMED_OUT, null, null, $e);
+            $message = sprintf(self::NO_REPLY_MESSAGE, $command, RabbitMQClient::REPLY_TIMEOUT);
+            throw new EppTransportException($message, null, null, $e);
         } catch (AMQPChannelClosedException $e) {
             if ($second === true) {
                 throw new EppTransportException($e->getMessage(), null, null, $e);
