@@ -49,4 +49,33 @@ class DomainSetPasswordTest extends TestCase
             'domain'      => $domain,
         ]));
     }
+
+    public function testClientUpdateProhibitedIsLiftedBeforeThePasswordIsSet(): void
+    {
+        $domain = 'silverfires1.me';
+        $domainModule = $this->mockModule(DomainModule::class, [
+            [
+                'methodName' => 'domainInfo',
+                'outputData' => [
+                    'domain'   => $domain,
+                    'statuses' => ['clientUpdateProhibited' => 'clientUpdateProhibited'],
+                ],
+            ],
+        ]);
+        $updates = [];
+        $tool = $this->createTool([], $this->getCommonSuccessResponse(), [], [
+            'domain:update' => function (array $data) use (&$updates): array {
+                $updates[] = $data;
+                return $this->getCommonSuccessResponse();
+            },
+        ]);
+        $domainModule->setTool($tool);
+        $tool->setModule('domain', $domainModule);
+
+        $tool->domainSetPassword(['domain' => $domain, 'password' => 'new_pass', 'id' => 25844450]);
+
+        $this->assertCount(2, $updates);
+        $this->assertArrayHasKey('rem', $updates[0]);
+        $this->assertSame(['pw' => 'new_pass'], $updates[1]['chg']);
+    }
 }

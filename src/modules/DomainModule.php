@@ -598,12 +598,13 @@ class DomainModule extends AbstractModule
 
         $this->domainSetWhoisProtect($row, $row['whois_protected']);
 
-        $info = $this->domainInfo($row);
-
+        // the registry keeps no contacts: nothing to set, so no domain:info is needed either
         $contactTypes = $this->tool->getContactTypes();
         if (empty($contactTypes)) {
             return $row;
         }
+
+        $info = $this->domainInfo($row);
 
         $this->domainDisableUpdateProhibited($info);
 
@@ -616,6 +617,9 @@ class DomainModule extends AbstractModule
      */
     public function domainSetPassword(array $row): array
     {
+        // not with the new password: domain:info would be refused with it
+        $this->domainDisableUpdateProhibited(['domain' => $row['domain'], 'id' => $row['id'] ?? null]);
+
         return $this->domainUpdate([
             'domain' => $row['domain'],
             'id'     => $row['id'] ?? null,
@@ -1359,8 +1363,9 @@ class DomainModule extends AbstractModule
     private function domainDisableUpdateProhibited(array $row)
     {
         $info = empty($row['statuses']) ? $this->domainInfo($row) : $row;
+        $statuses = $info['statuses'] ?? [];
 
-        if (!array_key_exists(self::CLIENT_UPDATE_PROHIBITED, $info['statuses']) && !in_array(self::CLIENT_UPDATE_PROHIBITED, $info['statuses'], true)) {
+        if (!array_key_exists(self::CLIENT_UPDATE_PROHIBITED, $statuses) && !in_array(self::CLIENT_UPDATE_PROHIBITED, $statuses, true)) {
             return $row;
         }
 
