@@ -2,6 +2,8 @@
 
 namespace hiapi\heppy\tests\unit\modules\domain;
 
+use hiapi\heppy\exceptions\DomainBeingDeletedException;
+use hiapi\heppy\modules\DomainModule;
 use hiapi\heppy\tests\unit\TestCase;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 
@@ -69,6 +71,28 @@ class DomainRenewTest extends TestCase
         $this->expectExceptionMessage('registry expiry date 2018-11-09 is earlier than 2019-11-09');
 
         $tool->domainRenew($this->getRenewRow($domain));
+    }
+
+    public function testExpiredRenewFailsWhileTheRegistryDeletesTheDomain(): void
+    {
+        $domain = 'silverfires1.me';
+        $tool = $this->createTool([], $this->getCommonSuccessResponse(), [], [
+            'domain:check'  => $this->addCommonSuccessResponse([
+                'avails' => [$domain => '1'],
+            ]),
+            'domain:info'   => [
+                'result_code'   => '2306',
+                'result_msg'    => 'Parameter value policy error',
+                'result_reason' => 'Verisign Connection Policy',
+                'clTRID'        => 'AA-00',
+                'svTRID'        => '17223417402-1795520101459',
+            ],
+        ]);
+
+        $this->expectException(DomainBeingDeletedException::class);
+        $this->expectExceptionMessage(DomainModule::DOMAIN_BEING_DELETED);
+
+        $tool->domainRenew($this->getRenewRow($domain), true);
     }
 
     public function testEppErrorWithoutMsgReturnsReadableMessage()
