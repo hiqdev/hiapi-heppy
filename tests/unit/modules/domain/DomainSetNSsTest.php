@@ -24,7 +24,7 @@ class DomainSetNSsTest extends TestCase
 
         $domainModule = $this->mockModule(DomainModule::class, [
             [
-                'methodName' => 'domainInfo',
+                'methodName' => 'requestDomainInfo',
                 'inputData'  => $apiData,
                 'outputData' => [
                     'domain'     => $domain,

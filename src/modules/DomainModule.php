@@ -10,6 +10,7 @@
 
 namespace hiapi\heppy\modules;
 
+use hiapi\heppy\exceptions\DomainBeingDeletedException;
 use hiapi\heppy\exceptions\EppErrorException;
 use Exception;
 use Throwable;
@@ -55,6 +56,10 @@ class DomainModule extends AbstractModule
 
     const AUTHORIZATION_ERROR = 'Authorization error';
 
+    const VERISIGN_CONNECTION_POLICY = 'Verisign Connection Policy';
+
+    const DOMAIN_BEING_DELETED = 'Domain is being deleted at the registry';
+
     /** {@inheritdoc} */
     public array $uris = [
         'domain' => 'urn:ietf:params:xml:ns:domain-1.0',
@@ -81,6 +86,15 @@ class DomainModule extends AbstractModule
      * @return array
      */
     public function domainInfo(array $row): array
+    {
+        try {
+            return $this->requestDomainInfo($row);
+        } catch (DomainBeingDeletedException $e) {
+            return array_merge($row, ['_error' => $e->getMessage()]);
+        }
+    }
+
+    protected function requestDomainInfo(array $row): array
     {
         try {
             $info =  $this->tool->commonRequest("{$this->object}:info", array_filter([
@@ -128,6 +142,10 @@ class DomainModule extends AbstractModule
 
             if (strpos($e->getMessage(), self::AUTHORIZATION_ERROR) !== false) {
                 throw new Exception(self::AUTHORIZATION_ERROR);
+            }
+
+            if (strpos($e->getMessage(), self::VERISIGN_CONNECTION_POLICY) !== false) {
+                throw new DomainBeingDeletedException(self::DOMAIN_BEING_DELETED, (int) $e->getCode(), $e);
             }
 
             $this->rethrow($e, new Exception($e->getMessage(), (int) $e->getCode(), $e));
@@ -358,7 +376,7 @@ class DomainModule extends AbstractModule
      */
     public function domainDelete(array $row): array
     {
-        $info = $this->domainInfo($row);
+        $info = $this->requestDomainInfo($row);
         $hosts = $info['hosts'] ?? '';
         $hosts = is_array($hosts) ? $hosts : explode(",", $hosts);
         foreach ($hosts as $host) {
@@ -412,7 +430,7 @@ class DomainModule extends AbstractModule
 
         $curExpDate = $this->tool->getDateTime($row['expires_time']);
         if ($expired === true) {
-            $info = $this->tool->domainInfo($row);
+            $info = $this->requestDomainInfo($row);
             $realExpDate = $this->tool->getDateTime($info['expiration_date']);
 
             // Domain is already renewed in registry: our expiry date + period matches registry expiry date
@@ -474,7 +492,7 @@ class DomainModule extends AbstractModule
         }
 
         try {
-            $res = $this->domainInfo($row);
+            $res = $this->requestDomainInfo($row);
         } catch (Throwable $e) {
             $zone = $this->getZone($row);
             if ($zone === 'eu' && $this->isKeySysExtensionEnabled()) {
@@ -604,7 +622,7 @@ class DomainModule extends AbstractModule
             return $row;
         }
 
-        $info = $this->domainInfo($row);
+        $info = $this->requestDomainInfo($row);
 
         $this->domainDisableUpdateProhibited($info);
 
@@ -635,7 +653,7 @@ class DomainModule extends AbstractModule
     {
         $this->domainDisableUpdateProhibited($row);
         $row = $this->_domainPrepareNSs($row);
-        $info = $this->domainInfo($row);
+        $info = $this->requestDomainInfo($row);
 
         $row = $this->prepareDataForUpdate($row, $info, [
             'nss' => 'nss',
@@ -733,7 +751,7 @@ class DomainModule extends AbstractModule
             ],
         ]);
 
-        $info = $this->domainInfo($row);
+        $info = $this->requestDomainInfo($row);
 
         if (!array_key_exists('pendingRestore', $info['statuses']) && !array_key_exists('rgp', $info['statuses']) && !array_key_exists('pendingDelete', $info['statuses'])) {
             return $row;
@@ -1323,7 +1341,7 @@ class DomainModule extends AbstractModule
         string $action,
         array $statuses
     ): array {
-        $info = $this->domainInfo($row);
+        $info = $this->requestDomainInfo($row);
         $this->domainDisableUpdateProhibited($info);
 
         $old_statuses = array_filter($info['statuses'], function($k, $v) {
@@ -1362,7 +1380,7 @@ class DomainModule extends AbstractModule
 
     private function domainDisableUpdateProhibited(array $row)
     {
-        $info = empty($row['statuses']) ? $this->domainInfo($row) : $row;
+        $info = empty($row['statuses']) ? $this->requestDomainInfo($row) : $row;
         $statuses = $info['statuses'] ?? [];
 
         if (!array_key_exists(self::CLIENT_UPDATE_PROHIBITED, $statuses) && !in_array(self::CLIENT_UPDATE_PROHIBITED, $statuses, true)) {
