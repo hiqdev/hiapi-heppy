@@ -12,7 +12,7 @@
 namespace hiapi\heppy\modules;
 
 use Exception;
-use hiapi\heppy\exceptions\EppTransportException;
+use hiapi\heppy\exceptions\EppErrorException;
 use Throwable;
 
 class PollModule extends AbstractModule
@@ -20,6 +20,7 @@ class PollModule extends AbstractModule
     const POLL_QUEUE_EMPTY = 1300;
     const POLL_QUEUE_FULL = 1301;
     const MAX_POLLS_PER_RUN = 10;
+    const EPP_ERROR_CODE_MIN = 2000;
     const M024_MAINTENANCE = "M024: The maintenance window Registry Scheduled Maintenance";
     const M027_MAINTENANCE = "M027: The domain";
     const DOMAIN_RENEWAL_SUCCESSFUL = 'DOMAIN_RENEWAL_SUCCESSFUL';
@@ -93,18 +94,17 @@ class PollModule extends AbstractModule
         $rc = $this->pollReq();
         $i = 1;
         while ((int) $rc['result_code'] === self::POLL_QUEUE_FULL) {
+            $poll = $rc;
             try {
-                $this->pollAck($rc);
-            } catch (EppTransportException $e) {
-                return $this->withPoll($polls, $rc);
-            } catch (Throwable $e) {
-                return $this->acknowledgedPollsOrThrow($polls, $e);
-            }
-            $polls = $this->withPoll($polls, $rc);
-            try {
+                $this->pollAck($poll);
+                $polls = $this->withPoll($polls, $poll);
                 $rc = $this->pollReq();
             } catch (Throwable $e) {
-                return $polls;
+                if ($this->isStillQueued($e)) {
+                    return $this->acknowledgedPollsOrThrow($polls, $e);
+                }
+
+                return $this->withPoll($polls, $poll);
             }
             $i++;
             if ($i > self::MAX_POLLS_PER_RUN) {
@@ -129,6 +129,11 @@ class PollModule extends AbstractModule
         }
 
         return $polls;
+    }
+
+    private function isStillQueued(Throwable $e): bool
+    {
+        return !$e instanceof EppErrorException || $e->getCode() >= self::EPP_ERROR_CODE_MIN;
     }
 
     /**
