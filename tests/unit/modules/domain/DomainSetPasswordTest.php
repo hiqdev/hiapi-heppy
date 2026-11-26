@@ -15,7 +15,7 @@ class DomainSetPasswordTest extends TestCase
 
         $domainModule = $this->mockModule(DomainModule::class, [
             [
-                'methodName' => 'domainInfo',
+                'methodName' => 'requestDomainInfo',
                 'inputData'  => ['domain' => $domain],
                 'outputData' => [
                     'domain'     => $domain,
@@ -55,7 +55,7 @@ class DomainSetPasswordTest extends TestCase
         $domain = 'silverfires1.me';
         $domainModule = $this->mockModule(DomainModule::class, [
             [
-                'methodName' => 'domainInfo',
+                'methodName' => 'requestDomainInfo',
                 'outputData' => [
                     'domain'   => $domain,
                     'statuses' => ['clientUpdateProhibited' => 'clientUpdateProhibited'],
