@@ -58,13 +58,6 @@ class DomainModule extends AbstractModule
     /** Verisign's reason for refusing domain:info on a name during its daily delete run. */
     const VERISIGN_CONNECTION_POLICY = 'Verisign Connection Policy';
 
-    /**
-     * Row flag: the caller checks whether the domain is gone from the registry
-     * (deleted or moved to another registrar), so the replies that answer that
-     * are expected and come back as an `_error` row instead of an exception.
-     */
-    const EXPECT_GONE = 'expect_gone';
-
     /** {@inheritdoc} */
     public array $uris = [
         'domain' => 'urn:ietf:params:xml:ns:domain-1.0',
@@ -87,10 +80,13 @@ class DomainModule extends AbstractModule
     ];
 
     /**
-     * With EXPECT_GONE set in the row, a reply saying the domain is gone or is
-     * being deleted returns the row with `_error` (the same shape and message
-     * callTool would produce) instead of throwing, so it is not logged as an
-     * error. Any other failure still throws.
+     * Tool entry for domain info. A reply saying the domain is not ours at the
+     * registry is an answer, not a failure: it returns the row with `_error`
+     * (the same shape and message callTool would produce) instead of throwing,
+     * so it is not logged as an error. Any other failure still throws.
+     *
+     * Commands that need the info to go on call requestDomainInfo(), which
+     * throws for these replies too.
      *
      * @param array $row
      * @return array
@@ -100,7 +96,7 @@ class DomainModule extends AbstractModule
         try {
             return $this->requestDomainInfo($row);
         } catch (Throwable $e) {
-            if (!empty($row[self::EXPECT_GONE]) && $this->isGoneReply($e)) {
+            if ($this->isGoneReply($e)) {
                 return array_merge($row, ['_error' => $e->getMessage()]);
             }
 
@@ -109,10 +105,10 @@ class DomainModule extends AbstractModule
     }
 
     /**
-     * Replies that answer "is the domain still ours at the registry":
-     * it does not exist (deleted), it belongs to another registrar
-     * (Authorization error), or Verisign is deleting it right now
-     * (2306 Verisign Connection Policy, for about an hour a day).
+     * Replies meaning the domain is not ours at the registry: it does not
+     * exist (deleted), it belongs to another registrar (Authorization error),
+     * or Verisign is deleting it right now (2306 Verisign Connection Policy,
+     * for about an hour a day).
      */
     private function isGoneReply(Throwable $e): bool
     {
@@ -124,7 +120,7 @@ class DomainModule extends AbstractModule
         return (int) $e->getCode() === 2306 && strpos($message, self::VERISIGN_CONNECTION_POLICY) !== false;
     }
 
-    private function requestDomainInfo(array $row): array
+    protected function requestDomainInfo(array $row): array
     {
         try {
             $info =  $this->tool->commonRequest("{$this->object}:info", array_filter([
@@ -402,7 +398,7 @@ class DomainModule extends AbstractModule
      */
     public function domainDelete(array $row): array
     {
-        $info = $this->domainInfo($row);
+        $info = $this->requestDomainInfo($row);
         $hosts = $info['hosts'] ?? '';
         $hosts = is_array($hosts) ? $hosts : explode(",", $hosts);
         foreach ($hosts as $host) {
@@ -456,7 +452,7 @@ class DomainModule extends AbstractModule
 
         $curExpDate = $this->tool->getDateTime($row['expires_time']);
         if ($expired === true) {
-            $info = $this->tool->domainInfo($row);
+            $info = $this->requestDomainInfo($row);
             $realExpDate = $this->tool->getDateTime($info['expiration_date']);
 
             // Domain is already renewed in registry: our expiry date + period matches registry expiry date
@@ -518,7 +514,7 @@ class DomainModule extends AbstractModule
         }
 
         try {
-            $res = $this->domainInfo($row);
+            $res = $this->requestDomainInfo($row);
         } catch (Throwable $e) {
             $zone = $this->getZone($row);
             if ($zone === 'eu' && $this->isKeySysExtensionEnabled()) {
@@ -648,7 +644,7 @@ class DomainModule extends AbstractModule
             return $row;
         }
 
-        $info = $this->domainInfo($row);
+        $info = $this->requestDomainInfo($row);
 
         $this->domainDisableUpdateProhibited($info);
 
@@ -679,7 +675,7 @@ class DomainModule extends AbstractModule
     {
         $this->domainDisableUpdateProhibited($row);
         $row = $this->_domainPrepareNSs($row);
-        $info = $this->domainInfo($row);
+        $info = $this->requestDomainInfo($row);
 
         $row = $this->prepareDataForUpdate($row, $info, [
             'nss' => 'nss',
@@ -777,7 +773,7 @@ class DomainModule extends AbstractModule
             ],
         ]);
 
-        $info = $this->domainInfo($row);
+        $info = $this->requestDomainInfo($row);
 
         if (!array_key_exists('pendingRestore', $info['statuses']) && !array_key_exists('rgp', $info['statuses']) && !array_key_exists('pendingDelete', $info['statuses'])) {
             return $row;
@@ -1367,7 +1363,7 @@ class DomainModule extends AbstractModule
         string $action,
         array $statuses
     ): array {
-        $info = $this->domainInfo($row);
+        $info = $this->requestDomainInfo($row);
         $this->domainDisableUpdateProhibited($info);
 
         $old_statuses = array_filter($info['statuses'], function($k, $v) {
@@ -1406,7 +1402,7 @@ class DomainModule extends AbstractModule
 
     private function domainDisableUpdateProhibited(array $row)
     {
-        $info = empty($row['statuses']) ? $this->domainInfo($row) : $row;
+        $info = empty($row['statuses']) ? $this->requestDomainInfo($row) : $row;
         $statuses = $info['statuses'] ?? [];
 
         if (!array_key_exists(self::CLIENT_UPDATE_PROHIBITED, $statuses) && !in_array(self::CLIENT_UPDATE_PROHIBITED, $statuses, true)) {

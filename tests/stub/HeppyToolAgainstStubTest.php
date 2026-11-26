@@ -70,9 +70,9 @@ class HeppyToolAgainstStubTest extends TestCase
 
     public function testRegistryError(): void
     {
-        $this->expectExceptionMessage('Authorization error');
+        $info = $this->tool->domainInfo(['domain' => 'authfail.test']);
 
-        $this->tool->domainInfo(['domain' => 'authfail.test']);
+        $this->assertSame('Authorization error', $info['_error']);
     }
 
     public function testReplyToAnotherRequestIsRejected(): void
