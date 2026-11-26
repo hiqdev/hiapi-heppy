@@ -12,11 +12,15 @@
 namespace hiapi\heppy\modules;
 
 use Exception;
+use hiapi\heppy\exceptions\EppErrorException;
+use Throwable;
 
 class PollModule extends AbstractModule
 {
     const POLL_QUEUE_EMPTY = 1300;
     const POLL_QUEUE_FULL = 1301;
+    const MAX_POLLS_PER_RUN = 10;
+    const EPP_ERROR_CODE_MIN = 2000;
     const M024_MAINTENANCE = "M024: The maintenance window Registry Scheduled Maintenance";
     const M027_MAINTENANCE = "M027: The domain";
     const DOMAIN_RENEWAL_SUCCESSFUL = 'DOMAIN_RENEWAL_SUCCESSFUL';
@@ -91,16 +95,45 @@ class PollModule extends AbstractModule
         $i = 1;
         while ((int) $rc['result_code'] === self::POLL_QUEUE_FULL) {
             $poll = $rc;
-            $this->pollAck($rc);
-            $rc = $this->pollReq();
-            $polls[$poll['id']] = $this->_pollPostEvent($poll);
+            try {
+                $this->pollAck($poll);
+                $polls = $this->withPoll($polls, $poll);
+                $rc = $this->pollReq();
+            } catch (Throwable $e) {
+                if ($this->isStillQueued($e)) {
+                    return $this->acknowledgedPollsOrThrow($polls, $e);
+                }
+
+                return $this->withPoll($polls, $poll);
+            }
             $i++;
-            if ($i > 10) {
+            if ($i > self::MAX_POLLS_PER_RUN) {
                 break;
             }
         }
 
         return $polls;
+    }
+
+    private function withPoll(array $polls, array $poll): array
+    {
+        $polls[$poll['id']] = $this->_pollPostEvent($poll);
+
+        return $polls;
+    }
+
+    private function acknowledgedPollsOrThrow(array $polls, Throwable $e): array
+    {
+        if ($polls === []) {
+            throw $e;
+        }
+
+        return $polls;
+    }
+
+    private function isStillQueued(Throwable $e): bool
+    {
+        return !$e instanceof EppErrorException || $e->getCode() >= self::EPP_ERROR_CODE_MIN;
     }
 
     /**
