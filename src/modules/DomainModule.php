@@ -55,6 +55,16 @@ class DomainModule extends AbstractModule
 
     const AUTHORIZATION_ERROR = 'Authorization error';
 
+    /** Verisign's reason for refusing domain:info on a name during its daily delete run. */
+    const VERISIGN_CONNECTION_POLICY = 'Verisign Connection Policy';
+
+    /**
+     * Row flag: the caller checks whether the domain is gone from the registry
+     * (deleted or moved to another registrar), so the replies that answer that
+     * are expected and come back as an `_error` row instead of an exception.
+     */
+    const EXPECT_GONE = 'expect_gone';
+
     /** {@inheritdoc} */
     public array $uris = [
         'domain' => 'urn:ietf:params:xml:ns:domain-1.0',
@@ -77,10 +87,44 @@ class DomainModule extends AbstractModule
     ];
 
     /**
+     * With EXPECT_GONE set in the row, a reply saying the domain is gone or is
+     * being deleted returns the row with `_error` (the same shape and message
+     * callTool would produce) instead of throwing, so it is not logged as an
+     * error. Any other failure still throws.
+     *
      * @param array $row
      * @return array
      */
     public function domainInfo(array $row): array
+    {
+        try {
+            return $this->requestDomainInfo($row);
+        } catch (Throwable $e) {
+            if (!empty($row[self::EXPECT_GONE]) && $this->isGoneReply($e)) {
+                return array_merge($row, ['_error' => $e->getMessage()]);
+            }
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Replies that answer "is the domain still ours at the registry":
+     * it does not exist (deleted), it belongs to another registrar
+     * (Authorization error), or Verisign is deleting it right now
+     * (2306 Verisign Connection Policy, for about an hour a day).
+     */
+    private function isGoneReply(Throwable $e): bool
+    {
+        $message = $e->getMessage();
+        if ($message === self::OBJECT_DOES_NOT_EXIST || $message === self::AUTHORIZATION_ERROR) {
+            return true;
+        }
+
+        return (int) $e->getCode() === 2306 && strpos($message, self::VERISIGN_CONNECTION_POLICY) !== false;
+    }
+
+    private function requestDomainInfo(array $row): array
     {
         try {
             $info =  $this->tool->commonRequest("{$this->object}:info", array_filter([
